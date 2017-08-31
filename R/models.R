@@ -19,6 +19,8 @@ model$set("public","model1",
             return(self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2)))
           })
 
+# To do in estim (rename to calib). Make initialize function of the elected model and the data to infer the estimation.
+# The user does not have to be to call the class model!!!
 
 estim <- R6Class(classname = "estim",
                  public = list(
@@ -33,11 +35,8 @@ estim <- R6Class(classname = "estim",
                    }
                  ))
 
-predict <- R6Class(classname = "predict",
-                   public = list(
-                     pred = function(obj,)
+# The class predict uses an object estim and new data to predict a new Y
 
-                   ))
 
 X <- cbind(runif(3),runif(3))
 code <- function(X,theta)
@@ -48,7 +47,7 @@ Yexp <- runif(3)
 
 obj <- model$new(code,X,Yexp)
 test <- estim$new()
-test$LSE(c(3,5),obj=obj)
+test$LSE(c(1,1),obj=obj)
 test$opt(obj)
 
 
