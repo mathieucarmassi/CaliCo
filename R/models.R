@@ -15,7 +15,7 @@
 #' @field n the number of experiments
 #' @field model the model choice see documentation
 #' @seealso The function ....
-gen <- R6Class(classname = "gen",
+model.class <- R6Class(classname = "gen",
                  public = list(
                    code     = NULL,
                    X        = NULL,
@@ -30,11 +30,10 @@ gen <- R6Class(classname = "gen",
                      self$n     <- length(Yexp)
                      self$model <- model
                      private$checkModels()
-                     private$selection()
                    }
                  ))
 
-gen$set("private","checkModels",
+model.class$set("private","checkModels",
         function()
         {
           if (self$model != "model1" & self$model != "model2")
@@ -43,73 +42,15 @@ gen$set("private","checkModels",
           }
         })
 
-gen$set("public","model1",
+model.class$set("public","model1",
           function(theta,sig2)
             {
             return(self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2)))
           })
 
-gen$set("public","model2",
+model.class$set("public","model2",
         function(theta,sig2,rho)
         {
           return(rho*self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2)))
         })
-
-gen$set("private","selection",
-        function()
-          {
-          if (self$model== "model1")
-          {
-            funSelect <- self$model1
-          } else
-            if (self$model== "model2")
-          {
-            funSelect <- self$model2
-          }
-        })
-
-# Example of generation a model
-X <- cbind(runif(3),runif(3))
-code <- function(X,theta)
-{
-  return(X[,1]+theta*X[,2])
-}
-Yexp <- runif(3)
-test <- gen$new(code,X,Yexp,"model1")
-
-
-# To do in estim (rename to calib). Make initialize function of the elected model and the data to infer the estimation.
-# The user does not have to be to call the class model!!!
-
-estim <- R6Class(classname = "estim",
-                 inherit = gen,
-                 public = list(
-                   LSE = function(theta,obj=obj)
-                   {
-                     Ytemp <- obj$model1(theta[-length(theta)],theta[length(theta)])
-                     return(sum((Ytemp-obj$Yexp)^2))
-                   },
-                   opt = function(obj)
-                   {
-                     return(optim(c(0,0),self$LSE,obj=obj)$par)
-                   }
-                 ))
-
-# The class predict uses an object estim and new data to predict a new Y
-
-calib <- function(code,X,Y)
-{
-  obj <- model$new(code,X,Y)
-  est <- estim$new()
-  return(est$opt(obj))
-}
-
-X <- cbind(runif(3),runif(3))
-code <- function(X,theta)
-{
-  return(X[,1]+theta*X[,2])
-}
-Yexp <- runif(3)
-
-calib(code,X,Yexp)
 
