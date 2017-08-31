@@ -15,7 +15,7 @@
 #' @field n the number of experiments
 #' @field model the model choice see documentation
 #' @seealso The function ....
-model.class <- R6Class(classname = "gen",
+model.class <- R6Class(classname = "model.class",
                  public = list(
                    code     = NULL,
                    X        = NULL,

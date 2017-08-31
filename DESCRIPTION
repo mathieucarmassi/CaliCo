@@ -1,11 +1,15 @@
 Package: calibrationCode
 Type: Package
-Title: What the Package Does (Title Case)
+Title: person("Mathieu", "Carmassi", email = "mathieu.carmassi@gmail.com", role = c("aut", "cre"))
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Mathieu Carmassi
+Maintainer: Mathieu Carmassi <mathieu.carmassi@gmail.com>
+Description: This package allows the user to realize quick code calibration for time consuming or
+  no time consuming codes.
+License: GPL-2
 Encoding: UTF-8
 LazyData: true
+Imports:
+    R6,
+    ggplot2
+RoxygenNote: 6.0.1

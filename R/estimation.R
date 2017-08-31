@@ -1,5 +1,5 @@
-estim.class <- R6Class(classname = "estim",
-                 inherit = gen,
+estim.class <- R6Class(classname = "estim.class",
+                 inherit = model.class,
                  public = list(
                    LSE = function(theta,obj=obj)
                    {
