@@ -7,23 +7,26 @@
 #' @return A function f(theta) is return
 #' @examples
 #' X <- cbind(runif(3),runif(3))
-#'code <- function(X,theta)
-#'{
-#'  return(X[,1]+theta*X[,2])
-#'}
-#'Yexp <- runif(3)
-#'test <- model(code,X,Yexp,"model1")
-#'test(2,3)
+#' code <- function(X,theta)
+#' {
+#'   return(X[,1]+theta*X[,2])
+#' }
+#' Yexp <- runif(3)
+#' foo <- model(code,X,Yexp,"model1")
+#' foo$fun(3,1)
 #' @export
-model <- function(code,X,Yexp,model)
+model <- function(code,X,Yexp,model,n.emul=100)
 {
-  obj <- gen$new(code,X,Yexp,model)
-  if (model == "model1")
-  {
-    return(obj$model1)
-  } else
-    if (model == "model2")
-    {
-      return(obj$model2)
-    }
+  obj <- model.class$new(code,X,Yexp,model)
+  switch(model,
+         model1={
+           obj = model1.class$new(code,X,Yexp,model)
+           return(obj)
+         },
+         model2={
+           obj = model2.class$new(code,X,Yexp,model,n.emul)
+           return(obj)
+         }
+  )
 }
+
