@@ -1,5 +1,6 @@
 #' Function that allows to generate the standard form of the used code into the chosen model
 #'
+#' @importFrom R6 R6Class
 #' @param  code the computational code (function of X and theta)
 #' @param  X the matrix of forced variables
 #' @param Yexp the vector of the experiments

@@ -1,6 +1,5 @@
 #' A Reference Class to generates differents model objects
 #'
-#' @include R6, FactoMineR
 #' @description See the function blabla which produces an instance of this class
 #'
 #' This class comes with a set of methods, some of them being useful for the user:

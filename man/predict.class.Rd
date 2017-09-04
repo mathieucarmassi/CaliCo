@@ -8,29 +8,7 @@
 \usage{
 predict.class
 }
-\arguments{
-\item{code}{the computational code (function of X and theta)}
-
-\item{X}{the matrix of forced variables}
-
-\item{Yexp}{the vector of the experiments}
-
-\item{model}{string of the model chosen ("model1","model2")}
-}
-\value{
-A function f(theta) is return
-}
 \description{
 Function that realize the prediction after calibration
-}
-\examples{
-X <- cbind(runif(3),runif(3))
-code <- function(X,theta)
-{
- return(X[,1]+theta*X[,2])
-}
-Yexp <- runif(3)
-test <- model(code,X,Yexp,"model1")
-test(2,3)
 }
 \keyword{datasets}

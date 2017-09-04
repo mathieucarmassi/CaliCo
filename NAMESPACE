@@ -3,4 +3,4 @@
 export(estim.class)
 export(model)
 export(predict.class)
-importFrom(R6, R6Class)
+importFrom(R6,R6Class)

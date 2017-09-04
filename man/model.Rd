@@ -4,7 +4,8 @@
 \alias{model}
 \title{Function that allows to generate the standard form of the used code into the chosen model}
 \usage{
-model(code, X, Yexp, model)
+model(code, X, Yexp, model, opt.emul = list(p = 1, n.emul = 100, PCA = TRUE,
+  binf = 0, bsup = 1))
 }
 \arguments{
 \item{code}{the computational code (function of X and theta)}
@@ -22,12 +23,27 @@ A function f(theta) is return
 Function that allows to generate the standard form of the used code into the chosen model
 }
 \examples{
+### For the first model
 X <- cbind(runif(3),runif(3))
 code <- function(X,theta)
 {
- return(X[,1]+theta*X[,2])
+  return(X[,1]+theta*X[,2])
 }
 Yexp <- runif(3)
-test <- model(code,X,Yexp,"model1")
-test(2,3)
+foo <- model(code,X,Yexp,"model1")
+foo$fun(3,1)
+
+### For the second model
+X <- cbind(runif(5),runif(5),runif(5))
+code <- function(X,theta)
+{
+  return(X[,1]+theta[,1]*X[,2]+theta[,2]^2*X[,3])
+}
+Yexp <- runif(5)
+foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=FALSE,binf=c(0,0),bsup=c(1,1)))
+foo$fun(c(3,3),1)
+
+# with the PCA
+foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE,binf=c(0,0),bsup=c(1,1)))
+foo$fun(c(3,3),1)
 }
