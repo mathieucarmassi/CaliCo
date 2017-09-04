@@ -1,6 +1,5 @@
 #' A Reference Class to generates differents model objects
 #'
-#' @include R6, FactoMineR
 #' @description See the function blabla which produces an instance of this class
 #'
 #' This class comes with a set of methods, some of them being useful for the user:
@@ -90,7 +89,9 @@ model2.class <- R6Class(classname = "model2.class",
                           Dim <- self$p+self$d
                           if (self$PCA==TRUE)
                           {
-                            D <- self$PCA.fun(X=self$X,n=self$n.emul,p=self$p,d=self$d,binf=self$binf,bsup=self$bsup)
+                            D <- self$PCA.fun(X=self$X,Dim=Dim,n=self$n.emul,p=self$p,d=self$d,
+                                              binf=self$binf,bsup=self$bsup,M=M,V=V)
+                            print(D)
                           } else
                           {
                             doe <- lhsDesign(self$n.emul,Dim)$design
@@ -120,9 +121,15 @@ model2.class <- R6Class(classname = "model2.class",
                         fun = function(theta,sig2)
                         {
                           options(warn=-1)
-                          Xnew <- cbind(X,rep(theta,self$n))
-                          pr <- predict(self$GP,newdata=Xnew,
-                                        type="UK",cov.compute=TRUE)
+                          if(self$p==1)
+                          {
+                            Xnew <- cbind(X,rep(theta,self$n))
+                          } else
+                          {
+                            Xtemp <- matrix(rep(theta,c(self$n,self$n)),nr=self$n,nc=self$p)
+                            Xnew  <- cbind(X,Xtemp)
+                          }
+                          pr <- predict(self$GP,newdata=Xnew,type="UK",cov.compute=TRUE)
                           err <- rnorm(n=self$n,mean = 0,sd=sqrt(sig2))
                           return(list(y=pr$mean+err,Cov.GP=pr$cov))
                         })
@@ -130,17 +137,13 @@ model2.class <- R6Class(classname = "model2.class",
 
 
 model2.class$set("public","PCA.fun",
-                function(X,n,p,d,binf,bsup)
+                function(X,Dim,n,p,d,binf,bsup,M,V)
                 {
-                  Xcr <- scale(X)
-                  V   <- attr(Xcr,"scaled:scale")
-                  M   <- attr(Xcr,"scaled:center")
-                  Dim <- p+d
                   PCA.sim <- PCA(X,graph = FALSE)
                   ### Coordinates in the new uncorrelated space of the initial points
                   B <- PCA.sim$ind$coord
                   ### Transition matrix
-                  P <- sqrt(PCA.sim$var$contrib)/10 * sign(PCA.sim$var$coord)
+                  P <- sqrt(PCA.sim$var$contrib[,1:d])/10 * sign(PCA.sim$var$coord[,1:d])
                   ### Establishment of the DOE
                   doe <- lhsDesign(n,Dim)$design
                   doe <- maximinSA_LHS(doe)
