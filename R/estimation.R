@@ -11,3 +11,5 @@ estim.class <- R6Class(classname = "estim.class",
                      return(optim(c(0,0),self$LSE,obj=obj)$par)
                    }
                  ))
+
+
