@@ -18,20 +18,22 @@
 #' @seealso The function ....
 model.class <- R6Class(classname = "model.class",
                  public = list(
-                   code     = NULL,
-                   X        = NULL,
-                   Yexp     = NULL,
-                   n        = NULL,
-                   d        = NULL,
-                   p        = NULL,
-                   model    = NULL,
-                   initialize = function(code=NA,X=NA,Yexp=NA,model=NA)
+                   code      = NULL,
+                   X         = NULL,
+                   Yexp      = NULL,
+                   n         = NULL,
+                   d         = NULL,
+                   emul.list = NULL,
+                   model     = NULL,
+                   initialize = function(code=NA,X=NA,Yexp=NA,model=NA,
+                                         emul.list=list(p=NA,PCA=NA,n.emul=NA))
                    {
-                     self$code  <- code
-                     self$X     <- X
-                     self$Yexp  <- Yexp
-                     self$n     <- length(Yexp)
-                     self$d     <- dim(X)[2]
+                     self$code      <- code
+                     self$X         <- X
+                     self$Yexp      <- Yexp
+                     self$n         <- length(Yexp)
+                     self$d         <- dim(X)[2]
+                     self$emul.list <- emul.list
                      ### Penser à donner une définition à self$p
                      self$model <- model
                      private$checkModels()
@@ -65,64 +67,99 @@ model2.class <- R6Class(classname = "model2.class",
                         public = list(
                           n.emul = NULL,
                           GP     = NULL,
-                        initialize = function(code=NA, X=NA, Yexp=NA, model=NA,n.emul=NA)
+                          p      = NULL,
+                          binf   = NULL,
+                          bsup   = NULL,
+                          PCA    = NULL,
+                        initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
                         {
                           super$initialize(code, X, Yexp, model)
-                          self$n.emul <- n.emul
+                          self$binf   <- opt.emul$binf
+                          self$bsup   <- opt.emul$bsup
+                          self$n.emul <- opt.emul$n.emul
+                          self$p      <- opt.emul$p
+                          self$PCA    <- opt.emul$PCA
                           self$GP     <- self$surrogate()
+                          print("The surrogate has been set up, you can now use the function")
                         },
-                        surrogate = function(PCA=TRUE)
+                        surrogate = function()
                         {
                           Xcr <- scale(X)
                           V   <- attr(Xcr,"scaled:scale")
                           M   <- attr(Xcr,"scaled:center")
                           Dim <- self$p+self$d
-                          if (PCA == TRUE)
+                          if (self$PCA==TRUE)
                           {
-                          ### PCA on the forced variables
-                          PCA.test <- PCA(Xcr,graph = FALSE)
-                          ### Coordinates in the new uncorrelated space of the initial points
-                          B    <- PCA.test$ind$coord
-                          ### Transition matrix
-                          P    <- sqrt(PCA.test$var$contrib[,1:5])/10 * sign(PCA.test$var$coord[,1:5])
-                          ### Establishment of the DOE
-                          doe  <- lhsDesign(n.emul,4)$design
-                          doe  <- maximinSA_LHS(doe)
-                          doe  <- doe$design
-                          ### Boundaries of the points in the new coordinates
-                          binf <- apply(B,2,min)
-                          bsup <- apply(B,2,max)
-                          ### Unscaling the doe into the right bounds
-                          DOE  <- unscale(doe[,1:3],binf[1:3],bsup[1:3])
-                          ### Setting the coordinates of the two other components to 0
-                          D    <- cbind(DOE,rep(0,n),rep(0,n))
-                          ### Matrix containing the points from the DOE but in the initial coordinates
-                          A    <- t(P%*%t(D))
-                          ### Multiplication of each components by the variance and add the mean
-                          for (i in 1:5)
+                            D <- self$PCA.fun(X=self$X,n=self$n.emul,p=self$p,d=self$d,binf=self$binf,bsup=self$bsup)
+                          } else
                           {
-                            A[,i] <- A[,i]*V[i]+rep(M[i],n)
+                            doe <- lhsDesign(self$n.emul,Dim)$design
+                            doe <- maximinSA_LHS(doe)
+                            doe <- doe$design
+                            ### Getting back the value of the parameter generated by the DOE
+                            binf.X <- apply(Xcr,2,min)
+                            bsup.X <- apply(Xcr,2,max)
+                            DOE <- unscale(doe[,1:self$d],binf.X,bsup.X)
+                            for (i in 1:self$d)
+                            {
+                              DOE[,i] <- DOE[,i]*V[i]+rep(M[i],self$n.emul)
+                            }
+                            doeParam <- unscale(doe[,(Dim-self$p+1):Dim],self$binf,self$bsup)
+                            ### Matrix D contains the final value for the DOE
+                            D <- cbind(DOE,doeParam)
                           }
-                          }
-                          ### Getting back the value of the parameter generated by the DOE
-                          doeParam <- unscale(doe[,4],0.153,0.187)
-                          ### Matrix D contains the final value for the DOE
-                          D <- cbind(A,doeParam)
                           ### Generating the response
-                          z <- fun2emul(D)
+                          z <- self$code(D[,1:(Dim-self$p)],D[,(Dim-self$p+1):Dim])
                           ### Converting D as a data.frame for the km function
                           D <- as.data.frame(D)
-                          colnames(D) <- c("V1","V2","V3","V4","V5","V6")
+                          #colnames(D) <- c("V1","V2","V3","V4","V5","V6")
                           ### Creation of the Gaussian Process with estimation of hyperpameters
-                          GP <- km(formula =~V1+V2+V3+V4+V5+V6, design=D, response = z, covtype = "matern5_2")
+                          GP <- km(formula =~1, design=D, response = z,covtype = "matern5_2")
                           return(GP)
                         },
                         fun = function(theta,sig2)
                         {
-                          pr <- predict(self$GP,newdata=X,
+                          options(warn=-1)
+                          Xnew <- cbind(X,rep(theta,self$n))
+                          pr <- predict(self$GP,newdata=Xnew,
                                         type="UK",cov.compute=TRUE)
-                          err <- rnorm(n=length(pr$mean),mean = 0,sd=sqrt(theta[2]))
+                          err <- rnorm(n=self$n,mean = 0,sd=sqrt(sig2))
+                          return(list(y=pr$mean+err,Cov.GP=pr$cov))
                         })
                         )
 
 
+model2.class$set("public","PCA.fun",
+                function(X,n,p,d,binf,bsup)
+                {
+                  Xcr <- scale(X)
+                  V   <- attr(Xcr,"scaled:scale")
+                  M   <- attr(Xcr,"scaled:center")
+                  Dim <- p+d
+                  PCA.sim <- PCA(X,graph = FALSE)
+                  ### Coordinates in the new uncorrelated space of the initial points
+                  B <- PCA.sim$ind$coord
+                  ### Transition matrix
+                  P <- sqrt(PCA.sim$var$contrib)/10 * sign(PCA.sim$var$coord)
+                  ### Establishment of the DOE
+                  doe <- lhsDesign(n,Dim)$design
+                  doe <- maximinSA_LHS(doe)
+                  doe <- doe$design
+                  ### Boundaries of the points in the new coordinates
+                  binf.X <- apply(B,2,min)
+                  bsup.X <- apply(B,2,max)
+                  ### Unscaling the doe into the right bounds
+                  DOE <- unscale(doe[,1:d],binf.X,bsup.X)
+                  ### Matrix containing the points from the DOE but in the initial coordinates
+                  A <- t(P%*%t(DOE))
+                  ### Multiplication of each components by the variance and add the mean
+                  for (i in 1:d)
+                  {
+                    A[,i] <- A[,i]*V[i]+rep(M[i],n)
+                  }
+                  ### Getting back the value of the parameter generated by the DOE
+                  doeParam <- unscale(doe[,(Dim-p+1):Dim],binf,bsup)
+                  ### Matrix D contains the final value for the DOE
+                  D <- cbind(A,doeParam)
+                  return(D)
+                })
