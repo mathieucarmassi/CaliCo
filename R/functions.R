@@ -23,7 +23,11 @@
 #'   return(X[,1]+theta[,1]*X[,2]+theta[,2]^2*X[,3])
 #' }
 #' Yexp <- runif(5)
-#' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=FALSE,binf=c(0,0),bsup=c(1,1))
+#' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=FALSE,binf=c(0,0),bsup=c(1,1)))
+#' foo$fun(c(3,3),1)
+#'
+#' # with the PCA
+#' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE,binf=c(0,0),bsup=c(1,1)))
 #' foo$fun(c(3,3),1)
 #' @export
 model <- function(code,X,Yexp,model,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1))
