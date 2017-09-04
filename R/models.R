@@ -84,15 +84,15 @@ model2.class <- R6Class(classname = "model2.class",
                         },
                         surrogate = function()
                         {
-                          Xcr <- scale(X)
-                          V   <- attr(Xcr,"scaled:scale")
-                          M   <- attr(Xcr,"scaled:center")
-                          Dim <- self$p+self$d
                           if (self$PCA==TRUE)
                           {
                             D <- self$PCA.fun(X=self$X,n=self$n.emul,p=self$p,d=self$d,binf=self$binf,bsup=self$bsup)
                           } else
                           {
+                            Xcr <- scale(X)
+                            V   <- attr(Xcr,"scaled:scale")
+                            M   <- attr(Xcr,"scaled:center")
+                            Dim <- self$p+self$d
                             doe <- lhsDesign(self$n.emul,Dim)$design
                             doe <- maximinSA_LHS(doe)
                             doe <- doe$design
