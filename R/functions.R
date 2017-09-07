@@ -1,6 +1,11 @@
 #' Function that allows to generate the standard form of the used code into the chosen model
 #'
 #' @importFrom R6 R6Class
+#' @importFrom DiceDesign lhsDesign
+#' @importFrom DiceDesign maximinSA_LHS
+#' @importFrom DiceKriging km
+#' @importFrom DiceKriging predict
+#' @importFrom FactoMineR PCA
 #' @param  code the computational code (function of X and theta)
 #' @param  X the matrix of forced variables
 #' @param Yexp the vector of the experiments
@@ -41,6 +46,14 @@ model <- function(code,X,Yexp,model,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0
          },
          model2={
            obj = model2.class$new(code,X,Yexp,model,opt.emul)
+           return(obj)
+         },
+         model3={
+           obj = model3.class$new(code,X,Yexp,model)
+           return(obj)
+         },
+         model4={
+           obj = model4.class$new(code,X,Yexp,model,opt.emul)
            return(obj)
          }
   )

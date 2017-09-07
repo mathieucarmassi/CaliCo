@@ -33,7 +33,6 @@ model.class <- R6Class(classname = "model.class",
                      self$n         <- length(Yexp)
                      self$d         <- dim(X)[2]
                      self$emul.list <- emul.list
-                     ### Penser à donner une définition à self$p
                      self$model <- model
                      private$checkModels()
                    }
@@ -42,7 +41,7 @@ model.class <- R6Class(classname = "model.class",
 model.class$set("private","checkModels",
         function()
         {
-          if (self$model != "model1" & self$model != "model2")
+          if (self$model != "model1" & self$model != "model2" & self$model != "model3" & self$model != "model4")
           {
             stop('Please elect a correct model')
           }
@@ -166,3 +165,60 @@ model2.class$set("public","PCA.fun",
                   D <- cbind(A,doeParam)
                   return(D)
                 })
+
+model3.class <- R6Class(classname = "model3.class",
+                        inherit = model1.class,
+                        public=list(
+                          funC = NULL,
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
+                          {
+                            super$initialize(code, X, Yexp, model)
+                            self$funC <- super$fun
+                          },
+                          discrepancy = function(theta,thetaD,sig2)
+                          {
+                            Yc    <- self$funC(theta,sig2)
+                            z     <- self$Yexp - Yc
+                            emul  <- km(formula=~1, design=as.data.frame(self$X), response=z,coef.trend=0,
+                                    coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
+                                    covtype="gauss", scaling = FALSE)
+                            biais <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE, nugget.sim=0,checkNames=FALSE)
+                            return(list(biais=biais,Yc=Yc))
+                          },
+                          fun = function(theta,thetaD,sig2)
+                          {
+                            res <- self$discrepancy(theta,thetaD,sig2)
+                            return(res$biais+res$Yc)
+                          }
+                          )
+)
+
+
+model4.class <- R6Class(classname = "model4.class",
+                        inherit = model2.class,
+                        public=list(
+                          funC = NULL,
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
+                          {
+                            super$initialize(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
+                            self$funC <- super$fun
+                          },
+                          discrepancy = function(theta,thetaD,sig2)
+                          {
+                            Yc    <- self$funC(theta,sig2)
+                            z     <- self$Yexp - Yc
+                            emul  <- km(formula=~1, design=as.data.frame(self$X), response=z,coef.trend=0,
+                                        coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
+                                        covtype="gauss", scaling = FALSE)
+                            biais <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE, nugget.sim=0,checkNames=FALSE)
+                            return(list(biais=biais,Yc=Yc))
+                          },
+                          fun = function(theta,thetaD,sig2)
+                          {
+                            res <- self$discrepancy(theta,thetaD,sig2)
+                            return(res$biais+res$Yc)
+                          })
+)
+
+
+
