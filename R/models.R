@@ -1,7 +1,7 @@
 #' A Reference Class to generates differents model objects
 #'
 #' @description See the function blabla which produces an instance of this class
-#'
+#' @importFrom R6 R6Class
 #' This class comes with a set of methods, some of them being useful for the user:
 #' See the documentation for blabla... Other methods
 #'  should not be called as they are designed to be used during the optimization process.
@@ -178,11 +178,12 @@ model3.class <- R6Class(classname = "model3.class",
                           discrepancy = function(theta,thetaD,sig2)
                           {
                             Yc    <- self$funC(theta,sig2)
-                            z     <- self$Yexp - Yc
+                            z     <- self$Yexp - Yc$y
                             emul  <- km(formula=~1, design=as.data.frame(self$X), response=z,coef.trend=0,
                                     coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
                                     covtype="gauss", scaling = FALSE)
-                            biais <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE, nugget.sim=0,checkNames=FALSE)
+                            biais <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
+                                              nugget.sim=0,checkNames=FALSE)
                             return(list(biais=biais,Yc=Yc))
                           },
                           fun = function(theta,thetaD,sig2)
@@ -200,7 +201,7 @@ model4.class <- R6Class(classname = "model4.class",
                           funC = NULL,
                           initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
                           {
-                            super$initialize(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
+                            super$initialize(code, X, Yexp, model,opt.emul)
                             self$funC <- super$fun
                           },
                           discrepancy = function(theta,thetaD,sig2)
@@ -210,7 +211,8 @@ model4.class <- R6Class(classname = "model4.class",
                             emul  <- km(formula=~1, design=as.data.frame(self$X), response=z,coef.trend=0,
                                         coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
                                         covtype="gauss", scaling = FALSE)
-                            biais <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE, nugget.sim=0,checkNames=FALSE)
+                            biais <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
+                                              nugget.sim=0,checkNames=FALSE)
                             return(list(biais=biais,Yc=Yc))
                           },
                           fun = function(theta,thetaD,sig2)
