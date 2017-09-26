@@ -50,6 +50,8 @@ model.class$set("private","checkModels",
 model1.class <- R6Class(classname = "model1.class",
                         inherit = model.class,
                         public=list(
+                        m.exp = NULL,
+                        V.exp = NULL,
                         initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
                         {
                           super$initialize(code, X, Yexp, model)
@@ -57,8 +59,58 @@ model1.class <- R6Class(classname = "model1.class",
                         fun = function(theta,sig2)
                         {
                           return(self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2)))
-                        })
+                        },
+                        likelihood = function(theta,sig2)
+                        {
+                          self$m.exp = self$code(self$X,theta)
+                          self$V.exp = sig2*diag(self$n)
+                          return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                                                          solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                        }
                         )
+                        )
+
+
+model3.class <- R6Class(classname = "model3.class",
+                        inherit = model1.class,
+                        public=list(
+                          funTemp  = NULL,
+                          temp     = NULL,
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
+                          {
+                            super$initialize(code, X, Yexp, model)
+                            self$funTemp <- super$fun
+                          },
+                          discrepancy = function(theta,thetaD,sig2)
+                          {
+                            Yc       <- self$funTemp(theta,sig2)
+                            z        <- self$Yexp - Yc
+                            emul     <- km(formula=~1, design=as.data.frame(self$X), response=z,coef.trend=0,
+                                    coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
+                                    covtype="gauss", scaling = FALSE)
+                            biais    <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
+                                              nugget.sim=0,checkNames=FALSE)
+                            return(list(biais=biais,Yc=Yc,cov=emul$cov))
+                          },
+                          fun = function(theta,thetaD,sig2)
+                          {
+                            res <- self$discrepancy(theta,thetaD,sig2)
+                            return(y=res$biais+res$Yc,cov=res$cov)
+                          }
+                          )
+)
+
+
+model3.class$set("public","likelihood",
+                 function(theta,thetaD,sig2)
+                 {
+                   self$m.exp <- self$code(theta,sig2)
+                   temp <- self$fun(theta,thetaD,sigma2)
+                   self$V.exp <- sig2*diag(self$n) + temp$cov
+                   return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                                                                solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                 })
+
 
 
 model2.class <- R6Class(classname = "model2.class",
@@ -168,33 +220,6 @@ model2.class$set("public","PCA.fun",
                 })
 
 
-model3.class <- R6Class(classname = "model3.class",
-                        inherit = model1.class,
-                        public=list(
-                          funC = NULL,
-                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
-                          {
-                            super$initialize(code, X, Yexp, model)
-                            self$funC <- super$fun
-                          },
-                          discrepancy = function(theta,thetaD,sig2)
-                          {
-                            Yc    <- self$funC(theta,sig2)
-                            z     <- self$Yexp - Yc$y
-                            emul  <- km(formula=~1, design=as.data.frame(self$X), response=z,coef.trend=0,
-                                    coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
-                                    covtype="gauss", scaling = FALSE)
-                            biais <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
-                                              nugget.sim=0,checkNames=FALSE)
-                            return(list(biais=biais,Yc=Yc))
-                          },
-                          fun = function(theta,thetaD,sig2)
-                          {
-                            res <- self$discrepancy(theta,thetaD,sig2)
-                            return(res$biais+res$Yc)
-                          }
-                          )
-)
 
 
 model4.class <- R6Class(classname = "model4.class",
