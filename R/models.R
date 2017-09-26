@@ -60,6 +60,7 @@ model1.class <- R6Class(classname = "model1.class",
                         })
                         )
 
+
 model2.class <- R6Class(classname = "model2.class",
                         inherit = model.class,
                         public = list(
@@ -166,6 +167,7 @@ model2.class$set("public","PCA.fun",
                   return(D)
                 })
 
+
 model3.class <- R6Class(classname = "model3.class",
                         inherit = model1.class,
                         public=list(
@@ -207,10 +209,10 @@ model4.class <- R6Class(classname = "model4.class",
                           discrepancy = function(theta,thetaD,sig2)
                           {
                             Yc    <- self$funC(theta,sig2)
-                            z     <- self$Yexp - Yc
-                            emul  <- km(formula=~1, design=as.data.frame(self$X), response=z,coef.trend=0,
-                                        coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
-                                        covtype="gauss", scaling = FALSE)
+                            z     <- self$Yexp - Yc$y
+                            emul  <- km(formula =~1 , design = as.data.frame(self$X), response = z,
+                                        coef.trend=0, coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
+                                        covtype="gauss")
                             biais <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
                                               nugget.sim=0,checkNames=FALSE)
                             return(list(biais=biais,Yc=Yc))
@@ -218,7 +220,7 @@ model4.class <- R6Class(classname = "model4.class",
                           fun = function(theta,thetaD,sig2)
                           {
                             res <- self$discrepancy(theta,thetaD,sig2)
-                            return(res$biais+res$Yc)
+                            return(res$biais+res$Yc$y)
                           })
 )
 

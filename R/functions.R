@@ -86,18 +86,18 @@ model <- function(code,X,Yexp,model,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0
 }
 
 
-
-
-
-
+#' Function which unscale a vector between two bounds
+#'
+#' @param  x the vector to unscale
+#' @param  binf the lower bound
+#' @param bsup the upper bound
+#' @return y the vector unscaled
+#' @examples
+#' X <- runif(3)
+#' Y <-unscale.vector(X,c(10,10,1O),c(15,15,15))
+#' print(Y)
+#' @export
 unscale.vector <- function(x,binf,bsup){
-  # Function which unscale a vector between two bounds
-  ###################### Inputs #######################
-  # x the vector to unscale
-  # binf the lower bound
-  # bsup the upper bound
-  ###################### Ouputs #######################
-  # y the unscaled vector
   n = length(x)
   if (length(binf)!=length(bsup))
   {
@@ -119,14 +119,19 @@ unscale.vector <- function(x,binf,bsup){
   return(y)
 }
 
+
+#' Funcion which unscale only the diagonal component of a matrix
+#'
+#' @param  M the matrix
+#' @param  binf the lower bound
+#' @param bsup the upper bound
+#' @return the normalized diagonal
+#' @examples
+#' X <- ones(3)*runif(3)
+#' Y <-unscale.matrix.diag(X,c(10,10,1O),c(15,15,15))
+#' print(Y)
+#' @export
 unscale.matrix.diag <- function(M,binf,bsup){
-  #### Funcion which unscale only the diagonal component of a matrix
-  ################### Inputs #######################
-  # M the matrix
-  # binf the lower bounds
-  # bsup the upper bounds
-  ################### Outputs ######################
-  # The normalized diagonal
   n <- dim(M)[1]
   T <- rep(1,n)
   for (i in 1:n){
@@ -140,14 +145,20 @@ unscale.matrix.diag <- function(M,binf,bsup){
 }
 
 
+#' Function which unscale un matrix or a vector
+#'
+#' @param M the matrix or the vector
+#' @param  binf the lower bound
+#' @param bsup the upper bound
+#' @param diag default value False if we want to unscale the whole matrix
+#' @param sym default value False if we do not have a symetric matrix
+#' @return the unscaled vector or matrix
+#' @examples
+#' X <- ones(3)*runif(3)
+#' Y <- unscale(X,c(10,10,1O),c(15,15,15))
+#' print(Y)
+#' @export
 unscale <- function(M,binf,bsup,diag=FALSE,sym=FALSE){
-  ### Function which unscale un matrix or a vector
-  #################### Inputs ####################
-  # M the matrix or the vector
-  # binf the lower bound
-  # bsup the upper bound
-  # option diag= False if we want to unscale the whole matrix
-  # option sym=False if we do not have a symetric matrix
   if (diag==FALSE){
     if(sym==FALSE){
       if (is.matrix(M)==FALSE){

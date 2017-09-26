@@ -46,4 +46,30 @@ foo$fun(c(3,3),1)
 # with the PCA
 foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE,binf=c(0,0),bsup=c(1,1)))
 foo$fun(c(3,3),1)
+
+
+### For the third model
+X <- cbind(runif(5),runif(5),runif(5))
+code <- function(X,theta)
+{
+  return(X[,1]+theta[,1]*X[,2]+theta[,2]^2*X[,3])
+}
+Yexp <- runif(5)
+foo <- model(code,X,Yexp,"model3")
+foo$fun(c(3,3),c(0.2,0.2),1)
+
+
+### For the fourth model
+X <- cbind(runif(5),runif(5),runif(5))
+code <- function(X,theta)
+{
+  return(X[,1]+theta[,1]*X[,2]+theta[,2]^2*X[,3])
+}
+Yexp <- runif(5)
+foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=FALSE,binf=c(0,0),bsup=c(1,1)))
+foo$fun(c(3,3),c(0.2,0.2),1)
+
+# with the PCA
+foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE,binf=c(0,0),bsup=c(1,1)))
+foo$fun(c(3,3),c(0.2,0.2),1)
 }
