@@ -1,7 +1,6 @@
 #' A Reference Class to generates differents model objects
 #'
 #' @description See the function blabla which produces an instance of this class
-#' @importFrom R6 R6Class
 #' This class comes with a set of methods, some of them being useful for the user:
 #' See the documentation for blabla... Other methods
 #'  should not be called as they are designed to be used during the optimization process.
@@ -14,8 +13,7 @@
 #' @field Yexp the experimental output
 #' @field n the number of experiments
 #' @field model the model choice see documentation
-#' @seealso The function ....
-model.class <- R6Class(classname = "model.class",
+model.class <- R6::R6Class(classname = "model.class",
                  public = list(
                    code      = NULL,
                    X         = NULL,
@@ -35,6 +33,7 @@ model.class <- R6Class(classname = "model.class",
                      self$emul.list <- emul.list
                      self$model <- model
                      private$checkModels()
+                     private$loadPackages()
                    }
                  ))
 
@@ -47,7 +46,17 @@ model.class$set("private","checkModels",
           }
         })
 
-model1.class <- R6Class(classname = "model1.class",
+model.class$set("private","loadPackages",
+                function()
+                {
+                  library(R6)
+                  library(DiceDesign)
+                  library(DiceKriging)
+                  library(FactoMineR)
+                })
+
+
+model1.class <- R6::R6Class(classname = "model1.class",
                         inherit = model.class,
                         public=list(
                         m.exp = NULL,
@@ -71,7 +80,7 @@ model1.class <- R6Class(classname = "model1.class",
                         )
 
 
-model3.class <- R6Class(classname = "model3.class",
+model3.class <- R6::R6Class(classname = "model3.class",
                         inherit = model1.class,
                         public=list(
                           funTemp  = NULL,
@@ -90,12 +99,20 @@ model3.class <- R6Class(classname = "model3.class",
                                     covtype="gauss", scaling = FALSE)
                             biais    <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
                                               nugget.sim=0,checkNames=FALSE)
-                            return(list(biais=biais,Yc=Yc,cov=emul$cov))
+                            Cov <- matrix(nr=self$n,nc=self$n)
+                            for (j in 1:self$n)
+                            {
+                              for (i in 1:self$n)
+                              {
+                                Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((X[i,]-X[j,])^2)/thetaD[2])^2)
+                              }
+                            }
+                            return(list(biais=biais,Yc=Yc,cov=Cov))
                           },
                           fun = function(theta,thetaD,sig2)
                           {
                             res <- self$discrepancy(theta,thetaD,sig2)
-                            return(y=res$biais+res$Yc,cov=res$cov)
+                            return(list(y=res$biais+res$Yc,cov=res$cov))
                           }
                           )
 )
@@ -104,8 +121,8 @@ model3.class <- R6Class(classname = "model3.class",
 model3.class$set("public","likelihood",
                  function(theta,thetaD,sig2)
                  {
-                   self$m.exp <- self$code(theta,sig2)
-                   temp <- self$fun(theta,thetaD,sigma2)
+                   self$m.exp <- self$code(self$X,theta)
+                   temp <- self$fun(theta,thetaD,sig2)
                    self$V.exp <- sig2*diag(self$n) + temp$cov
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                                                                 solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
@@ -113,7 +130,7 @@ model3.class$set("public","likelihood",
 
 
 
-model2.class <- R6Class(classname = "model2.class",
+model2.class <- R6::R6Class(classname = "model2.class",
                         inherit = model.class,
                         public = list(
                           n.emul = NULL,
@@ -122,6 +139,8 @@ model2.class <- R6Class(classname = "model2.class",
                           binf   = NULL,
                           bsup   = NULL,
                           PCA    = NULL,
+                          m.exp = NULL,
+                          V.exp = NULL,
                         initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
                         {
                           super$initialize(code, X, Yexp, model)
@@ -183,7 +202,7 @@ model2.class <- R6Class(classname = "model2.class",
                           }
                           pr <- predict(self$GP,newdata=Xnew,type="UK",cov.compute=TRUE)
                           err <- rnorm(n=self$n,mean = 0,sd=sqrt(sig2))
-                          return(list(y=pr$mean+err,Cov.GP=pr$cov))
+                          return(list(y=pr$mean+err,Cov.GP=pr$cov,yc=pr$mean))
                         })
                         )
 
@@ -222,7 +241,7 @@ model2.class$set("public","PCA.fun",
 
 
 
-model4.class <- R6Class(classname = "model4.class",
+model4.class <- R6::R6Class(classname = "model4.class",
                         inherit = model2.class,
                         public=list(
                           funC = NULL,

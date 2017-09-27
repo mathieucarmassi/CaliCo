@@ -2,25 +2,29 @@
 % Please edit documentation in R/functions.R
 \name{model}
 \alias{model}
-\title{Function that allows to generate the standard form of the used code into the chosen model}
+\title{Generates \code{\link{model.class}} objects}
 \usage{
-model(code, X, Yexp, model, opt.emul = list(p = 1, n.emul = 100, PCA = TRUE,
-  binf = 0, bsup = 1))
+model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
+  PCA = TRUE, binf = 0, bsup = 1))
 }
 \arguments{
 \item{code}{the computational code (function of X and theta)}
 
-\item{X}{the matrix of forced variables}
+\item{X}{the matrix of the forced variables}
 
 \item{Yexp}{the vector of the experiments}
 
-\item{model}{string of the model chosen ("model1","model2")}
+\item{model}{string of the model chosen ("model1","model2","model3","model4")
+by default "model1" is choosen.}
 }
 \value{
-A function f(theta) is return
+\code{model} returns a \code{model.class} object
 }
 \description{
-Function that allows to generate the standard form of the used code into the chosen model
+\code{model} is a function that allows us to load a calibration model and its likelihood.
+}
+\details{
+There is four kind of models in calibration. They are properly defined in [1].
 }
 \examples{
 ### For the first model
@@ -32,6 +36,7 @@ code <- function(X,theta)
 Yexp <- runif(3)
 foo <- model(code,X,Yexp,"model1")
 foo$fun(3,1)
+foo$likelihood(3,1)
 
 ### For the second model
 X <- cbind(runif(5),runif(5),runif(5))
@@ -52,18 +57,19 @@ foo$fun(c(3,3),1)
 X <- cbind(runif(5),runif(5),runif(5))
 code <- function(X,theta)
 {
-  return(X[,1]+theta[,1]*X[,2]+theta[,2]^2*X[,3])
+  return(X[,1]+theta[1]*X[,2]+theta[2]^2*X[,3])
 }
 Yexp <- runif(5)
 foo <- model(code,X,Yexp,"model3")
 foo$fun(c(3,3),c(0.2,0.2),1)
+foo$likelihood(c(3,3),c(0.2,0.2),1)
 
 
 ### For the fourth model
 X <- cbind(runif(5),runif(5),runif(5))
 code <- function(X,theta)
 {
-  return(X[,1]+theta[,1]*X[,2]+theta[,2]^2*X[,3])
+  return(X[,1]+theta[1]*X[,2]+theta[2]^2*X[,3])
 }
 Yexp <- runif(5)
 foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=FALSE,binf=c(0,0),bsup=c(1,1)))
@@ -72,4 +78,10 @@ foo$fun(c(3,3),c(0.2,0.2),1)
 # with the PCA
 foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE,binf=c(0,0),bsup=c(1,1)))
 foo$fun(c(3,3),c(0.2,0.2),1)
+}
+\seealso{
+\code{\link{model.class}},
+}
+\author{
+M. Carmassi
 }

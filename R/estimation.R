@@ -1,11 +1,10 @@
 #' A Reference Class to generate different calibration methods after generating a model from
 #' model.class
-#' @importFrom R6 R6Class
 #'
 #' @examples
 #'
 #' @export
-estim.class <- R6Class(classname = "estim.class",
+estim.class <- R6::R6Class(classname = "estim.class",
                  public = list(
                    LSE = function(theta,fun=fun)
                    {
