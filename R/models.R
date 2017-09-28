@@ -238,6 +238,17 @@ model2.class$set("public","PCA.fun",
                   return(D)
                 })
 
+model2.class$set("public","likelihood",
+                 function(theta,sig2)
+                 {
+                   temp <- self$fun(theta,sig2)
+                   self$m.exp <- temp$yc
+                   self$V.exp <- sig2*diag(self$n) + temp$Cov.GP
+                   return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                                                                            solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                 })
+
+
 
 
 
@@ -259,14 +270,32 @@ model4.class <- R6::R6Class(classname = "model4.class",
                                         covtype="gauss")
                             biais <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
                                               nugget.sim=0,checkNames=FALSE)
-                            return(list(biais=biais,Yc=Yc))
+                            Cov <- matrix(nr=self$n,nc=self$n)
+                            for (j in 1:self$n)
+                            {
+                              for (i in 1:self$n)
+                              {
+                                Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((X[i,]-X[j,])^2)/thetaD[2])^2)
+                              }
+                            }
+                            return(list(biais=biais,Yc=Yc,Cov.D=Cov))
                           },
                           fun = function(theta,thetaD,sig2)
                           {
                             res <- self$discrepancy(theta,thetaD,sig2)
-                            return(res$biais+res$Yc$y)
+                            return(list(y=res$biais+res$Yc$y,covGP=res$Yc$Cov.GP,covD=res$Cov.D,yc=res$Yc$yc))
                           })
 )
 
 
+model4.class$set("public","likelihood",
+                 function(theta,thetaD,sig2)
+                 {
+                   temp <- self$fun(theta,thetaD,sig2)
+
+                   self$m.exp <- temp$yc
+                   self$V.exp <- sig2*diag(self$n) + temp$covGP +temp$covD
+                   return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                                                                            solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                 })
 

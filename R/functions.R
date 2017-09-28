@@ -34,11 +34,11 @@
 #' Yexp <- runif(5)
 #' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=FALSE,binf=c(0,0),bsup=c(1,1)))
 #' foo$fun(c(3,3),1)
+#' foo$likelihood(c(3,3),1)
 #'
 #' # with the PCA
 #' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE,binf=c(0,0),bsup=c(1,1)))
 #' foo$fun(c(3,3),1)
-#'
 #'
 #' ### For the third model
 #' X <- cbind(runif(5),runif(5),runif(5))
@@ -61,6 +61,7 @@
 #' Yexp <- runif(5)
 #' foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=FALSE,binf=c(0,0),bsup=c(1,1)))
 #' foo$fun(c(3,3),c(0.2,0.2),1)
+#' foo$likelihood(c(3,3),c(0.2,0.2),1)
 #'
 #' # with the PCA
 #' foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE,binf=c(0,0),bsup=c(1,1)))
