@@ -1,6 +1,6 @@
 #' Generates \code{\link{model.class}} objects
 #'
-#' \code{model} is a function that allows us to load a calibration model and its likelihood.
+#' \code{model} is a function that allows us to generates a calibration model and its likelihood.
 #'
 #' There is four kind of models in calibration. They are properly defined in [1].
 #'
@@ -94,6 +94,120 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,PCA=TR
 }
 
 
+#' Generates \code{\link{prior.class}} objects
+#'
+#' \code{prior} is a function that allows us to generate one or a list of classes
+#'  in which the charasteristics of each prior are defined
+#'
+#' The realized estimation is realized similarly as it is defined in [1]
+#'
+#'
+#' @param  type.prior the vector of the prior types selected
+#' @param opt.prior list of the hyperparameters relatives to the prior selected
+#' @return \code{prior} returns a \code{prior.class} object
+#' @author M. Carmassi
+#' @seealso \code{\link{model.class}}, \code{\link{estim.class}}
+#' @examples
+#' ### Only one prior is wanted
+#' ###### For a Gaussian Prior
+#' foo <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
+#' hist(foo$gaussian())
+#'
+#' ###### For a Gamma Prior
+#' foo <- prior(type.prior="gamma",opt.prior=list(c(0.2,0.3)))
+#' hist(foo$gamma())
+#'
+#' ##### For an inverse-Gamma Prior
+#' foo <- prior(type.prior="invGamma",opt.prior=list(c(0.2,0.3)))
+#' hist(foo$invGamma())
+#'
+#' ### For several priors
+#' foo <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(0.2,0.3)))
+#' hist(foo$Prior1$gaussian())
+#'
+#' @export
+prior <- function(type.prior,opt.prior,log=FALSE)
+{
+  library(R6)
+  n <- length(type.prior)
+  if (n == 1)
+  {
+  switch(type.prior,
+         gaussian = {
+           obj = gaussian.class$new(type.prior,opt.prior,log)
+           return(obj)
+         },
+         gamma={
+           obj = gamma.class$new(type.prior,opt.prior,log)
+           return(obj)
+         },
+         invGamma={
+           obj = invGamma.class$new(type.prior,opt.prior,log)
+           return(obj)
+         },
+         unif={
+           obj = unif.class$new(type.prior,opt.prior,log)
+           return(obj)
+         }
+  )
+  } else
+  {
+    NAmes <- c("Prior1")
+    res <- list()
+    for (i in 1:n)
+    {
+      if (i>1){NAmes <- cbind(NAmes,paste("Prior",i,sep=""))}
+      switch(type.prior[i],
+             gaussian = {
+               obj = gaussian.class$new(type.prior[i],opt.prior[[i]],log)
+             },
+             gamma={
+               obj = gamma.class$new(type.prior[i],opt.prior[[i]],log)
+             },
+             invGamma={
+               obj = invGamma.class$new(type.prior[i],opt.prior[[i]],log)
+             },
+             unif={
+               obj = unif.class$new(type.prior[i],opt.prior[[i]],log)
+             }
+      )
+      res[[i]] <- obj
+      names(res) <- NAmes
+    }
+    return(res)
+  }
+}
+
+
+#' Generates \code{\link{estim.class}} objects
+#'
+#' \code{estim} is a function that allows us to generate a class in which the estimation is
+#' done
+#'
+#' The realized estimation is realized similarly as it is defined in [1]
+#'
+#'
+#' @param  md a \code{\link{model.class}} object
+#' @param pr a \code{\link{prior.class}} object
+#' @param x data for calibration
+#' @return opt list of options for the inference
+#' @author M. Carmassi
+#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}
+#' @examples
+#'
+#'
+#' @export
+estim <- function(code,X,Yexp,model="model1",type.prior,log=FALSE
+                  ,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1),opt.prior)
+{
+  md <- model(code,X,Yexp,mode,opt.emul)
+  pr <- prir(type.prior,opt.prior,log=TRUE)
+
+}
+
+
+
+
 #' Function which unscale a vector between two bounds
 #'
 #' @param  x the vector to unscale
@@ -182,7 +296,8 @@ unscale <- function(M,binf,bsup,diag=FALSE,sym=FALSE){
           temp <- unscale.vector(M,binf,bsup)
         } else {
           if (n!=length(binf) & N!=length(bsup)){
-            print('The bound s sizes are not compatible. Please enter a upper bound and a lower bound of the same size than the matrix.')
+            print('The bound s sizes are not compatible.
+                  Please enter a upper bound and a lower bound of the same size than the matrix.')
           } else {
             temp <- matrix(nrow = N,ncol = n)
             for (i in 1:N){

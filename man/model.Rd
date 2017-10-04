@@ -21,7 +21,7 @@ by default "model1" is choosen.}
 \code{model} returns a \code{model.class} object
 }
 \description{
-\code{model} is a function that allows us to load a calibration model and its likelihood.
+\code{model} is a function that allows us to generates a calibration model and its likelihood.
 }
 \details{
 There is four kind of models in calibration. They are properly defined in [1].

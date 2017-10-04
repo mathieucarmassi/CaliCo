@@ -16,4 +16,4 @@ Collate:
     'models.R'
     'prediction.R'
     'estimation.R'
-
+    'prior.R'
