@@ -53,6 +53,9 @@ model.class$set("private","loadPackages",
                   library(DiceDesign)
                   library(DiceKriging)
                   library(FactoMineR)
+                  library(Rcpp)
+                  library(RcppArmadillo)
+                  library(MASS)
                 })
 
 

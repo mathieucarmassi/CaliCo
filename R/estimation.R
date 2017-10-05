@@ -6,18 +6,21 @@
 #' @export
 estim.class <- R6::R6Class(classname = "estim.class",
                  public = list(
-                   LSE = function(theta,fun=fun)
-                   {
-                     Ytemp <- fun(theta[-length(theta)],theta[length(theta)])
-                     return(sum((Ytemp-obj$Yexp)^2))
-                   },
-                   opt = function(fun)
-                   {
-                     return(optim(c(0,0),self$LSE,fun=fun)$par)
-                   }
-                 ))
+                    logTest   = NULL,
+                    opt.estim = NULL,
+                    initialize = function(logTest=NA,opt.estim=NA)
+                    {
+                      self$logTest   <- logTest
+                      self$opt.estim <- opt.optim
 
+                    }
+                   ))
 
+estim.model1.class <- R6::R6Class(classname = "estim.model1.class",
+                                  inherit = estim.class,
+                                  public = list(
+
+                                  ))
 
 
 

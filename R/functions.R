@@ -111,19 +111,19 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,PCA=TR
 #' ### Only one prior is wanted
 #' ###### For a Gaussian Prior
 #' foo <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
-#' hist(foo$gaussian())
+#' hist(foo$prior())
 #'
 #' ###### For a Gamma Prior
 #' foo <- prior(type.prior="gamma",opt.prior=list(c(0.2,0.3)))
-#' hist(foo$gamma())
+#' hist(foo$prior())
 #'
 #' ##### For an inverse-Gamma Prior
 #' foo <- prior(type.prior="invGamma",opt.prior=list(c(0.2,0.3)))
-#' hist(foo$invGamma())
+#' hist(foo$prior())
 #'
 #' ### For several priors
 #' foo <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(0.2,0.3)))
-#' hist(foo$Prior1$gaussian())
+#' hist(foo$Prior1$prior())
 #'
 #' @export
 prior <- function(type.prior,opt.prior,log=FALSE)
@@ -186,6 +186,8 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #'
 #' The realized estimation is realized similarly as it is defined in [1]
 #'
+#' @useDynLib calibrationCode
+#' @importFrom Rcpp evalCpp
 #'
 #' @param  md a \code{\link{model.class}} object
 #' @param pr a \code{\link{prior.class}} object
@@ -194,18 +196,48 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' @author M. Carmassi
 #' @seealso \code{\link{model.class}}, \code{\link{prior.class}}
 #' @examples
-#'
+#' ### For the first model
+#' X <- cbind(runif(3),runif(3))
+#' code <- function(X,theta)
+#' {
+#'   return(X[,1]+as.vector(theta)*X[,2])
+#' }
+#' Yexp <- runif(3)
+#' test <- estim(code,X,Yexp,model="model1",type.prior=c("gaussian","gamma"),log=TRUE,opt.prior=list(c(3,1),c(0.2,0.3)),opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(3,1),k=c(0.1,0.1),sig=diag(2)))
 #'
 #' @export
 estim <- function(code,X,Yexp,model="model1",type.prior,log=FALSE
-                  ,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1),opt.prior)
+                  ,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1),opt.prior,opt.estim)
 {
-  md <- model(code,X,Yexp,mode,opt.emul)
-  pr <- prir(type.prior,opt.prior,log=TRUE)
-
+  md <<- model(code,X,Yexp,model,opt.emul)
+  pr <- prior(type.prior,opt.prior,log=TRUE)
+  binf <- pr[[1]]$binf
+  bsup <- pr[[1]]$bsup
+  for (i in 2:length(type.prior))
+  {
+    binf <- cbind(binf,pr[[i]]$binf)
+    bsup <- cbind(bsup,pr[[i]]$bsup)
+  }
+  if (length(type.prior) == 1)
+  {
+    logTest <- function(theta,sig2){return(log(md$likelihood(theta,sig2))+pr$prior(theta))}
+  } else
+  {
+    logTest <- function(theta,sig2)
+    {
+      s <- 0
+      for (i in 1:(length(theta)))
+      {
+        s <- s + pr[[i]]$prior(theta[i])
+      }
+      s <- s + pr[[(length(theta)+1)]]$prior(sig2)
+      return(log(md$likelihood(theta,sig2)) + s)
+    }
+  }
+  res <- MetropolisHastingsCpp(md$fun,opt.estim$Ngibbs,opt.estim$Nmh,opt.estim$thetaInit,
+                               opt.estim$k,opt.estim$sig,Yexp,binf,bsup,logTest)
+  return(res)
 }
-
-
 
 
 #' Function which unscale a vector between two bounds

@@ -50,13 +50,17 @@ gaussian.class <- R6::R6Class(classname = "gaussian.class",
                               public = list(
                                 mean  = NULL,
                                 var   = NULL,
+                                binf  = NULL,
+                                bsup  = NULL,
                                 initialize = function(type.prior=NA,opt.prior=NA,log=NA)
                                 {
                                   super$initialize(type.prior,opt.prior,log)
                                   self$mean  <- unlist(self$opt.prior)[1]
                                   self$var   <- unlist(self$opt.prior)[2]
+                                  self$binf  <- self$mean - 2*sqrt(self$var)
+                                  self$bsup  <- self$mean + 2*sqrt(self$var)
                                 },
-                                gaussian = function(x=seq(0,1,length.out = 100))
+                                prior = function(x=seq(0,1,length.out = 100))
                                   {
                                   if (self$log == FALSE)
                                   {
@@ -85,7 +89,7 @@ unif.class <- R6::R6Class(classname = "unif.class",
                                   self$binf <- unlist(self$opt.prior)[1]
                                   self$bsup <- unlist(self$opt.prior)[2]
                                 },
-                                unif = function(x=seq(0,1,length.out = 100))
+                                prior = function(x=seq(0,1,length.out = 100))
                                 {
                                   self$y <- matrix(nr=length(x),1)
                                   for (i in 1:length(x))
@@ -114,14 +118,18 @@ gamma.class <- R6::R6Class(classname = "gamma.class",
                           public = list(
                             shape    = NULL,
                             scale    = NULL,
-                            y       = NULL,
+                            y        = NULL,
+                            binf     = NULL,
+                            bsup     = NULL,
                             initialize = function(type.prior=NA,opt.prior=NA,log=NA)
                             {
                               super$initialize(type.prior,opt.prior,log)
                               self$shape <- unlist(self$opt.prior)[1]
                               self$scale <- unlist(self$opt.prior)[2]
+                              self$binf  <- self$shape*self$scale*(1-self$scale)
+                              self$bsup  <- self$shape*self$scale*(1+self$scale)
                             },
-                            gamma = function(x=seq(0,1,length.out = 100))
+                            prior = function(x=seq(0,1,length.out = 100))
                             {
                               if (self$log == FALSE)
                               {
@@ -141,14 +149,18 @@ invGamma.class <- R6::R6Class(classname = "invGamma.class",
                            public = list(
                              shape    = NULL,
                              scale    = NULL,
-                             y       = NULL,
+                             y        = NULL,
+                             binf     = NULL,
+                             bsup     = NULL,
                              initialize = function(type.prior=NA,opt.prior=NA,log=NA)
                              {
                                super$initialize(type.prior,opt.prior,log)
                                self$shape <- unlist(opt.prior)[1]
                                self$scale <- unlist(opt.prior)[2]
+                               self$binf  <- 1/(self$shape*self$scale*(1-self$scale))
+                               self$bsup  <- 1/(self$shape*self$scale*(1+self$scale))
                              },
-                             invGamma = function(x=seq(0,1,length.out = 100))
+                             prior = function(x=seq(0,1,length.out = 100))
                              {
                                if (self$log == FALSE)
                                {

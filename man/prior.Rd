@@ -25,19 +25,19 @@ The realized estimation is realized similarly as it is defined in [1]
 ### Only one prior is wanted
 ###### For a Gaussian Prior
 foo <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
-hist(foo$gaussian())
+hist(foo$prior())
 
 ###### For a Gamma Prior
 foo <- prior(type.prior="gamma",opt.prior=list(c(0.2,0.3)))
-hist(foo$gamma())
+hist(foo$prior())
 
 ##### For an inverse-Gamma Prior
 foo <- prior(type.prior="invGamma",opt.prior=list(c(0.2,0.3)))
-hist(foo$invGamma())
+hist(foo$prior())
 
 ### For several priors
 foo <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(0.2,0.3)))
-hist(foo$Prior1$gaussian())
+hist(foo$Prior1$prior())
 
 }
 \seealso{

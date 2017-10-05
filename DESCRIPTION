@@ -6,10 +6,18 @@ Author: Mathieu Carmassi
 Maintainer: Mathieu Carmassi <mathieu.carmassi@gmail.com>
 Description: This package allows the user to realize quick code calibration for time consuming or
   no time consuming codes.
-License: GPL-2
+License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
-Imports: R6, ggplot2, FactoMineR, DiceKriging, DiceDesign
+Imports: 
+    R6,
+    ggplot2,
+    FactoMineR,
+    DiceKriging,
+    DiceDesign,
+    Rcpp (>= 0.12.12),
+    RcppArmadillo,
+    MASS
 RoxygenNote: 6.0.1
 Collate: 
     'functions.R'
@@ -17,3 +25,7 @@ Collate:
     'prediction.R'
     'estimation.R'
     'prior.R'
+    'RcppExports.R'
+LinkingTo: 
+    Rcpp,
+    RcppArmadillo

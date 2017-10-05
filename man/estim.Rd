@@ -6,7 +6,7 @@
 \usage{
 estim(code, X, Yexp, model = "model1", type.prior, log = FALSE,
   opt.emul = list(p = 1, n.emul = 100, PCA = TRUE, binf = 0, bsup = 1),
-  opt.prior)
+  opt.prior, opt.estim)
 }
 \arguments{
 \item{md}{a \code{\link{model.class}} object}
@@ -26,7 +26,14 @@ done
 The realized estimation is realized similarly as it is defined in [1]
 }
 \examples{
-
+### For the first model
+X <- cbind(runif(3),runif(3))
+code <- function(X,theta)
+{
+  return(X[,1]+as.vector(theta)*X[,2])
+}
+Yexp <- runif(3)
+test <- estim(code,X,Yexp,model="model1",type.prior=c("gaussian","gamma"),log=TRUE,opt.prior=list(c(3,1),c(0.2,0.3)),opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(3,1),k=c(0.1,0.1),sig=diag(2)))
 
 }
 \seealso{
