@@ -117,5 +117,8 @@ estim.class$set("private","checkup",
 
 
 
+=======
+                 ))
+>>>>>>> 3e3f19b6dae7990dca94250ef74371fcaad7b430
 
 
