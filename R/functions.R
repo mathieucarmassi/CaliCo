@@ -178,71 +178,9 @@ prior <- function(type.prior,opt.prior,log=FALSE)
   }
 }
 
-
 #' Generates \code{\link{estim.class}} objects
 #'
 #' \code{estim} is a function that allows us to generate a class in which the estimation is
-#' done
-#'
-#' The realized estimation is realized similarly as it is defined in [1]
-#'
-#' @useDynLib calibrationCode
-#' @importFrom Rcpp evalCpp
-#'
-#' @param  md a \code{\link{model.class}} object
-#' @param pr a \code{\link{prior.class}} object
-#' @param x data for calibration
-#' @return opt list of options for the inference
-#' @author M. Carmassi
-#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}
-#' @examples
-#' ### For the first model
-#' X <- cbind(runif(3),runif(3))
-#' code <- function(X,theta)
-#' {
-#'   return(X[,1]+as.vector(theta)*X[,2])
-#' }
-#' Yexp <- code(X,10) + rnorm(0,1)
-#' test <- estim(code,X,Yexp,model="model1",type.prior=c("gaussian","gamma"),log=TRUE,opt.prior=list(c(3,1),c(0.2,0.3)),opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(3,1),k=c(0.1,0.1),sig=diag(2)))
-#' plot(density(test$THETA[,1]),type='l',xlim=c(0,4))
-#' plot(density(test$THETA[,2]),type='l')
-#' @export
-estim <- function(code,X,Yexp,model="model1",type.prior,log=FALSE
-                  ,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1),opt.prior,opt.estim)
-{
-  md <- model(code,X,Yexp,model,opt.emul)
-  pr <- prior(type.prior,opt.prior,log=TRUE)
-  binf <- pr[[1]]$binf
-  bsup <- pr[[1]]$bsup
-  for (i in 2:length(type.prior))
-  {
-    binf <- cbind(binf,pr[[i]]$binf)
-    bsup <- cbind(bsup,pr[[i]]$bsup)
-  }
-  if (length(type.prior) == 1)
-  {
-    logTest <<- function(theta,sig2){return(log(md$likelihood(theta,sig2))+pr$prior(theta))}
-  } else
-  {
-    logTest <<- function(theta,sig2)
-    {
-      s <- 0
-      for (i in 1:(length(theta)))
-      {
-        s <- s + pr[[i]]$prior(theta[i])
-      }
-      s <- s + pr[[(length(theta)+1)]]$prior(sig2)
-      return(log(md$likelihood(theta,sig2)) + s)
-    }
-  }
-  res <- MetropolisHastingsCpp(md$fun,opt.estim$Ngibbs,opt.estim$Nmh,opt.estim$thetaInit,
-                               opt.estim$k,opt.estim$sig,Yexp,binf,bsup,logTest)
-  return(res)
-}
-
-#' Generates \code{\link{estim.class}} objects
-#'
-#' \code{estim2} is a function that allows us to generate a class in which the estimation is
 #' done
 #'
 #' The realized estimation is realized similarly as it is defined in [1]
@@ -268,14 +206,14 @@ estim <- function(code,X,Yexp,model="model1",type.prior,log=FALSE
 #' opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1)
 #' opt.prior=list(c(3,1),c(0.2,0.3))
 #' opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(3,1),k=c(0.1,0.1),sig=diag(2))
-#' test <- estim2(code,X,Yexp,model="model1",type.prior,log=TRUE,opt.emul,opt.prior,opt.estim)
+#' test <- estim(code,X,Yexp,model="model1",type.prior,log=TRUE,opt.emul,opt.prior,opt.estim)
 #' plot(density(test$THETA[,1]),type='l',xlim=c(0,4))
 #' plot(density(test$THETA[,2]),type='l')
 #' @export
-estim2 <-function(code,X,Yexp,model="model1",type.prior,log=TRUE
+estim <-function(code,X,Yexp,model="model1",type.prior,log=TRUE
                   ,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1),opt.prior,opt.estim)
 {
-  res <<- estim.class$new(code,X,Yexp,model,type.prior,log,opt.emul,opt.prior,opt.estim)
+  res <- estim.class$new(code,X,Yexp,model,type.prior,log,opt.emul,opt.prior,opt.estim)
   return(res$estimation())
 }
 

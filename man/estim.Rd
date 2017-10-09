@@ -4,7 +4,7 @@
 \alias{estim}
 \title{Generates \code{\link{estim.class}} objects}
 \usage{
-estim(code, X, Yexp, model = "model1", type.prior, log = FALSE,
+estim(code, X, Yexp, model = "model1", type.prior, log = TRUE,
   opt.emul = list(p = 1, n.emul = 100, PCA = TRUE, binf = 0, bsup = 1),
   opt.prior, opt.estim)
 }
@@ -32,8 +32,12 @@ code <- function(X,theta)
 {
   return(X[,1]+as.vector(theta)*X[,2])
 }
-Yexp <- code(X,10) + rnorm(0,1)
-test <- estim(code,X,Yexp,model="model1",type.prior=c("gaussian","gamma"),log=TRUE,opt.prior=list(c(3,1),c(0.2,0.3)),opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(3,1),k=c(0.1,0.1),sig=diag(2)))
+Yexp <- runif(3)
+type.prior=c("gaussian","gamma")
+opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1)
+opt.prior=list(c(3,1),c(0.2,0.3))
+opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(3,1),k=c(0.1,0.1),sig=diag(2))
+test <- estim(code,X,Yexp,model="model1",type.prior,log=TRUE,opt.emul,opt.prior,opt.estim)
 plot(density(test$THETA[,1]),type='l',xlim=c(0,4))
 plot(density(test$THETA[,2]),type='l')
 }

@@ -2,7 +2,6 @@
 
 export(estim)
 export(estim.class)
-export(estim2)
 export(model)
 export(predict.class)
 export(prior)

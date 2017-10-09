@@ -6,58 +6,62 @@
 #' @export
 estim.class <- R6::R6Class(classname = "estim.class",
                  public = list(
-                    code       = NULL,
-                    X          = NULL,
-                    Yexp       = NULL,
-                    model      = NULL,
-                    type.prior = NULL,
-                    log        = NULL,
-                    opt.emul   = NULL,
-                    opt.prior  = NULL,
-                    opt.estim  = NULL,
-                    binf       = NULL,
-                    bsup       = NULL,
-                    md         = NULL,
-                    pr         = NULL,
+                    code        = NULL,
+                    X           = NULL,
+                    Yexp        = NULL,
+                    model       = NULL,
+                    type.prior  = NULL,
+                    log         = NULL,
+                    opt.emul    = NULL,
+                    opt.prior   = NULL,
+                    opt.estim   = NULL,
+                    binf        = NULL,
+                    bsup        = NULL,
+                    logTest.fun = NULL,
+                    md          = NULL,
+                    pr          = NULL,
                     initialize = function(code=NA,X=NA,Yexp=NA,model=NA,type.prior=NA,log=TRUE,
                                           opt.emul=NA,opt.prior=NA,opt.estim=NA)
                     {
-                      self$code       <- code
-                      self$X          <- X
-                      self$Yexp       <- Yexp
-                      self$model      <- model
-                      self$log        <- log
-                      self$opt.emul   <- opt.emul
-                      self$opt.prior  <- opt.prior
-                      self$opt.estim  <- opt.estim
-                      self$type.prior <- type.prior
-                      private$boundaries()
+                      self$code        <- code
+                      self$X           <- X
+                      self$Yexp        <- Yexp
+                      self$model       <- model
+                      self$log         <- log
+                      self$opt.emul    <- opt.emul
+                      self$opt.prior   <- opt.prior
+                      self$opt.estim   <- opt.estim
+                      self$type.prior  <- type.prior
                       private$checkup()
-                      self$md         <- model(code,X,Yexp,model,opt.emul)
-                      self$pr         <- prior(self$type.prior,opt.prior,log=TRUE)
+                      self$md          <- model(code,X,Yexp,model,opt.emul)
+                      self$pr          <- prior(self$type.prior,opt.prior,log=TRUE)
+                      self$binf        <- private$boundaries()$binf
+                      self$bsup        <- private$boundaries()$bsup
+                      self$logTest.fun <- self$logTest
                     },
                     estimation = function()
                     {
-                      print(self$logTest(10,1))
                       out <- MetropolisHastingsCpp(self$md$fun,self$opt.estim$Ngibbs,
                                                    self$opt.estim$Nmh,self$opt.estim$thetaInit,
                                                    self$opt.estim$k,self$opt.estim$sig,self$Yexp,
-                                                   self$binf,self$bsup,private$logTest)
+                                                   self$binf,self$bsup,self$logTest.fun)
                       return(out)
                     }
                    ))
 
-
 estim.class$set("private","boundaries",
                 function()
                 {
-                  self$binf <- self$pr[[1]]$binf
-                  self$bsup <- self$pr[[1]]$bsup
+                  binf <- self$pr[[1]]$binf
+                  print(binf)
+                  bsup <- self$pr[[1]]$bsup
+                  print(bsup)
                   for (i in 2:length(self$type.prior))
                   {
-                    self$binf <- cbind(self$binf,self$pr[[i]]$binf)
-                    self$bsup <- cbind(self$bsup,self$pr[[i]]$bsup)
+                    binf <- cbind(binf,self$pr[[i]]$binf)
+                    bsup <- cbind(bsup,self$pr[[i]]$bsup)
                   }
+                  return(list(binf=binf,bsup=bsup))
                 })
 
 
