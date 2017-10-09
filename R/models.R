@@ -23,7 +23,7 @@ model.class <- R6::R6Class(classname = "model.class",
                    emul.list = NULL,
                    model     = NULL,
                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA,
-                                         emul.list=list(p=NA,PCA=NA,n.emul=NA))
+                                         emul.list=list(p=NA,n.emul=NA,PCA=NA,binf=NA,bsup=NA))
                    {
                      self$code      <- code
                      self$X         <- X
@@ -33,6 +33,8 @@ model.class <- R6::R6Class(classname = "model.class",
                      self$emul.list <- emul.list
                      self$model <- model
                      private$checkModels()
+                     private$checkEmul()
+                     #private$checkCode()
                      private$loadPackages()
                    }
                  ))
@@ -56,6 +58,27 @@ model.class$set("private","loadPackages",
                   library(Rcpp)
                   library(RcppArmadillo)
                   library(MASS)
+                })
+
+model.class$set("private","checkEmul",
+                function()
+                  {
+                  N <- c("p","n.emul","PCA","binf","bsup")
+                  N2 <- names(self$emul.list)
+                  for (i in 1:length(N))
+                  {
+                    if(names(self$emul.list)[i] != N[i])
+                    {
+                      stop(paste(N[i],"value is missing, please enter a correct value",sep=" "))
+                    }
+                  }
+                })
+
+model.class$set("private","checkCode",
+                function()
+                {
+                  if (is.na(self$code))
+                  {stop("Please enter a valid code")}
                 })
 
 
