@@ -15,11 +15,13 @@ estim.class <- R6::R6Class(classname = "estim.class",
                     opt.emul    = NULL,
                     opt.prior   = NULL,
                     opt.estim   = NULL,
+                    burnIn      = NULL,
                     binf        = NULL,
                     bsup        = NULL,
                     logTest.fun = NULL,
                     md          = NULL,
                     pr          = NULL,
+                    out         = NULL,
                     initialize = function(code=NA,X=NA,Yexp=NA,model=NA,type.prior=NA,log=TRUE,
                                           opt.emul=NA,opt.prior=NA,opt.estim=NA)
                     {
@@ -31,6 +33,7 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       self$opt.emul    <- opt.emul
                       self$opt.prior   <- opt.prior
                       self$opt.estim   <- opt.estim
+                      self$burnIn      <- 0.1*opt.estim$Nmh
                       self$type.prior  <- type.prior
                       private$checkup()
                       self$md          <- model(code,X,Yexp,model,opt.emul)
@@ -38,6 +41,7 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       self$binf        <- private$boundaries()$binf
                       self$bsup        <- private$boundaries()$bsup
                       self$logTest.fun <- self$logTest
+                      self$out         <- self$estimation()
                     },
                     estimation = function()
                     {
@@ -53,9 +57,7 @@ estim.class$set("private","boundaries",
                 function()
                 {
                   binf <- self$pr[[1]]$binf
-                  print(binf)
                   bsup <- self$pr[[1]]$bsup
-                  print(bsup)
                   for (i in 2:length(self$type.prior))
                   {
                     binf <- cbind(binf,self$pr[[i]]$binf)
@@ -102,23 +104,72 @@ estim.class$set("private","checkup",
                 })
 
 
+estim.class$set("public","plot",
+               function(separated=FALSE)
+                 {
+                    n      <- length(self$type.prior)
+                    a      <- list()
+                    m      <- list()
+                    p      <- list()
+                    for (i in 1:n)
+                    {
+                      dplot2  <- data.frame(data=self$out$THETA[-c(1:self$burnIn),i],type="posterior")
+                      a[[i]]  <- self$acf(i)
+                      m[[i]]  <- self$mcmc(i)
+                      p[[i]]  <- self$pr[[i]]$plot() + geom_density(data=dplot2,kernel="gaussian",alpha=0.1)
+                    }
+                    if (separated==TRUE)
+                    {
+                      a
+                      m
+                      p
+                    } else{
+                      do.call(grid.arrange,a)
+                      do.call(grid.arrange,m)
+                      do.call(grid.arrange,p)
+                    }
+               })
+
+estim.class$set("public","gg",
+                function(i)
+                {
+                  dplot  <- data.frame(data=self$out$THETA[-c(1:self$burnIn),i],type="posterior")
+                  p <- ggplot(dplot,aes(data,fill=type,color=type)) +
+                    geom_density(kernel = "gaussian",adjust=3,alpha=0.1)+
+                    theme_light()+xlab("")+ylab("")+ xlim(self$binf[i],self$bsup[i])+
+                    scale_fill_manual( values = "blue")+
+                    scale_color_manual(values = "blue")+
+                    theme(legend.position=c(0.86,0.86),
+                          legend.text=element_text(face="bold",size = '20'),
+                          legend.title=element_blank(),
+                          legend.key=element_rect(colour=NA),
+                          axis.text=element_text(size=20))+
+                    geom_hline(aes(yintercept = 0))
+                  return(p)
+                })
 
 
+estim.class$set("public","acf",
+                function(i)
+                  {
+                    bacf   <- acf(self$out$THETA[-c(1:self$burnIn),i], plot = FALSE)
+                    bacfdf <- with(bacf, data.frame(lag, acf))
+                    p      <- ggplot(data = bacfdf, mapping = aes(x = lag, y = acf))+
+                        geom_hline(aes(yintercept = 0))+
+                        geom_segment(mapping = aes(xend = lag, yend = 0))+
+                        xlab("")+ylab("")+theme_light()
+                    return(p)
+                  }
+)
 
 
-
-
-
-
-
-
-
-
-
-
-
-=======
-                 ))
->>>>>>> 3e3f19b6dae7990dca94250ef74371fcaad7b430
-
-
+estim.class$set("public","mcmc",
+                function(i)
+                {
+                  n <- length(self$out$THETA[-c(1:self$burnIn),i])
+                  resgg <- data.frame(inc=c(1:n),data=self$out$THETA[-c(1:self$burnIn),i])
+                  p   <- ggplot(data=resgg, aes(x=inc,y=data))+geom_line()+ylab("")+
+                      xlab("")+theme_light()
+                  return(p)
+                }
+)
