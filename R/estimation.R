@@ -128,6 +128,7 @@ estim.class$set("public","plot",
                       do.call(grid.arrange,m)
                       do.call(grid.arrange,p)
                     }
+                    self$plotComp()
                })
 
 estim.class$set("public","gg",
@@ -173,3 +174,26 @@ estim.class$set("public","mcmc",
                   return(p)
                 }
 )
+
+estim.class$set("public","plotComp",
+                function()
+                  {
+                    m      <- apply(self$out$THETA[-c(1:self$burnIn),],2,mean)
+                    dplot  <- data.frame(x=self$X,data=self$md$fun(m[-length(m)],m[length(m)]),type="calibrated")
+                    dplot2 <- data.frame(x=self$X,data=self$Yexp,type="experiments")
+                    dplot  <- rbind(dplot,dplot2)
+                    p <- ggplot(data=dplot, aes(x=x,y=data,color=type))+geom_line()+ylab("")+xlab("")+
+                      theme_light()
+
+                    return(p)
+                })
+
+
+estim.class$set("public","print",
+                function()
+                {
+                  cat('the main results of the calibration are')
+                }
+)
+
+

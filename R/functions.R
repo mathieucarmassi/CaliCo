@@ -220,6 +220,8 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(11,1.5),k=c(0.01,0.01),sig=diag(2))
 #'
 #' test <- estim(code,X,Yexp,model="model1",type.prior,log=TRUE,opt.emul,opt.prior,opt.estim)
+#' test$plot()
+#'
 #'
 #' ####### For the fourth model
 #' X <- seq(0,1,length.out=100)
