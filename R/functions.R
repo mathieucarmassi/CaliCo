@@ -209,7 +209,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #'   return((6*X-2)^2*sin(theta*X-4))
 #' }
 #' ### Simulated data
-#' Yexp <- code(X,11)+rnorm(100,0,1)
+#' Yexp <- code(X,11)+rnorm(100,0,0.5)
 #' ### Definition of the nature of the priors
 #' type.prior=c("gaussian","gamma")
 #' ### Definition of the emulation options
