@@ -8,6 +8,7 @@ estim.class <- R6::R6Class(classname = "estim.class",
                  public = list(
                     code        = NULL,
                     X           = NULL,
+                    Yr          = NULL,
                     Yexp        = NULL,
                     model       = NULL,
                     type.prior  = NULL,
@@ -22,11 +23,12 @@ estim.class <- R6::R6Class(classname = "estim.class",
                     md          = NULL,
                     pr          = NULL,
                     out         = NULL,
-                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA,type.prior=NA,log=TRUE,
+                    initialize = function(code=NA,X=NA,Yr=NA,Yexp=NA,model=NA,type.prior=NA,log=TRUE,
                                           opt.emul=NA,opt.prior=NA,opt.estim=NA)
                     {
                       self$code        <- code
                       self$X           <- X
+                      self$Yr          <- Yr
                       self$Yexp        <- Yexp
                       self$model       <- model
                       self$log         <- log
@@ -182,13 +184,13 @@ estim.class$set("public","plotComp",
                     {
                       m <- apply(self$out$THETA[-c(1:self$burnIn),],2,mean)
                       quantilesPost <- apply(self$out$THETA[-c(1:self$burnIn),],2,quantile,probs=c(0.05,0.95,0.5))
-                      lower <- self$md$fun(quantilesPost[1:(length(m)-1),1],quantilesPost[length(m),2])
-                      upper <- self$md$fun(quantilesPost[1:(length(m)-1),1],quantilesPost[length(m),2])
+                      lower <- self$code(self$X,quantilesPost[1,1:(length(m)-1)])
+                      upper <- self$code(self$X,quantilesPost[2,1:(length(m)-1)])
                       dplot <- data.frame(lower=lower,upper=upper,
-                                           fill="90% credibility interval a posteriori",
-                                          Y=self$md$fun(m[-length(m)],m[length(m)]), x=self$X)
-                      dplot2 <- data.frame(Y=self$Yexp, x=self$X)
-                      p <- ggplot(dplot) + geom_line(aes(y=Y, x=x)) +
+                                           fill="90% credibility interval",
+                                          Y=self$code(self$X,m[-length(m)]), x=self$X,type='calibrated')
+                      dplot2 <- data.frame(Y=self$Yr, x=self$X, type='experiment')
+                      p <- ggplot(dplot) + geom_line(aes(y=Y, x=x),color='black') +
                         geom_ribbon(aes(ymin=lower, ymax=upper, x=x,fill=fill), alpha = 0.3) +
                         scale_colour_manual("",values="red") +
                         scale_fill_manual("",values=c("grey12")) +
@@ -199,12 +201,12 @@ estim.class$set("public","plotComp",
                               legend.title=element_blank(),
                               legend.key=element_rect(colour=NA),
                               axis.text=element_text(size=20))+
-                        geom_line(data=dplot2,aes(y=Y,x=x))
+                        geom_line(data=dplot2,aes(y=Y,x=x),color='blue')
                     } else
                     {
                       m      <- apply(self$out$THETA[-c(1:self$burnIn),],2,mean)
-                      dplot  <- data.frame(x=self$X,data=self$md$fun(m[-length(m)],m[length(m)]),type="calibrated")
-                      dplot2 <- data.frame(x=self$X,data=self$Yexp,type="experiments")
+                      dplot  <- data.frame(x=self$X,data=self$code(m[-length(m)]),type="calibrated")
+                      dplot2 <- data.frame(x=self$X,data=self$Yr,type="experiments")
                       dplot  <- rbind(dplot,dplot2)
                       p <- ggplot(data=dplot, aes(x=x,y=data,color=type))+geom_line()+ylab("")+xlab("")+
                         theme_light()+

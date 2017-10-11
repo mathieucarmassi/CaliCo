@@ -206,20 +206,21 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' ### The code to calibrate
 #' code <- function(X,theta)
 #' {
-#'   return((6*X-2)^2*sin(theta*X-4))
+#'   return(X*sin(theta*X))
 #' }
 #' ### Simulated data
-#' Yexp <- code(X,11)+rnorm(100,0,0.5)
+#' Yr   <- code(X,5)
+#' Yexp <- Yr+rnorm(100,0,0.1)
 #' ### Definition of the nature of the priors
 #' type.prior=c("gaussian","gamma")
 #' ### Definition of the emulation options
-#' opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1)
+#' #opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1)
 #' ### Definition of the prior hyperparameters
-#' opt.prior=list(c(11,3),c(4,0.5))
+#' opt.prior=list(c(5,3),c(2,0.1))
 #' ### Definition of the estimation option
-#' opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(11,1.5),k=c(0.01,0.01),sig=diag(2))
+#' opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(5,0.1),k=c(0.001,0.001),sig=diag(2))
 #'
-#' test <- estim(code,X,Yexp,model="model1",type.prior,log=TRUE,opt.emul,opt.prior,opt.estim)
+#' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.emul,opt.prior,opt.estim)
 #' test$plot()
 #'
 #'
@@ -238,10 +239,10 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #'
 #'
 #' @export
-estim <-function(code,X,Yexp,model="model1",type.prior,log=TRUE
+estim <-function(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE
                   ,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1),opt.prior,opt.estim)
 {
-  res <- estim.class$new(code,X,Yexp,model,type.prior,log,opt.emul,opt.prior,opt.estim)
+  res <- estim.class$new(code,X,Yr,Yexp,model,type.prior,log,opt.emul,opt.prior,opt.estim)
   return(res)
 }
 
