@@ -1,7 +1,6 @@
 #' A Reference Class to generates differents model objects
 #'
 #' @description See the function blabla which produces an instance of this class
-#'
 #' This class comes with a set of methods, some of them being useful for the user:
 #' See the documentation for blabla... Other methods
 #'  should not be called as they are designed to be used during the optimization process.
@@ -14,8 +13,7 @@
 #' @field Yexp the experimental output
 #' @field n the number of experiments
 #' @field model the model choice see documentation
-#' @seealso The function ....
-model.class <- R6Class(classname = "model.class",
+model.class <- R6::R6Class(classname = "model.class",
                  public = list(
                    code      = NULL,
                    X         = NULL,
@@ -25,7 +23,7 @@ model.class <- R6Class(classname = "model.class",
                    emul.list = NULL,
                    model     = NULL,
                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA,
-                                         emul.list=list(p=NA,PCA=NA,n.emul=NA))
+                                         emul.list=list(p=NA,n.emul=NA,PCA=NA,binf=NA,bsup=NA))
                    {
                      self$code      <- code
                      self$X         <- X
@@ -33,24 +31,62 @@ model.class <- R6Class(classname = "model.class",
                      self$n         <- length(Yexp)
                      self$d         <- dim(X)[2]
                      self$emul.list <- emul.list
-                     ### Penser à donner une définition à self$p
                      self$model <- model
                      private$checkModels()
+                     private$checkEmul()
+                     #private$checkCode()
+                     private$loadPackages()
                    }
                  ))
 
 model.class$set("private","checkModels",
         function()
         {
-          if (self$model != "model1" & self$model != "model2")
+          if (self$model != "model1" & self$model != "model2" & self$model != "model3" & self$model != "model4")
           {
             stop('Please elect a correct model')
           }
         })
 
-model1.class <- R6Class(classname = "model1.class",
+model.class$set("private","loadPackages",
+                function()
+                {
+                  library(R6)
+                  library(DiceDesign)
+                  library(DiceKriging)
+                  library(FactoMineR)
+                  library(Rcpp)
+                  library(RcppArmadillo)
+                  library(MASS)
+                })
+
+model.class$set("private","checkEmul",
+                function()
+                  {
+                  N <- c("p","n.emul","PCA","binf","bsup")
+                  N2 <- names(self$emul.list)
+                  for (i in 1:length(N))
+                  {
+                    if(names(self$emul.list)[i] != N[i])
+                    {
+                      stop(paste(N[i],"value is missing, please enter a correct value",sep=" "))
+                    }
+                  }
+                })
+
+model.class$set("private","checkCode",
+                function()
+                {
+                  if (is.na(self$code))
+                  {stop("Please enter a valid code")}
+                })
+
+
+model1.class <- R6::R6Class(classname = "model1.class",
                         inherit = model.class,
                         public=list(
+                        m.exp = NULL,
+                        V.exp = NULL,
                         initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
                         {
                           super$initialize(code, X, Yexp, model)
@@ -58,10 +94,69 @@ model1.class <- R6Class(classname = "model1.class",
                         fun = function(theta,sig2)
                         {
                           return(self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2)))
-                        })
+                        },
+                        likelihood = function(theta,sig2)
+                        {
+                          self$m.exp = self$code(self$X,theta)
+                          self$V.exp = sig2*diag(self$n)
+                          return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                                                          solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                        }
+                        )
                         )
 
-model2.class <- R6Class(classname = "model2.class",
+
+model3.class <- R6::R6Class(classname = "model3.class",
+                        inherit = model1.class,
+                        public=list(
+                          funTemp  = NULL,
+                          temp     = NULL,
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
+                          {
+                            super$initialize(code, X, Yexp, model)
+                            self$funTemp <- super$fun
+                          },
+                          discrepancy = function(theta,thetaD,sig2)
+                          {
+                            Yc       <- self$funTemp(theta,sig2)
+                            z        <- self$Yexp - Yc
+                            emul     <- km(formula=~1, design=as.data.frame(self$X), response=z,coef.trend=0,
+                                    coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
+                                    covtype="gauss", scaling = FALSE)
+                            biais    <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
+                                              nugget.sim=0,checkNames=FALSE)
+                            Cov <- matrix(nr=self$n,nc=self$n)
+                            for (j in 1:self$n)
+                            {
+                              for (i in 1:self$n)
+                              {
+                                Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((X[i,]-X[j,])^2)/thetaD[2])^2)
+                              }
+                            }
+                            return(list(biais=biais,Yc=Yc,cov=Cov))
+                          },
+                          fun = function(theta,thetaD,sig2)
+                          {
+                            res <- self$discrepancy(theta,thetaD,sig2)
+                            return(list(y=res$biais+res$Yc,cov=res$cov))
+                          }
+                          )
+)
+
+
+model3.class$set("public","likelihood",
+                 function(theta,thetaD,sig2)
+                 {
+                   self$m.exp <- self$code(self$X,theta)
+                   temp <- self$fun(theta,thetaD,sig2)
+                   self$V.exp <- sig2*diag(self$n) + temp$cov
+                   return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                                                                solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                 })
+
+
+
+model2.class <- R6::R6Class(classname = "model2.class",
                         inherit = model.class,
                         public = list(
                           n.emul = NULL,
@@ -70,6 +165,8 @@ model2.class <- R6Class(classname = "model2.class",
                           binf   = NULL,
                           bsup   = NULL,
                           PCA    = NULL,
+                          m.exp = NULL,
+                          V.exp = NULL,
                         initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
                         {
                           super$initialize(code, X, Yexp, model)
@@ -131,7 +228,7 @@ model2.class <- R6Class(classname = "model2.class",
                           }
                           pr <- predict(self$GP,newdata=Xnew,type="UK",cov.compute=TRUE)
                           err <- rnorm(n=self$n,mean = 0,sd=sqrt(sig2))
-                          return(list(y=pr$mean+err,Cov.GP=pr$cov))
+                          return(list(y=pr$mean+err,Cov.GP=pr$cov,yc=pr$mean))
                         })
                         )
 
@@ -166,3 +263,65 @@ model2.class$set("public","PCA.fun",
                   D <- cbind(A,doeParam)
                   return(D)
                 })
+
+model2.class$set("public","likelihood",
+                 function(theta,sig2)
+                 {
+                   temp <- self$fun(theta,sig2)
+                   self$m.exp <- temp$yc
+                   self$V.exp <- sig2*diag(self$n) + temp$Cov.GP
+                   return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                                                                            solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                 })
+
+
+
+
+
+model4.class <- R6::R6Class(classname = "model4.class",
+                        inherit = model2.class,
+                        public=list(
+                          funC = NULL,
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
+                          {
+                            super$initialize(code, X, Yexp, model,opt.emul)
+                            self$funC <- super$fun
+                          },
+                          discrepancy = function(theta,thetaD,sig2)
+                          {
+                            Yc    <- self$funC(theta,sig2)
+                            z     <- self$Yexp - Yc$y
+                            emul  <- km(formula =~1 , design = as.data.frame(self$X), response = z,
+                                        coef.trend=0, coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
+                                        covtype="gauss")
+                            biais <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
+                                              nugget.sim=0,checkNames=FALSE)
+                            Cov <- matrix(nr=self$n,nc=self$n)
+                            for (j in 1:self$n)
+                            {
+                              for (i in 1:self$n)
+                              {
+                                Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((X[i,]-X[j,])^2)/thetaD[2])^2)
+                              }
+                            }
+                            return(list(biais=biais,Yc=Yc,Cov.D=Cov))
+                          },
+                          fun = function(theta,thetaD,sig2)
+                          {
+                            res <- self$discrepancy(theta,thetaD,sig2)
+                            return(list(y=res$biais+res$Yc$y,covGP=res$Yc$Cov.GP,covD=res$Cov.D,yc=res$Yc$yc))
+                          })
+)
+
+
+model4.class$set("public","likelihood",
+                 function(theta,thetaD,sig2)
+                 {
+                   temp <- self$fun(theta,thetaD,sig2)
+
+                   self$m.exp <- temp$yc
+                   self$V.exp <- sig2*diag(self$n) + temp$covGP +temp$covD
+                   return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                                                                            solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                 })
+
