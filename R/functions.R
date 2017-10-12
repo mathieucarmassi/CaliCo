@@ -206,41 +206,47 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' ### The code to calibrate
 #' code <- function(X,theta)
 #' {
-#'   return(X*sin(theta*X))
+#'   return((6*X-2)^2*sin(theta*X-4))
 #' }
 #' ### Simulated data
-#' Yr   <- code(X,5)
+#' Yr   <- code(X,11)
 #' Yexp <- Yr+rnorm(100,0,0.1)
 #' ### Definition of the nature of the priors
 #' type.prior=c("gaussian","gamma")
-#' ### Definition of the emulation options
-#' #opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1)
 #' ### Definition of the prior hyperparameters
-#' opt.prior=list(c(5,3),c(2,0.1))
+#' opt.prior=list(c(11,3),c(2,0.1))
 #' ### Definition of the estimation option
-#' opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(5,0.1),k=c(0.001,0.001),sig=diag(2))
+#' opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(11,0.1),k=c(0.001,0.001),sig=diag(2))
 #'
-#' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.emul,opt.prior,opt.estim)
+#' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
 #' test$plot()
 #'
 #'
-#' ####### For the fourth model
+#' ####### For the second model
+#' ### The data set
 #' X <- seq(0,1,length.out=100)
+#' ### The code to calibrate
 #' code <- function(X,theta)
 #' {
 #'   return((6*X-2)^2*sin(theta*X-4))
 #' }
-#' Yexp <- code(X,11)+rnorm(100,0,0.1)
+#' ### Simulated data
+#' Yr   <- code(X,11)
+#' Yexp <- Yr+rnorm(100,0,0.1)
+#' ### Definition of the nature of the priors
 #' type.prior=c("gaussian","gamma")
+#' ### Definition of the emulation options
 #' opt.emul=list(p=1,n.emul=100,PCA=FALSE,binf=0,bsup=1)
-#' opt.prior=list(c(10,3),c(5,0.2))
-#' opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(10,1),k=c(0.1,0.1),sig=diag(2))
-#' test <- estim(code,X,Yexp,model="model4",type.prior,log=TRUE,opt.emul,opt.prior,opt.estim)
+#' ### Definition of the prior hyperparameters
+#' opt.prior=list(c(11,3),c(2,0.1))
+#' ### Definition of the estimation option
+#' opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(11,0.1),k=c(0.001,0.001),sig=diag(2))
 #'
-#'
+#' test <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
+#' test$plot()
 #' @export
 estim <-function(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE
-                  ,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1),opt.prior,opt.estim)
+                  ,opt.prior,opt.estim,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1))
 {
   res <- estim.class$new(code,X,Yr,Yexp,model,type.prior,log,opt.emul,opt.prior,opt.estim)
   return(res)

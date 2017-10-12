@@ -184,24 +184,22 @@ estim.class$set("public","plotComp",
                     {
                       m <- apply(self$out$THETA[-c(1:self$burnIn),],2,mean)
                       quantilesPost <- apply(self$out$THETA[-c(1:self$burnIn),],2,quantile,probs=c(0.05,0.95,0.5))
-                      lower <- self$code(self$X,quantilesPost[1,1:(length(m)-1)])
-                      upper <- self$code(self$X,quantilesPost[2,1:(length(m)-1)])
-                      dplot <- data.frame(lower=lower,upper=upper,
-                                           fill="90% credibility interval",
-                                          Y=self$code(self$X,m[-length(m)]), x=self$X,type='calibrated')
-                      dplot2 <- data.frame(Y=self$Yr, x=self$X, type='experiment')
-                      p <- ggplot(dplot) + geom_line(aes(y=Y, x=x),color='black') +
+                      lowerPost <- self$code(self$X,quantilesPost[1,1:(length(m)-1)])
+                      upperPost <- self$code(self$X,quantilesPost[2,1:(length(m)-1)])
+                      dplot <- data.frame(Y=self$code(self$X,m[-length(m)]),x=self$X,type='calibrated',lower=lowerPost,upper=upperPost,
+                                           fill="90% credibility interval a posteriori")
+                      dplot2 <- data.frame(Y=self$Yr, x=self$X, type='experiment',lower=lowerPost,upper=upperPost,
+                                           fill="90% credibility interval a posteriori")
+                      dplot <- rbind(dplot,dplot2)
+                      p <- ggplot(dplot) + geom_line(aes(x=x,y=Y,color=type))+
                         geom_ribbon(aes(ymin=lower, ymax=upper, x=x,fill=fill), alpha = 0.3) +
-                        scale_colour_manual("",values="red") +
-                        scale_fill_manual("",values=c("grey12")) +
-                        theme_light() + xlab("") +
-                        ylab("") +
+                        scale_fill_manual("",values=c("blue4","blue4")) +
+                        theme_light() + xlab("") + ylab("") +
                         theme(legend.position=c(0.65,0.86),
                               legend.text=element_text(size = '15'),
                               legend.title=element_blank(),
                               legend.key=element_rect(colour=NA),
-                              axis.text=element_text(size=20))+
-                        geom_line(data=dplot2,aes(y=Y,x=x),color='blue')
+                              axis.text=element_text(size=20))
                     } else
                     {
                       m      <- apply(self$out$THETA[-c(1:self$burnIn),],2,mean)
