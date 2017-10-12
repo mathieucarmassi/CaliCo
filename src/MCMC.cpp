@@ -14,7 +14,6 @@ using namespace arma;
 List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,
                            arma::vec binf, arma::vec bsup, Function LogTest)
 {
-  cout << "balise" << endl;
   double Dim = theta_init.size();
   int D;
   arma::mat PHIwg=randu<arma::mat>(Ngibbs,Dim), THETAwg=randu<arma::mat>(Ngibbs,Dim);
