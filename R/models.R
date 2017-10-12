@@ -29,9 +29,15 @@ model.class <- R6::R6Class(classname = "model.class",
                      self$X         <- X
                      self$Yexp      <- Yexp
                      self$n         <- length(Yexp)
-                     self$d         <- dim(X)[2]
+                     if (is.null(dim(X)))
+                     {
+                       self$d       <- 1
+                     } else
+                     {
+                       self$d       <- dim(X)[2]
+                     }
                      self$emul.list <- emul.list
-                     self$model <- model
+                     self$model     <- model
                      private$checkModels()
                      private$checkEmul()
                      #private$checkCode()
@@ -165,8 +171,8 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           binf   = NULL,
                           bsup   = NULL,
                           PCA    = NULL,
-                          m.exp = NULL,
-                          V.exp = NULL,
+                          m.exp  = NULL,
+                          V.exp  = NULL,
                         initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
                         {
                           super$initialize(code, X, Yexp, model)
@@ -198,9 +204,17 @@ model2.class <- R6::R6Class(classname = "model2.class",
                             binf.X <- apply(Xcr,2,min)
                             bsup.X <- apply(Xcr,2,max)
                             DOE <- unscale(doe[,1:self$d],binf.X,bsup.X)
-                            for (i in 1:self$d)
+                            if (self$d==1)
                             {
-                              DOE[,i] <- DOE[,i]*V[i]+rep(M[i],self$n.emul)
+                              for (i in 1:self$d)
+                              {
+                                DOE[i] <- DOE[i]*V[i]+rep(M[i],self$n.emul)
+                              }
+                            } else {
+                              for (i in 1:self$d)
+                              {
+                                DOE[,i] <- DOE[,i]*V[i]+rep(M[i],self$n.emul)
+                              }
                             }
                             doeParam <- unscale(doe[,(Dim-self$p+1):Dim],self$binf,self$bsup)
                             ### Matrix D contains the final value for the DOE
