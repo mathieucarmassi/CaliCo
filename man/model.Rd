@@ -5,7 +5,7 @@
 \title{Generates \code{\link{model.class}} objects}
 \usage{
 model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
-  PCA = TRUE, binf = 0, bsup = 1))
+  PCA = TRUE))
 }
 \arguments{
 \item{code}{the computational code (function of X and theta)}

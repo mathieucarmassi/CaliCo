@@ -10,8 +10,6 @@ using namespace std;
 using namespace arma;
 
 
-
-
 // [[Rcpp::export]]
 List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,
                            arma::vec binf, arma::vec bsup, Function LogTest)
@@ -30,11 +28,12 @@ List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_i
   PHIwg.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
   arma::vec theta=theta_init.rows(0,Dim-2);
   double Verr=THETAwg(0,(Dim-1));
+  cout << theta_init << endl;
   arma::vec Yg=as<arma::vec>(model(theta,Verr));
   double alpha = as<double>(LogTest(theta,Verr));
   double alpha2 = alpha;
   cout << "Begin of the Metropolis within Gibbs algorithm" << endl;
-  cout << "Number of iteration "<< Ngibbs << endl;
+  cout << "Number of iterations "<< Ngibbs << endl;
   int barWidth = 40;
   int q = 0;
   for (int i=0; i<(Ngibbs-1); i++)

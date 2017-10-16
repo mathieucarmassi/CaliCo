@@ -67,7 +67,7 @@
 #' foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE,binf=c(0,0),bsup=c(1,1)))
 #' foo$fun(c(3,3),c(0.2,0.2),1)
 #' @export
-model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1))
+model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,PCA=TRUE),binf=0,bsup=1)
 {
   library(R6)
   library(FactoMineR)
@@ -236,7 +236,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' ### Definition of the nature of the priors
 #' type.prior=c("gaussian","gamma")
 #' ### Definition of the emulation options
-#' opt.emul=list(p=1,n.emul=100,PCA=FALSE,binf=0,bsup=1)
+#' opt.emul=list(p=1,n.emul=100,PCA=FALSE)
 #' ### Definition of the prior hyperparameters
 #' opt.prior=list(c(11,3),c(2,0.1))
 #' ### Definition of the estimation option
@@ -246,7 +246,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' test$plot()
 #' @export
 estim <-function(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE
-                  ,opt.prior,opt.estim,opt.emul=list(p=1,n.emul=100,PCA=TRUE,binf=0,bsup=1))
+                  ,opt.prior,opt.estim,opt.emul=list(p=1,n.emul=100,PCA=TRUE))
 {
   res <- estim.class$new(code,X,Yr,Yexp,model,type.prior,log,opt.emul,opt.prior,opt.estim)
   return(res)

@@ -173,11 +173,11 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           PCA    = NULL,
                           m.exp  = NULL,
                           V.exp  = NULL,
-                        initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
+                        initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA,binf=NA,bsup=NA)
                         {
                           super$initialize(code, X, Yexp, model)
-                          self$binf   <- opt.emul$binf
-                          self$bsup   <- opt.emul$bsup
+                          self$binf   <- binf
+                          self$bsup   <- bsup
                           self$n.emul <- opt.emul$n.emul
                           self$p      <- opt.emul$p
                           self$PCA    <- opt.emul$PCA
@@ -240,12 +240,13 @@ model2.class <- R6::R6Class(classname = "model2.class",
                             Xtemp <- matrix(rep(theta,c(self$n,self$n)),nr=self$n,nc=self$p)
                             Xnew  <- cbind(X,Xtemp)
                           }
+                          Xnew <- as.data.frame(Xnew)
+                          names(Xnew) <- c("X1","X2")
                           pr <- predict(self$GP,newdata=Xnew,type="UK",cov.compute=TRUE)
                           err <- rnorm(n=self$n,mean = 0,sd=sqrt(sig2))
                           return(list(y=pr$mean+err,Cov.GP=pr$cov,yc=pr$mean))
                         })
                         )
-
 
 model2.class$set("public","PCA.fun",
                 function(X,Dim,n,p,d,binf,bsup,M,V)
