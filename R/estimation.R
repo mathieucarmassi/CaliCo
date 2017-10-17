@@ -43,21 +43,12 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       self$bsup          <- private$boundaries()$bsup
                       self$md            <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1:(length(self$type.prior)-1)],
                                                   bsup=self$bsup[1:(length(self$type.prior)-1)])
+                      print('balise')
                       self$logTest.fun   <- self$logTest
                       self$out           <- self$estimation()
                     },
                     estimation = function()
                     {
-                      # print(self$md$fun)
-                      # print(self$opt.estim$Ngibbs)
-                      # print(self$opt.estim$Nmh)
-                      # print(self$opt.estim$thetaInit)
-                      # print(self$opt.estim$k)
-                      # print(self$opt.estim$sig)
-                      # print(self$Yexp)
-                      # print(self$binf)
-                      # print(self$bsup)
-                      # print(self$logTest.fun)
                       out <- MetropolisHastingsCpp(self$md$fun,self$opt.estim$Ngibbs,
                                                    self$opt.estim$Nmh,self$opt.estim$thetaInit,
                                                    self$opt.estim$k,self$opt.estim$sig,self$Yexp,

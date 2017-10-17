@@ -20,15 +20,19 @@ model.class <- R6::R6Class(classname = "model.class",
                    Yexp      = NULL,
                    n         = NULL,
                    d         = NULL,
+                   binf      = NULL,
+                   bsup      = NULL,
                    emul.list = NULL,
                    model     = NULL,
                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA,
-                                         emul.list=list(p=NA,n.emul=NA,PCA=NA,binf=NA,bsup=NA))
+                                        binf=NA,bsup=NA, emul.list=list(p=NA,n.emul=NA,PCA=NA))
                    {
-                     self$code      <- code
-                     self$X         <- X
-                     self$Yexp      <- Yexp
-                     self$n         <- length(Yexp)
+                     self$code  <- code
+                     self$X     <- X
+                     self$Yexp  <- Yexp
+                     self$n     <- length(Yexp)
+                     self$binf  <- binf
+                     self$bsup  <- bsup
                      if (is.null(dim(X)))
                      {
                        self$d       <- 1
@@ -69,7 +73,7 @@ model.class$set("private","loadPackages",
 model.class$set("private","checkEmul",
                 function()
                   {
-                  N <- c("p","n.emul","PCA","binf","bsup")
+                  N <- c("p","n.emul","PCA")
                   N2 <- names(self$emul.list)
                   for (i in 1:length(N))
                   {
@@ -93,9 +97,9 @@ model1.class <- R6::R6Class(classname = "model1.class",
                         public=list(
                         m.exp = NULL,
                         V.exp = NULL,
-                        initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
+                        initialize=function(code=NA, X=NA, Yexp=NA, model=NA, binf=NA, bsup=NA)
                         {
-                          super$initialize(code, X, Yexp, model)
+                          super$initialize(code, X, Yexp, model, binf, bsup)
                         },
                         fun = function(theta,sig2)
                         {
@@ -117,9 +121,9 @@ model3.class <- R6::R6Class(classname = "model3.class",
                         public=list(
                           funTemp  = NULL,
                           temp     = NULL,
-                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA, binf=NA, bsup=NA)
                           {
-                            super$initialize(code, X, Yexp, model)
+                            super$initialize(code, X, Yexp, model,binf, bsup)
                             self$funTemp <- super$fun
                           },
                           discrepancy = function(theta,thetaD,sig2)
@@ -175,7 +179,7 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           V.exp  = NULL,
                         initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA,binf=NA,bsup=NA)
                         {
-                          super$initialize(code, X, Yexp, model)
+                          super$initialize(code, X, Yexp, model, binf, bsup, opt.emul)
                           self$binf   <- binf
                           self$bsup   <- bsup
                           self$n.emul <- opt.emul$n.emul
@@ -194,7 +198,6 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           {
                             D <- self$PCA.fun(X=self$X,Dim=Dim,n=self$n.emul,p=self$p,d=self$d,
                                               binf=self$binf,bsup=self$bsup,M=M,V=V)
-                            print(D)
                           } else
                           {
                             doe <- lhsDesign(self$n.emul,Dim)$design
@@ -206,12 +209,12 @@ model2.class <- R6::R6Class(classname = "model2.class",
                             DOE <- unscale(doe[,1:self$d],binf.X,bsup.X)
                             if (self$d==1)
                             {
-                              for (i in 1:self$d)
+                              for (i in 1:self$n.emul)
                               {
                                 DOE[i] <- DOE[i]*V[i]+rep(M[i],self$n.emul)
                               }
                             } else {
-                              for (i in 1:self$d)
+                              for (i in 1:self$n.emul)
                               {
                                 DOE[,i] <- DOE[,i]*V[i]+rep(M[i],self$n.emul)
                               }
@@ -240,9 +243,7 @@ model2.class <- R6::R6Class(classname = "model2.class",
                             Xtemp <- matrix(rep(theta,c(self$n,self$n)),nr=self$n,nc=self$p)
                             Xnew  <- cbind(X,Xtemp)
                           }
-                          Xnew <- as.data.frame(Xnew)
-                          names(Xnew) <- c("X1","X2")
-                          pr <- predict(self$GP,newdata=Xnew,type="UK",cov.compute=TRUE)
+                          pr <- predict(self$GP,newdata=as.data.frame(Xnew),type="UK",cov.compute=TRUE)
                           err <- rnorm(n=self$n,mean = 0,sd=sqrt(sig2))
                           return(list(y=pr$mean+err,Cov.GP=pr$cov,yc=pr$mean))
                         })
@@ -286,7 +287,13 @@ model2.class$set("public","likelihood",
                    self$m.exp <- temp$yc
                    self$V.exp <- sig2*diag(self$n) + temp$Cov.GP
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                                                                            solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                                                                  solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                 })
+
+
+model2.class$set("public","plot",
+                 function()
+                 {
                  })
 
 
@@ -297,9 +304,9 @@ model4.class <- R6::R6Class(classname = "model4.class",
                         inherit = model2.class,
                         public=list(
                           funC = NULL,
-                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA,binf=NA,bsup=NA)
                           {
-                            super$initialize(code, X, Yexp, model,opt.emul)
+                            super$initialize(code, X, Yexp, model,binf,bsup,opt.emul)
                             self$funC <- super$fun
                           },
                           discrepancy = function(theta,thetaD,sig2)
@@ -337,6 +344,6 @@ model4.class$set("public","likelihood",
                    self$m.exp <- temp$yc
                    self$V.exp <- sig2*diag(self$n) + temp$covGP +temp$covD
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                                                                            solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                                                                  solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
                  })
 

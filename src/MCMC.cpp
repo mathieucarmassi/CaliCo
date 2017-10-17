@@ -28,7 +28,6 @@ List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_i
   PHIwg.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
   arma::vec theta=theta_init.rows(0,Dim-2);
   double Verr=THETAwg(0,(Dim-1));
-  cout << theta_init << endl;
   arma::vec Yg=as<arma::vec>(model(theta,Verr));
   double alpha = as<double>(LogTest(theta,Verr));
   double alpha2 = alpha;
