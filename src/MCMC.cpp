@@ -146,5 +146,13 @@ List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_i
 }
 
 
+// [[Rcpp::export]]
+arma::mat invMat(arma::mat V)
+{
+  int n=V.n_rows;
+  arma::mat Vinv=solve(V, eye(n,n), solve_opts::fast);
+  return Vinv;
+}
+
 
 

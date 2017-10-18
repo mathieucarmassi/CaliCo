@@ -43,7 +43,6 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       self$bsup          <- private$boundaries()$bsup
                       self$md            <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1:(length(self$type.prior)-1)],
                                                   bsup=self$bsup[1:(length(self$type.prior)-1)])
-                      print('balise')
                       self$logTest.fun   <- self$logTest
                       self$out           <- self$estimation()
                     },

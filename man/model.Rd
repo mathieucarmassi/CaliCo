@@ -39,14 +39,15 @@ foo$fun(3,1)
 foo$likelihood(3,1)
 
 ### For the second model
-X <- runif(100)
+X <- seq(0,1,length.out=100)
 code <- function(X,theta)
 {
   return((6*X-2)^2*sin(theta*X-4))
 }
-Yexp <- code(X,11)+rnorm(100,0,0.1)
+Yexp <- code(X,11)
 plot(Yexp,type='l')
-foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=FALSE),binf=c(0,0),bsup=c(1,1))
+foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=3,PCA=FALSE),binf=8,bsup=14)
+plot(foo$fun(11),type='l')
 foo$fun(c(3,3),1)
 foo$likelihood(c(3,3),1)
 

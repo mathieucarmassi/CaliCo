@@ -5,3 +5,7 @@ MetropolisHastingsCpp <- function(model, Ngibbs, Nmh, theta_init, k, SIGMA, Yf, 
     .Call('_calibrationCode_MetropolisHastingsCpp', PACKAGE = 'calibrationCode', model, Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest)
 }
 
+invMat <- function(V) {
+    .Call('_calibrationCode_invMat', PACKAGE = 'calibrationCode', V)
+}
+

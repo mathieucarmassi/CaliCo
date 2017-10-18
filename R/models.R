@@ -44,7 +44,7 @@ model.class <- R6::R6Class(classname = "model.class",
                      self$model     <- model
                      private$checkModels()
                      private$checkEmul()
-                     #private$checkCode()
+                     private$checkCode()
                      private$loadPackages()
                    }
                  ))
@@ -101,19 +101,45 @@ model1.class <- R6::R6Class(classname = "model1.class",
                         {
                           super$initialize(code, X, Yexp, model, binf, bsup)
                         },
-                        fun = function(theta,sig2)
+                        fun = function(theta,sig2,Newdata)
                         {
-                          return(self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2)))
+                          y  <- self$code(Newdata,theta)+rnorm(self$n,0,sqrt(sig2))
+                          yc <- self$code(Newdata,theta)
+                          return(list(y=y, yc=yc))
                         },
                         likelihood = function(theta,sig2)
                         {
                           self$m.exp = self$code(self$X,theta)
                           self$V.exp = sig2*diag(self$n)
                           return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                                                          solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                                                          invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
                         }
                         )
                         )
+
+
+model1.class$set("public","plot",
+                 function(theta,sig,Newdata)
+                 {
+                   res <- self$fun(theta,sig,Newdata)
+                   gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),type="code result")
+                   gg.data.noisy <- data.frame(y=res$y,x=seq(0,1,length.out=length(res$yc)),
+                                             type="noisy")
+                   gg.data.exp  <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),
+                                              type="experiments")
+                   gg.data <- rbind(gg.data,gg.data.noisy,gg.data.exp)
+                   p <- ggplot(gg.data)+
+                     geom_line(aes(y=y,x=x,col=type))+
+                     theme_light()+
+                     ylab("")+xlab("")+
+                     theme(legend.position=c(0.65,0.86),
+                           legend.text=element_text(size = '15'),
+                           legend.title=element_blank(),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=20))
+                   return(p)
+                 })
+
 
 
 model3.class <- R6::R6Class(classname = "model3.class",
@@ -128,10 +154,19 @@ model3.class <- R6::R6Class(classname = "model3.class",
                           },
                           discrepancy = function(theta,thetaD,sig2)
                           {
-                            Yc       <- self$funTemp(theta,sig2)
-                            z        <- self$Yexp - Yc
-                            emul     <- km(formula=~1, design=as.data.frame(self$X), response=z,coef.trend=0,
-                                    coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
+                            y        <- self$funTemp(theta,sig2,self$X)$y
+                            z        <- self$Yexp - y
+                            if (is.null(ncol(self$X)))
+                            {
+                              coef.cov <- rep(thetaD[2],length(self$X))
+                            } else
+                            {
+                              coef.cov <- rep(thetaD[2],ncol(self$X))
+                            }
+                            data.cal <- as.data.frame(as.matrix(self$X))
+                            print(names(data.cal))
+                            emul     <- km(formula=~1, design=data.cal, response=z, coef.trend=0,
+                                    coef.var = thetaD[1], coef.cov = coef.cov,
                                     covtype="gauss", scaling = FALSE)
                             biais    <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
                                               nugget.sim=0,checkNames=FALSE)
@@ -143,15 +178,41 @@ model3.class <- R6::R6Class(classname = "model3.class",
                                 Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((X[i,]-X[j,])^2)/thetaD[2])^2)
                               }
                             }
-                            return(list(biais=biais,Yc=Yc,cov=Cov))
+                            return(list(biais=biais,cov=Cov))
                           },
-                          fun = function(theta,thetaD,sig2)
+                          fun = function(theta,thetaD,sig2,Newdata)
                           {
                             res <- self$discrepancy(theta,thetaD,sig2)
-                            return(list(y=res$biais+res$Yc,cov=res$cov))
+                            foo <- self$funTemp(theta,sig2,Newdata)
+                            y   <- foo$y
+                            yc  <- foo$yc
+                            return(list(y=res$biais+y,cov=res$cov,yc=yc))
                           }
                           )
 )
+
+
+model3.class$set("public","plot",
+                 function(theta,thetaD,sig,Newdata)
+                 {
+                   res <- self$fun(theta,thetaD,sig,Newdata)
+                   gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),type="code result")
+                   gg.data.noisy <- data.frame(y=res$y,x=seq(0,1,length.out=length(res$yc)),
+                                               type="noisy")
+                   gg.data.exp  <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),
+                                              type="experiments")
+                   gg.data <- rbind(gg.data,gg.data.noisy,gg.data.exp)
+                   p <- ggplot(gg.data)+
+                     geom_line(aes(y=y,x=x,col=type))+
+                     theme_light()+
+                     ylab("")+xlab("")+
+                     theme(legend.position=c(0.65,0.86),
+                           legend.text=element_text(size = '15'),
+                           legend.title=element_blank(),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=20))
+                   return(p)
+                 })
 
 
 model3.class$set("public","likelihood",
@@ -161,7 +222,7 @@ model3.class$set("public","likelihood",
                    temp <- self$fun(theta,thetaD,sig2)
                    self$V.exp <- sig2*diag(self$n) + temp$cov
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                                                                solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                                                                invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
                  })
 
 
@@ -171,6 +232,7 @@ model2.class <- R6::R6Class(classname = "model2.class",
                         public = list(
                           n.emul = NULL,
                           GP     = NULL,
+                          DOE    = NULL,
                           p      = NULL,
                           binf   = NULL,
                           bsup   = NULL,
@@ -185,7 +247,9 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           self$n.emul <- opt.emul$n.emul
                           self$p      <- opt.emul$p
                           self$PCA    <- opt.emul$PCA
-                          self$GP     <- self$surrogate()
+                          foo         <- self$surrogate()
+                          self$GP     <- foo$GP
+                          self$DOE    <- foo$DOE
                           print("The surrogate has been set up, you can now use the function")
                         },
                         surrogate = function()
@@ -211,7 +275,13 @@ model2.class <- R6::R6Class(classname = "model2.class",
                             {
                               for (i in 1:self$n.emul)
                               {
-                                DOE[i] <- DOE[i]*V[i]+rep(M[i],self$n.emul)
+                                if (self$d==1)
+                                {
+                                  DOE[i] <- DOE[i]*V+M
+                                } else
+                                {
+                                  DOE[i] <- DOE[i]*V[i]+rep(M[i],self$n.emul)
+                                }
                               }
                             } else {
                               for (i in 1:self$n.emul)
@@ -230,22 +300,25 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           #colnames(D) <- c("V1","V2","V3","V4","V5","V6")
                           ### Creation of the Gaussian Process with estimation of hyperpameters
                           GP <- km(formula =~1, design=D, response = z,covtype = "matern5_2")
-                          return(GP)
+                          return(list(GP=GP,DOE=D))
                         },
-                        fun = function(theta,sig2)
+                        fun = function(theta,sig2,Newdata)
                         {
-                          options(warn=-1)
+                          # options(warn=-1)
                           if(self$p==1)
                           {
-                            Xnew <- cbind(X,rep(theta,self$n))
+                            Xnew <- cbind(Newdata,rep(theta,self$n))
                           } else
                           {
                             Xtemp <- matrix(rep(theta,c(self$n,self$n)),nr=self$n,nc=self$p)
-                            Xnew  <- cbind(X,Xtemp)
+                            Xnew  <- cbind(Newdata,Xtemp)
                           }
-                          pr <- predict(self$GP,newdata=as.data.frame(Xnew),type="UK",cov.compute=TRUE)
+                          Xnew <- as.data.frame(Xnew)
+                          names(Xnew) <- c("DOE","doeParam")
+                          pr <- predict(self$GP,newdata=as.data.frame(Xnew),type="UK",
+                                        cov.compute=TRUE,interval="confidence")
                           err <- rnorm(n=self$n,mean = 0,sd=sqrt(sig2))
-                          return(list(y=pr$mean+err,Cov.GP=pr$cov,yc=pr$mean))
+                          return(list(y=pr$mean+err,Cov.GP=pr$cov,yc=pr$mean,lower=pr$lower95,upper=pr$upper95))
                         })
                         )
 
@@ -281,22 +354,45 @@ model2.class$set("public","PCA.fun",
                 })
 
 model2.class$set("public","likelihood",
-                 function(theta,sig2)
+                 function(theta,sig2,Newdata)
                  {
-                   temp <- self$fun(theta,sig2)
+                   temp <- self$fun(theta,sig2,Newdata)
                    self$m.exp <- temp$yc
                    self$V.exp <- sig2*diag(self$n) + temp$Cov.GP
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                                                                  solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                                                                  invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
                  })
 
 
 model2.class$set("public","plot",
-                 function()
+                 function(theta,sig,Newdata,points=TRUE)
                  {
+                   res <- self$fun(theta,sig,Newdata)
+                   gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),
+                                          lower=res$lower,upper=res$upper,type="Gaussian Process",
+                                         fill="90% credibility interval")
+                   gg.data.exp <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),lower=res$lower,
+                                            upper=res$upper,type="experiment",fill="90% credibility interval")
+                   gg.data <- rbind(gg.data,gg.data.exp)
+                   gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE[,1],theta))
+                   p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
+                     geom_line(aes(y=y,x=x,col=type))+
+                     theme_light()+
+                     ylab("")+xlab("")+
+                     scale_fill_manual("",values=c("grey12"))+
+                     theme(legend.position=c(0.65,0.86),
+                           legend.text=element_text(size = '15'),
+                           legend.title=element_blank(),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=20))
+                   if (points==FALSE)
+                   {
+                     return(p)
+                   } else
+                   {
+                     return(p+geom_jitter(data=gg.points,aes(x=x,y=y)))
+                   }
                  })
-
-
 
 
 
@@ -344,6 +440,6 @@ model4.class$set("public","likelihood",
                    self$m.exp <- temp$yc
                    self$V.exp <- sig2*diag(self$n) + temp$covGP +temp$covD
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                                                                  solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                                                                  invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
                  })
 
