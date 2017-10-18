@@ -40,7 +40,7 @@
 #' # Generate the model with setup for the Gaussian Process
 #' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=50,PCA=FALSE),binf=8,bsup=14)
 #' # Plot the model
-#' foo$plot(11,0.1,X,points=FALSE)
+#' foo$plot(11,0.1,X,points=TRUE)
 #'
 #' # with the PCA in stand by
 #' # foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
@@ -55,7 +55,7 @@
 #'
 #' Yexp <- code(X,11)+rnorm(100,0,0.1)
 #' foo <- model(code,X,Yexp,"model3")
-#' foo$plot(11,c(0.2,0.2),0.1,X)
+#' foo$plot(11,c(3,0.5),0.1,X)
 #'
 #'
 #' ### For the fourth model

@@ -44,7 +44,7 @@ model.class <- R6::R6Class(classname = "model.class",
                      self$model     <- model
                      private$checkModels()
                      private$checkEmul()
-                     private$checkCode()
+                     #private$checkCode()
                      private$loadPackages()
                    }
                  ))
@@ -164,10 +164,9 @@ model3.class <- R6::R6Class(classname = "model3.class",
                               coef.cov <- rep(thetaD[2],ncol(self$X))
                             }
                             data.cal <- as.data.frame(as.matrix(self$X))
-                            print(names(data.cal))
-                            emul     <- km(formula=~1, design=data.cal, response=z, coef.trend=0,
-                                    coef.var = thetaD[1], coef.cov = coef.cov,
-                                    covtype="gauss", scaling = FALSE)
+                            emul     <- km(formula=~1, design=data.cal, response=z,coef.trend=0,
+                                    coef.var = thetaD[1], coef.cov = thetaD[2],
+                                    covtype="gauss")
                             biais    <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
                                               nugget.sim=0,checkNames=FALSE)
                             Cov <- matrix(nr=self$n,nc=self$n)
