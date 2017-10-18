@@ -5,8 +5,7 @@
 \title{Generates \code{\link{estim.class}} objects}
 \usage{
 estim(code, X, Yr, Yexp, model = "model1", type.prior, log = TRUE,
-  opt.prior, opt.estim, opt.emul = list(p = 1, n.emul = 100, PCA = TRUE, binf
-  = 0, bsup = 1))
+  opt.prior, opt.estim, opt.emul = list(p = 1, n.emul = 100, PCA = TRUE))
 }
 \arguments{
 \item{md}{a \code{\link{model.class}} object}
@@ -62,7 +61,7 @@ Yexp <- Yr+rnorm(100,0,0.1)
 ### Definition of the nature of the priors
 type.prior=c("gaussian","gamma")
 ### Definition of the emulation options
-opt.emul=list(p=1,n.emul=100,PCA=FALSE,binf=0,bsup=1)
+opt.emul=list(p=1,n.emul=100,PCA=FALSE)
 ### Definition of the prior hyperparameters
 opt.prior=list(c(11,3),c(2,0.1))
 ### Definition of the estimation option

@@ -5,7 +5,7 @@
 \title{Generates \code{\link{model.class}} objects}
 \usage{
 model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
-  PCA = TRUE, binf = 0, bsup = 1))
+  PCA = TRUE), binf = 0, bsup = 1)
 }
 \arguments{
 \item{code}{the computational code (function of X and theta)}
@@ -39,18 +39,20 @@ foo$fun(3,1)
 foo$likelihood(3,1)
 
 ### For the second model
-X <- cbind(runif(5),runif(5),runif(5))
+X <- seq(0,1,length.out=100)
 code <- function(X,theta)
 {
-  return(X[,1]+theta[,1]*X[,2]+theta[,2]^2*X[,3])
+  return((6*X-2)^2*sin(theta*X-4))
 }
-Yexp <- runif(5)
-foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=FALSE,binf=c(0,0),bsup=c(1,1)))
+Yexp <- code(X,11)
+plot(Yexp,type='l')
+foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=3,PCA=FALSE),binf=8,bsup=14)
+plot(foo$fun(11),type='l')
 foo$fun(c(3,3),1)
 foo$likelihood(c(3,3),1)
 
 # with the PCA
-foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE,binf=c(0,0),bsup=c(1,1)))
+foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
 foo$fun(c(3,3),1)
 
 ### For the third model
@@ -72,12 +74,12 @@ code <- function(X,theta)
   return(X[,1]+theta[1]*X[,2]+theta[2]^2*X[,3])
 }
 Yexp <- runif(5)
-foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=FALSE,binf=c(0,0),bsup=c(1,1)))
+foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=FALSE),binf=c(0,0),bsup=c(1,1))
 foo$fun(c(3,3),c(0.2,0.2),1)
 foo$likelihood(c(3,3),c(0.2,0.2),1)
 
 # with the PCA
-foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE,binf=c(0,0),bsup=c(1,1)))
+foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
 foo$fun(c(3,3),c(0.2,0.2),1)
 }
 \seealso{

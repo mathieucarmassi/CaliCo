@@ -26,9 +26,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// invMat
+arma::mat invMat(arma::mat V);
+RcppExport SEXP _calibrationCode_invMat(SEXP VSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type V(VSEXP);
+    rcpp_result_gen = Rcpp::wrap(invMat(V));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_calibrationCode_MetropolisHastingsCpp", (DL_FUNC) &_calibrationCode_MetropolisHastingsCpp, 10},
+    {"_calibrationCode_invMat", (DL_FUNC) &_calibrationCode_invMat, 1},
     {NULL, NULL, 0}
 };
 
