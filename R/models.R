@@ -154,29 +154,40 @@ model3.class <- R6::R6Class(classname = "model3.class",
                           },
                           discrepancy = function(theta,thetaD,sig2)
                           {
-                            y        <- self$funTemp(theta,sig2,self$X)$y
-                            z        <- self$Yexp - y
+                            y   <- self$funTemp(theta,sig2,self$X)$y
+                            z   <- self$Yexp - y
+                            Cov <- matrix(nr=self$n,nc=self$n)
                             if (is.null(ncol(self$X)))
                             {
-                              coef.cov <- rep(thetaD[2],length(self$X))
+                              Cov <- matrix(nr=self$n,nc=self$n)
+                              for (j in 1:self$n)
+                              {
+                                for (i in 1:self$n)
+                                {
+                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[i]-self$X[j])^2)/thetaD[2])^2)
+                                }
+                              }
                             } else
                             {
-                              coef.cov <- rep(thetaD[2],ncol(self$X))
-                            }
-                            data.cal <- as.data.frame(as.matrix(self$X))
-                            emul     <- km(formula=~1, design=data.cal, response=z,coef.trend=0,
-                                    coef.var = thetaD[1], coef.cov = thetaD[2],
-                                    covtype="gauss")
-                            biais    <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
-                                              nugget.sim=0,checkNames=FALSE)
-                            Cov <- matrix(nr=self$n,nc=self$n)
-                            for (j in 1:self$n)
-                            {
-                              for (i in 1:self$n)
+                              Cov <- matrix(nr=self$n,nc=self$n)
+                              for (j in 1:self$n)
                               {
-                                Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((X[i,]-X[j,])^2)/thetaD[2])^2)
+                                for (i in 1:self$n)
+                                {
+                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[i,]-self$X[j,])^2)/thetaD[2])^2)
+                                }
                               }
                             }
+                            p <- eigen(Cov)$vectors
+                            e <- eigen(Cov)$values
+                            if (all(e>0)){} else
+                            {
+                              e[which(e<0)] <- 1e-4
+                            }
+                            d <- diag(e)
+                            Cov <- t(p)%*%d%*%p
+                            biais <- mvrnorm(n=100,rep(0,length(self$X)),Cov)
+                            biais <- apply(biais,1,mean)
                             return(list(biais=biais,cov=Cov))
                           },
                           fun = function(theta,thetaD,sig2,Newdata)
@@ -197,7 +208,7 @@ model3.class$set("public","plot",
                    res <- self$fun(theta,thetaD,sig,Newdata)
                    gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),type="code result")
                    gg.data.noisy <- data.frame(y=res$y,x=seq(0,1,length.out=length(res$yc)),
-                                               type="noisy")
+                                               type="with discrepancy and noise")
                    gg.data.exp  <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),
                                               type="experiments")
                    gg.data <- rbind(gg.data,gg.data.noisy,gg.data.exp)
@@ -215,10 +226,10 @@ model3.class$set("public","plot",
 
 
 model3.class$set("public","likelihood",
-                 function(theta,thetaD,sig2)
+                 function(theta,thetaD,sig2,Newdata)
                  {
-                   self$m.exp <- self$code(self$X,theta)
-                   temp <- self$fun(theta,thetaD,sig2)
+                   self$m.exp <- self$code(Newdata,theta)
+                   temp <- self$fun(theta,thetaD,sig2,Newdata)
                    self$V.exp <- sig2*diag(self$n) + temp$cov
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                                                                 invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
@@ -401,44 +412,103 @@ model4.class <- R6::R6Class(classname = "model4.class",
                           funC = NULL,
                           initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA,binf=NA,bsup=NA)
                           {
-                            super$initialize(code, X, Yexp, model,binf,bsup,opt.emul)
+                            super$initialize(code, X, Yexp, model, opt.emul, binf, bsup)
                             self$funC <- super$fun
                           },
                           discrepancy = function(theta,thetaD,sig2)
                           {
-                            Yc    <- self$funC(theta,sig2)
-                            z     <- self$Yexp - Yc$y
-                            emul  <- km(formula =~1 , design = as.data.frame(self$X), response = z,
-                                        coef.trend=0, coef.var = thetaD[1], coef.cov = rep(thetaD[2],ncol(self$X)),
-                                        covtype="gauss")
-                            biais <- simulate(object=emul, nsim=1, seed=NULL, cond=FALSE,
-                                              nugget.sim=0,checkNames=FALSE)
+                            y   <- self$funTemp(theta,sig2,self$X)$y
+                            z   <- self$Yexp - y
                             Cov <- matrix(nr=self$n,nc=self$n)
-                            for (j in 1:self$n)
+                            if (is.null(ncol(self$X)))
                             {
-                              for (i in 1:self$n)
+                              Cov <- matrix(nr=self$n,nc=self$n)
+                              for (j in 1:self$n)
                               {
-                                Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((X[i,]-X[j,])^2)/thetaD[2])^2)
+                                for (i in 1:self$n)
+                                {
+                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[i]-self$X[j])^2)/thetaD[2])^2)
+                                }
+                              }
+                            } else
+                            {
+                              Cov <- matrix(nr=self$n,nc=self$n)
+                              for (j in 1:self$n)
+                              {
+                                for (i in 1:self$n)
+                                {
+                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[,i]-self$X[,j])^2)/thetaD[2])^2)
+                                }
                               }
                             }
-                            return(list(biais=biais,Yc=Yc,Cov.D=Cov))
+                            p <- eigen(Cov)$vectors
+                            e <- eigen(Cov)$values
+                            if (all(e>0)){} else
+                            {
+                              e[which(e<0)] <- 1e-4
+                            }
+                            d <- diag(e)
+                            Cov <- t(p)%*%d%*%p
+                            biais <- mvrnorm(n=100,rep(0,length(self$X)),Cov)
+                            biais <- apply(biais,1,mean)
+                            return(list(biais=biais,cov=Cov))
                           },
-                          fun = function(theta,thetaD,sig2)
+                          fun = function(theta,thetaD,sig2,Newdata)
                           {
+                            print(self$discrepancy)
                             res <- self$discrepancy(theta,thetaD,sig2)
-                            return(list(y=res$biais+res$Yc$y,covGP=res$Yc$Cov.GP,covD=res$Cov.D,yc=res$Yc$yc))
+                            foo <- self$funC(theta,sig2,Newdata)
+                            y <- foo$y
+                            Cov.GP <- foo$cov
+                            yc <- foo$yc
+                            lower <- foo$lower
+                            upper <- foo$upper
+                            return(list(y=res$biais+y,Cov.D=res$cov,yc=yc,lower=lower,upper=upper,Cov.GP=Cov.GP))
                           })
 )
 
 
 model4.class$set("public","likelihood",
-                 function(theta,thetaD,sig2)
+                 function(theta,thetaD,sig2,Newdata)
                  {
-                   temp <- self$fun(theta,thetaD,sig2)
-
+                   temp <- self$fun(theta,thetaD,sig2,Newdataœ)
                    self$m.exp <- temp$yc
-                   self$V.exp <- sig2*diag(self$n) + temp$covGP +temp$covD
+                   self$V.exp <- sig2*diag(self$n) + temp$Cov.GP +temp$Cov.D
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                                                                   invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                 })
+
+
+
+model4.class$set("public","plot",
+                 function(theta,sig,Newdata,points=TRUE)
+                 {
+                   res <- self$fun(theta,thetaD,sig,Newdata)
+                   gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),
+                                         lower=res$lower,upper=res$upper,type="Gaussian Process",
+                                         fill="90% credibility interval")
+                   gg.data.dis <- data.frame(y=res$y,x=seq(0,1,length.out=length(res$yc)),lower=res$lower,
+                                             upper=res$upper,type="experiment",fill="90% credibility interval")
+                   gg.data.exp <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),lower=res$lower,
+                                             upper=res$upper,type="experiment",fill="90% credibility interval")
+                   gg.data <- rbind(gg.data,gg.data.dis,gg.data.exp)
+                   gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE[,1],theta))
+                   p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
+                     geom_line(aes(y=y,x=x,col=type))+
+                     theme_light()+
+                     ylab("")+xlab("")+
+                     scale_fill_manual("",values=c("grey12"))+
+                     theme(legend.position=c(0.65,0.86),
+                           legend.text=element_text(size = '15'),
+                           legend.title=element_blank(),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=20))
+                   if (points==FALSE)
+                   {
+                     return(p)
+                   } else
+                   {
+                     return(p+geom_jitter(data=gg.points,aes(x=x,y=y)))
+                   }
                  })
 
