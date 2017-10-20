@@ -417,7 +417,7 @@ model4.class <- R6::R6Class(classname = "model4.class",
                           },
                           discrepancy = function(theta,thetaD,sig2)
                           {
-                            y   <- self$funTemp(theta,sig2,self$X)$y
+                            y   <- self$funC(theta,sig2,self$X)$y
                             z   <- self$Yexp - y
                             Cov <- matrix(nr=self$n,nc=self$n)
                             if (is.null(ncol(self$X)))
@@ -455,9 +455,8 @@ model4.class <- R6::R6Class(classname = "model4.class",
                           },
                           fun = function(theta,thetaD,sig2,Newdata)
                           {
-                            print(self$discrepancy)
-                            res <- self$discrepancy(theta,thetaD,sig2)
                             foo <- self$funC(theta,sig2,Newdata)
+                            res <- self$discrepancy(theta,thetaD,sig2)
                             y <- foo$y
                             Cov.GP <- foo$cov
                             yc <- foo$yc
@@ -471,7 +470,7 @@ model4.class <- R6::R6Class(classname = "model4.class",
 model4.class$set("public","likelihood",
                  function(theta,thetaD,sig2,Newdata)
                  {
-                   temp <- self$fun(theta,thetaD,sig2,Newdataœ)
+                   temp <- self$fun(theta,thetaD,sig2,Newdata)
                    self$m.exp <- temp$yc
                    self$V.exp <- sig2*diag(self$n) + temp$Cov.GP +temp$Cov.D
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
@@ -481,16 +480,16 @@ model4.class$set("public","likelihood",
 
 
 model4.class$set("public","plot",
-                 function(theta,sig,Newdata,points=TRUE)
+                 function(theta,thetaD,sig,Newdata,points=TRUE)
                  {
                    res <- self$fun(theta,thetaD,sig,Newdata)
                    gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),
                                          lower=res$lower,upper=res$upper,type="Gaussian Process",
                                          fill="90% credibility interval")
                    gg.data.dis <- data.frame(y=res$y,x=seq(0,1,length.out=length(res$yc)),lower=res$lower,
-                                             upper=res$upper,type="experiment",fill="90% credibility interval")
+                                             upper=res$upper,type="Gaussian Process with discrepancy",fill="90% credibility interval")
                    gg.data.exp <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),lower=res$lower,
-                                             upper=res$upper,type="experiment",fill="90% credibility interval")
+                                             upper=res$upper,type="Experiment",fill="90% credibility interval")
                    gg.data <- rbind(gg.data,gg.data.dis,gg.data.exp)
                    gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE[,1],theta))
                    p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+

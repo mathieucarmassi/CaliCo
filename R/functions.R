@@ -64,12 +64,11 @@
 #' {
 #'   return((6*X-2)^2*sin(theta*X-4))
 #' }
-#'
 #' Yexp <- code(X,11)+rnorm(100,0,0.1)
 #' foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=50,PCA=FALSE),binf=8,bsup=14)
-#' foo$plot(11,c(50,1),0.1,X)
+#' foo$plot(11,c(50,1),0.1,X,points=FALSE)
 #'
-#' foo$likelihood(c(3,3),c(0.2,0.2),1)
+#' foo$likelihood(11,c(50,1),0.1,X)
 #'
 #' # with the PCA in stand by
 #' # foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
