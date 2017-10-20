@@ -43,7 +43,8 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       self$bsup          <- private$boundaries()$bsup
                       self$md            <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1:(length(self$type.prior)-1)],
                                                   bsup=self$bsup[1:(length(self$type.prior)-1)])
-                      self$logTest.fun   <- self$logTest
+                      self$logTest.fun   <- self$logTest(Newdata=self$X)
+                      print(self$logTest.fun)
                       self$out           <- self$estimation()
                     },
                     estimation = function()
@@ -51,7 +52,7 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       out <- MetropolisHastingsCpp(self$md$fun,self$opt.estim$Ngibbs,
                                                    self$opt.estim$Nmh,self$opt.estim$thetaInit,
                                                    self$opt.estim$k,self$opt.estim$sig,self$Yexp,
-                                                   self$binf,self$bsup,self$logTest.fun)
+                                                   self$binf,self$bsup,self$logTest.fun,as.matrix(self$X))
                       return(out)
                     }
                    ))
@@ -71,11 +72,12 @@ estim.class$set("private","boundaries",
 
 
 estim.class$set("public","logTest",
-                function(theta,sig2)
+                function(theta,sig2,Newdata=self$X)
                 {
+                  browser()
                   if (length(self$type.prior) == 1)
                   {
-                      return(log(self$md$likelihood(theta,sig2))+self$pr$prior(theta))
+                      return(log(self$md$likelihood(theta,sig2,Newdata))+self$pr$prior(theta))
                   } else
                   {
                       s <- 0
@@ -84,7 +86,7 @@ estim.class$set("public","logTest",
                         s <- s + self$pr[[i]]$prior(theta[i])
                       }
                       s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
-                      return(log(self$md$likelihood(theta,sig2)) + s)
+                      return(log(self$md$likelihood(theta,sig2,Newdata)) + s)
                   }
                 })
 

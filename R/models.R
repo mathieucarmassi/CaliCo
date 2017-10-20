@@ -458,7 +458,7 @@ model4.class <- R6::R6Class(classname = "model4.class",
                             foo <- self$funC(theta,sig2,Newdata)
                             res <- self$discrepancy(theta,thetaD,sig2)
                             y <- foo$y
-                            Cov.GP <- foo$cov
+                            Cov.GP <- foo$Cov.GP
                             yc <- foo$yc
                             lower <- foo$lower
                             upper <- foo$upper
