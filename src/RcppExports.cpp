@@ -37,10 +37,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// MetropolisHastingsCppD
+List MetropolisHastingsCppD(Function model, int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest);
+RcppExport SEXP _calibrationCode_MetropolisHastingsCppD(SEXP modelSEXP, SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Function >::type model(modelSEXP);
+    Rcpp::traits::input_parameter< int >::type Ngibbs(NgibbsSEXP);
+    Rcpp::traits::input_parameter< int >::type Nmh(NmhSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type theta_init(theta_initSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type k(kSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type SIGMA(SIGMASEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type Yf(YfSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type binf(binfSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type bsup(bsupSEXP);
+    Rcpp::traits::input_parameter< Function >::type LogTest(LogTestSEXP);
+    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCppD(model, Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_calibrationCode_MetropolisHastingsCpp", (DL_FUNC) &_calibrationCode_MetropolisHastingsCpp, 10},
     {"_calibrationCode_invMat", (DL_FUNC) &_calibrationCode_invMat, 1},
+    {"_calibrationCode_MetropolisHastingsCppD", (DL_FUNC) &_calibrationCode_MetropolisHastingsCppD, 10},
     {NULL, NULL, 0}
 };
 

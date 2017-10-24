@@ -26,9 +26,9 @@
 #' # Plot the results
 #' foo$plot(11,0.1,X)
 #' # Print the results for new data X
-#' foo$fun(11,0.1,X)
+#' foo$fun(11,0.1)
 #' # Get acces to the likelihood
-#' foo$likelihood(11,0.1,X)
+#' foo$likelihood(11,0.1)
 #'
 #' ### For the second model
 #' X <- seq(0,1,length.out=100)
@@ -56,7 +56,7 @@
 #' Yexp <- code(X,11)+rnorm(100,0,0.1)
 #' foo <- model(code,X,Yexp,"model3")
 #' foo$plot(11,c(50,1),0.1,X)
-#'
+#' foo$likelihood(11,c(50,1),0.1)
 #'
 #' ### For the fourth model
 #' X <- seq(0,1,length.out=100)
@@ -68,7 +68,7 @@
 #' foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=60,PCA=FALSE),binf=8,bsup=14)
 #' foo$plot(11,c(50,1),0.1,X,points=FALSE)
 #'
-#' foo$likelihood(11,c(50,1),0.1,X)
+#' foo$likelihood(11,c(50,1),0.1)
 #'
 #' # with the PCA in stand by
 #' # foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
@@ -247,10 +247,43 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' ### Definition of the prior hyperparameters
 #' opt.prior=list(c(11,3),c(2,0.1))
 #' ### Definition of the estimation option
-#' opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(11,0.1),k=c(0.001,0.001),sig=diag(2))
+#' opt.estim=list(Ngibbs=1000,Nmh=5000,thetaInit=c(11,0.1),k=c(0.001,0.001),sig=diag(2))
 #'
 #' test <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
 #' test$plot()
+#'
+#' ####### For the third model
+#' ### The data set
+#' X <- seq(0,1,length.out=50)
+#' ### The code to calibrate
+#' code <- function(X,theta)
+#' {
+#'   return((6*X-2)^2*sin(theta*X-4))
+#' }
+#' ### Simulated data
+#' Yr   <- code(X,11)
+#' Yexp <- Yr+rnorm(50,0,0.1)
+#' ### Definition of the nature of the priors
+#' type.prior=c("gaussian","gamma","unif","gamma")
+#' ### Definition of the prior hyperparameters
+#' opt.prior=list(c(11,3),c(2,0.1),c(0,1),c(2,0.1))
+#' ### Definition of the estimation option
+#' opt.estim=list(Ngibbs=1000,Nmh=5000,thetaInit=c(11,2,0.5,0.1),k=rep(0.001,4),sig=diag(4))
+#'
+#' test <- estim(code,X,Yr,Yexp,model="model3",type.prior,log=TRUE,opt.prior,opt.estim)
+#' test$plot()
+#'
+#'
+#' ### For the fourth model
+#' X <- seq(0,1,length.out=100)
+#' code <- function(X,theta)
+#' {
+#'   return((6*X-2)^2*sin(theta*X-4))
+#' }
+#' Yexp <- code(X,11)+rnorm(100,0,0.1)
+#' foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=60,PCA=FALSE),binf=8,bsup=14)
+#'
+#'
 #' @export
 estim <-function(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE
                   ,opt.prior,opt.estim,opt.emul=list(p=1,n.emul=100,PCA=TRUE))
