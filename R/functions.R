@@ -268,7 +268,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' ### Definition of the prior hyperparameters
 #' opt.prior=list(c(11,3),c(2,0.1),c(0,1),c(2,0.1))
 #' ### Definition of the estimation option
-#' opt.estim=list(Ngibbs=1000,Nmh=5000,thetaInit=c(11,2,0.5,0.1),k=rep(0.001,4),sig=diag(4))
+#' opt.estim=list(Ngibbs=500,Nmh=2000,thetaInit=c(11,2,0.5,0.1),k=rep(0.001,4),sig=diag(4))
 #'
 #' test <- estim(code,X,Yr,Yexp,model="model3",type.prior,log=TRUE,opt.prior,opt.estim)
 #' test$plot()
