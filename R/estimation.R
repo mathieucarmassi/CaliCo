@@ -142,7 +142,7 @@ estim.class$set("private","checkup",
 		)
 
 estim.class$set("public","plot",
-               function(separated=FALSE,CI=TRUE)
+               function(separated=FALSE,CI=TRUE,depend.X=TRUE)
                  {
                     n      <- length(self$type.prior)
                     a      <- list()
@@ -167,10 +167,10 @@ estim.class$set("public","plot",
                     }
                     if (self$md$model=="model1" | self$md$model=="model2")
                     {
-                      self$plotComp(CI)
+                      self$plotComp(CI,depend.X)
                     }else
                     {
-                      self$plotCompD(CI)
+                      self$plotCompD(CI,depend.X)
                     }
                })
 
@@ -219,7 +219,7 @@ estim.class$set("public","mcmc",
 )
 
 estim.class$set("public","plotComp",
-                function(CI=TRUE)
+                function(CI=TRUE,depend.X=TRUE)
                 {
                   m <- self$out$THETA[-c(1:self$burnIn),]
                   Dist <- matrix(nr=nrow(m),nc=length(self$Yexp))
@@ -231,11 +231,26 @@ estim.class$set("public","plotComp",
                   lowerPost <- apply(Dist,2,quantile,probs=0.05)
                   upperPost <- apply(Dist,2,quantile,probs=0.95)
                   meanPost  <- apply(Dist,2,quantile,probs=0.5)
+                  if (depend.X==FALSE)
+                  {
+                    X <- self$X[,1]
+                  }else
+                  {
+                    if (is.null(dim(self$X)))
+                    {
+                      X <- self$X
+                    } else{
+                      if (dim(self$X)[2]>1)
+                      {
+                        stop("You an X dimension over 2, please desactivate the option depend.X to visualize your result")
+                      }
+                    }
+                  }
                   if (CI==TRUE)
                   {
-                    dplot <- data.frame(Y=meanPost,x=self$X,type='calibrated',lower=lowerPost,upper=upperPost,
+                    dplot <- data.frame(Y=meanPost,x=X,type='calibrated',lower=lowerPost,upper=upperPost,
                                         fill="90% credibility interval a posteriori")
-                    dplot2 <- data.frame(Y=self$Yr, x=self$X, type='experiment',lower=lowerPost,upper=upperPost,
+                    dplot2 <- data.frame(Y=self$Yr, x=X, type='experiment',lower=lowerPost,upper=upperPost,
                                          fill="90% credibility interval a posteriori")
                     dplot <- rbind(dplot,dplot2)
                     p <- ggplot(dplot) + geom_line(aes(x=x,y=Y,color=type))+
@@ -249,8 +264,8 @@ estim.class$set("public","plotComp",
                             axis.text=element_text(size=20))
                   } else
                   {
-                    dplot  <- data.frame(x=self$X,data=meanPost,type="calibrated")
-                    dplot2 <- data.frame(x=self$X,data=self$Yr,type="experiments")
+                    dplot  <- data.frame(x=X,data=meanPost,type="calibrated")
+                    dplot2 <- data.frame(x=X,data=self$Yr,type="experiments")
                     dplot  <- rbind(dplot,dplot2)
                     p <- ggplot(data=dplot, aes(x=x,y=data,color=type))+geom_line()+ylab("")+xlab("")+
                       theme_light()+
