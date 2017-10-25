@@ -253,7 +253,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' X <- cbind(seq(0,1,length.out=200),seq(0,1,length.out=200))
 #' code <- function(X,theta)
 #' {
-#'   return((theta[2]*X[1]-2)^2*sin(theta[1]*X[2]-4))
+#'   return((theta[2]*X[1]-2)^2*sin(theta[1]*X[2]-4)))
 #' }
 #' ### Simulated data
 #' Yr   <- code(X,c(11,6))
