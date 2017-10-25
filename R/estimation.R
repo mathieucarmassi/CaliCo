@@ -41,8 +41,8 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       self$pr            <- prior(self$type.prior,opt.prior,log=TRUE)
                       self$binf          <- private$boundaries()$binf
                       self$bsup          <- private$boundaries()$bsup
-                      self$md            <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1:(length(self$type.prior)-1)],
-                                                  bsup=self$bsup[1:(length(self$type.prior)-1)])
+                      self$md            <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1],
+                                                  bsup=self$bsup[1])
                       logLikelihood <- function(model)
                       {
                         switch(model,
@@ -165,7 +165,13 @@ estim.class$set("public","plot",
                       do.call(grid.arrange,m)
                       do.call(grid.arrange,p)
                     }
-                    self$plotComp(CI)
+                    if (self$md$model=="model1" | self$md$model=="model2")
+                    {
+                      self$plotComp(CI)
+                    }else
+                    {
+                      self$plotCompD(CI)
+                    }
                })
 
 estim.class$set("public","gg",
@@ -214,43 +220,95 @@ estim.class$set("public","mcmc",
 
 estim.class$set("public","plotComp",
                 function(CI=TRUE)
+                {
+                  m <- self$out$THETA[-c(1:self$burnIn),]
+                  Dist <- matrix(nr=nrow(m),nc=length(self$Yexp))
+                  Dim <- length(self$type.prior)
+                  for (i in 1:nrow(m))
                   {
-                    if (CI==TRUE)
-                    {
-                      m <- apply(self$out$THETA[-c(1:self$burnIn),],2,mean)
-                      quantilesPost <- apply(self$out$THETA[-c(1:self$burnIn),],2,quantile,probs=c(0.05,0.95,0.5))
-                      lowerPost <- self$code(self$X,quantilesPost[1,1:(length(m)-1)])
-                      upperPost <- self$code(self$X,quantilesPost[2,1:(length(m)-1)])
-                      dplot <- data.frame(Y=self$code(self$X,m[-length(m)]),x=self$X,type='calibrated',lower=lowerPost,upper=upperPost,
-                                           fill="90% credibility interval a posteriori")
-                      dplot2 <- data.frame(Y=self$Yr, x=self$X, type='experiment',lower=lowerPost,upper=upperPost,
-                                           fill="90% credibility interval a posteriori")
-                      dplot <- rbind(dplot,dplot2)
-                      p <- ggplot(dplot) + geom_line(aes(x=x,y=Y,color=type))+
-                        geom_ribbon(aes(ymin=lower, ymax=upper, x=x,fill=fill), alpha = 0.3) +
-                        scale_fill_manual("",values=c("blue4","blue4")) +
-                        theme_light() + xlab("") + ylab("") +
-                        theme(legend.position=c(0.65,0.86),
-                              legend.text=element_text(size = '15'),
-                              legend.title=element_blank(),
-                              legend.key=element_rect(colour=NA),
-                              axis.text=element_text(size=20))
-                    } else
-                    {
-                      m      <- apply(self$out$THETA[-c(1:self$burnIn),],2,mean)
-                      dplot  <- data.frame(x=self$X,data=self$code(m[-length(m)]),type="calibrated")
-                      dplot2 <- data.frame(x=self$X,data=self$Yr,type="experiments")
-                      dplot  <- rbind(dplot,dplot2)
-                      p <- ggplot(data=dplot, aes(x=x,y=data,color=type))+geom_line()+ylab("")+xlab("")+
-                        theme_light()+
-                        theme(legend.position=c(0.86,0.86),
-                              legend.text=element_text(face="bold",size = '20'),
-                              legend.title=element_blank(),
-                              legend.key=element_rect(colour=NA),
-                              axis.text=element_text(size=20))
-                    }
+                    Dist[i,] <- self$md$fun(m[i,1:(Dim-1)],m[i,Dim])$y
+                  }
+                  lowerPost <- apply(Dist,2,quantile,probs=0.05)
+                  upperPost <- apply(Dist,2,quantile,probs=0.95)
+                  meanPost  <- apply(Dist,2,quantile,probs=0.5)
+                  if (CI==TRUE)
+                  {
+                    dplot <- data.frame(Y=meanPost,x=self$X,type='calibrated',lower=lowerPost,upper=upperPost,
+                                        fill="90% credibility interval a posteriori")
+                    dplot2 <- data.frame(Y=self$Yr, x=self$X, type='experiment',lower=lowerPost,upper=upperPost,
+                                         fill="90% credibility interval a posteriori")
+                    dplot <- rbind(dplot,dplot2)
+                    p <- ggplot(dplot) + geom_line(aes(x=x,y=Y,color=type))+
+                      geom_ribbon(aes(ymin=lower, ymax=upper, x=x,fill=fill), alpha = 0.3) +
+                      scale_fill_manual("",values=c("blue4","blue4")) +
+                      theme_light() + xlab("") + ylab("") +
+                      theme(legend.position=c(0.65,0.86),
+                            legend.text=element_text(size = '15'),
+                            legend.title=element_blank(),
+                            legend.key=element_rect(colour=NA),
+                            axis.text=element_text(size=20))
+                  } else
+                  {
+                    dplot  <- data.frame(x=self$X,data=meanPost,type="calibrated")
+                    dplot2 <- data.frame(x=self$X,data=self$Yr,type="experiments")
+                    dplot  <- rbind(dplot,dplot2)
+                    p <- ggplot(data=dplot, aes(x=x,y=data,color=type))+geom_line()+ylab("")+xlab("")+
+                      theme_light()+
+                      theme(legend.position=c(0.86,0.86),
+                            legend.text=element_text(face="bold",size = '20'),
+                            legend.title=element_blank(),
+                            legend.key=element_rect(colour=NA),
+                            axis.text=element_text(size=20))
+                  }
                     return(p)
                 })
+
+
+estim.class$set("public","plotCompD",
+                function(CI=TRUE)
+                {
+                  m <- self$out$THETA[-c(1:self$burnIn),]
+                  Dist <- matrix(nr=nrow(m),nc=length(self$Yexp))
+                  Dim <- length(self$type.prior)
+                  for (i in 1:nrow(m))
+                  {
+                    Dist[i,] <- self$md$fun(m[i,1:(Dim-3)],m[i,(Dim-2):(Dim-1)],m[i,Dim])$y
+                  }
+                  lowerPost <- apply(Dist,2,quantile,probs=0.05)
+                  upperPost <- apply(Dist,2,quantile,probs=0.95)
+                  meanPost  <- apply(Dist,2,quantile,probs=0.5)
+                  if (CI==TRUE)
+                  {
+                    dplot <- data.frame(Y=meanPost,x=self$X,type='calibrated',lower=lowerPost,upper=upperPost,
+                                        fill="90% credibility interval a posteriori")
+                    dplot2 <- data.frame(Y=self$Yr, x=self$X, type='experiment',lower=lowerPost,upper=upperPost,
+                                         fill="90% credibility interval a posteriori")
+                    dplot <- rbind(dplot,dplot2)
+                    p <- ggplot(dplot) + geom_line(aes(x=x,y=Y,color=type))+
+                      geom_ribbon(aes(ymin=lower, ymax=upper, x=x,fill=fill), alpha = 0.3) +
+                      scale_fill_manual("",values=c("blue4","blue4")) +
+                      theme_light() + xlab("") + ylab("") +
+                      theme(legend.position=c(0.65,0.86),
+                            legend.text=element_text(size = '15'),
+                            legend.title=element_blank(),
+                            legend.key=element_rect(colour=NA),
+                            axis.text=element_text(size=20))
+                  } else
+                  {
+                    dplot  <- data.frame(x=self$X,data=meanPost,type="calibrated")
+                    dplot2 <- data.frame(x=self$X,data=self$Yr,type="experiments")
+                    dplot  <- rbind(dplot,dplot2)
+                    p <- ggplot(data=dplot, aes(x=x,y=data,color=type))+geom_line()+ylab("")+xlab("")+
+                      theme_light()+
+                      theme(legend.position=c(0.86,0.86),
+                            legend.text=element_text(face="bold",size = '20'),
+                            legend.title=element_blank(),
+                            legend.key=element_rect(colour=NA),
+                            axis.text=element_text(size=20))
+                  }
+                  return(p)
+                })
+
 
 
 estim.class$set("public","print",

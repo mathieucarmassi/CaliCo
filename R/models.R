@@ -187,7 +187,7 @@ model3.class <- R6::R6Class(classname = "model3.class",
                             }
                             d <- diag(e)
                             Cov <- t(p)%*%d%*%p
-                            biais <- mvrnorm(n=100,rep(0,length(self$X)),Cov)
+                            biais <- mvrnorm(n=self$n,rep(0,length(self$X)),Cov)
                             biais <- apply(biais,1,mean)
                             return(list(biais=biais,cov=Cov))
                           },
@@ -195,7 +195,7 @@ model3.class <- R6::R6Class(classname = "model3.class",
                           {
                             res <- self$discrepancy(theta,thetaD,sig2)
                             foo <- self$funTemp(theta,sig2)
-                            y   <- foo$y
+                            y <- foo$y
                             yc  <- foo$yc
                             return(list(y=res$biais+y,cov=res$cov,yc=yc))
                           }

@@ -128,9 +128,8 @@ unif.class <- R6::R6Class(classname = "unif.class",
                                 },
                                 plot = function()
                                 {
-                                  xvals <- data.frame(x=c(self$binf,self$bsup),type="prior")
-                                  ggplot(data.frame(xvals), aes(x = x,color=type)) +
-                                    xlim(c(self$binf-0.2*self$bsup,self$bsup*1.2)) +
+                                  xvals <- data.frame(data=c(self$binf,self$bsup),type="prior")
+                                  ggplot(data.frame(xvals), aes(x = data,color=type)) +
                                     stat_function(fun = dunif, color="red")+
                                     stat_function(fun = dunif, args = list(min =self$binf,max =self$bsup)
                                                   , geom = "area",fill = "red", alpha = 0.1) +
