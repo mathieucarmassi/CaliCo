@@ -72,7 +72,7 @@ estim.class$set("private","boundaries",
 
 
 estim.class$set("public","logTest",
-                function(theta,sig2,Newdata=self$X)
+                function(theta,sig2)
                 {
                   browser()
                   if (length(self$type.prior) == 1)
@@ -85,8 +85,9 @@ estim.class$set("public","logTest",
                       {
                         s <- s + self$pr[[i]]$prior(theta[i])
                       }
+                      print(s)
                       s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
-                      return(log(self$md$likelihood(theta,sig2,Newdata)) + s)
+                      return(log(self$md$likelihood(theta,sig2,Newdata=self$X)) + s)
                   }
                 })
 

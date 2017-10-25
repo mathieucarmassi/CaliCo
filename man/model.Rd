@@ -68,23 +68,24 @@ code <- function(X,theta)
 
 Yexp <- code(X,11)+rnorm(100,0,0.1)
 foo <- model(code,X,Yexp,"model3")
-foo$plot(11,c(0.2,0.2),0.1,X)
+foo$plot(11,c(50,1),0.1,X)
 
 
 ### For the fourth model
-X <- cbind(runif(5),runif(5),runif(5))
+X <- seq(0,1,length.out=100)
 code <- function(X,theta)
 {
-  return(X[,1]+theta[1]*X[,2]+theta[2]^2*X[,3])
+  return((6*X-2)^2*sin(theta*X-4))
 }
-Yexp <- runif(5)
-foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=FALSE),binf=c(0,0),bsup=c(1,1))
-foo$fun(c(3,3),c(0.2,0.2),1)
-foo$likelihood(c(3,3),c(0.2,0.2),1)
+Yexp <- code(X,11)+rnorm(100,0,0.1)
+foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=60,PCA=FALSE),binf=8,bsup=14)
+foo$plot(11,c(50,1),0.1,X,points=FALSE)
 
-# with the PCA
-foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
-foo$fun(c(3,3),c(0.2,0.2),1)
+foo$likelihood(11,c(50,1),0.1,X)
+
+# with the PCA in stand by
+# foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
+# foo$fun(c(3,3),c(0.2,0.2),1)
 }
 \seealso{
 \code{\link{model.class}},
