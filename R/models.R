@@ -382,10 +382,11 @@ model2.class$set("public","plot",
                    self$X <- Newdata
                    res <- self$fun(theta,sig)
                    gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),
-                                          lower=res$lower,upper=res$upper,type="Gaussian Process",
-                                         fill="90% credibility interval")
+                                          lower=res$lower,upper=res$upper,type="Gaussian process",
+                                         fill="90% credibility interval for the Gaussian process")
                    gg.data.exp <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),lower=res$lower,
-                                            upper=res$upper,type="experiment",fill="90% credibility interval")
+                                            upper=res$upper,type="experiment",
+                                            fill="90% credibility interval for the Gaussian process")
                    gg.data <- rbind(gg.data,gg.data.exp)
                    gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE[,1],theta))
                    p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
@@ -488,10 +489,11 @@ model4.class$set("public","plot",
                    self$X <- Newdata
                    res <- self$fun(theta,thetaD,sig)
                    gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),
-                                         lower=res$lower,upper=res$upper,type="Gaussian Process",
-                                         fill="90% credibility interval")
+                                         lower=res$lower,upper=res$upper,type="Gaussian process",
+                                         fill="90% credibility interval for the Gaussian process")
                    gg.data.dis <- data.frame(y=res$y,x=seq(0,1,length.out=length(res$yc)),lower=res$lower,
-                                             upper=res$upper,type="Gaussian Process with discrepancy",fill="90% credibility interval")
+                                             upper=res$upper,type="Gaussian Process with discrepancy",
+                                             fill="90% credibility interval for the Gaussian process")
                    gg.data.exp <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),lower=res$lower,
                                              upper=res$upper,type="Experiment",fill="90% credibility interval")
                    gg.data <- rbind(gg.data,gg.data.dis,gg.data.exp)
