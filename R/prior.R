@@ -81,7 +81,7 @@ gaussian.class <- R6::R6Class(classname = "gaussian.class",
                                   dplot <- data.frame(data=rnorm(n=1000,self$mean,sqrt(self$var)),type="prior")
                                   p <- ggplot(dplot,aes(data,fill=type,color=type)) +
                                     geom_density(kernel = "gaussian",adjust=3,alpha=0.1)+
-                                    theme_light()+xlab("")+ylab("")+ xlim(self$binf,self$bsup)+
+                                    theme_light()+xlab("")+ylab("")+
                                     theme(legend.position=c(0.86,0.86),
                                           legend.text=element_text(face="bold",size = '20'),
                                           legend.title=element_blank(),
@@ -128,9 +128,8 @@ unif.class <- R6::R6Class(classname = "unif.class",
                                 },
                                 plot = function()
                                 {
-                                  xvals <- data.frame(x=c(self$binf,self$bsup),type="prior")
-                                  ggplot(data.frame(xvals), aes(x = x,color=type)) +
-                                    xlim(c(self$binf-0.2*self$bsup,self$bsup*1.2)) +
+                                  xvals <- data.frame(data=c(self$binf,self$bsup),type="prior")
+                                  ggplot(data.frame(xvals), aes(x = data,color=type)) +
                                     stat_function(fun = dunif, color="red")+
                                     stat_function(fun = dunif, args = list(min =self$binf,max =self$bsup)
                                                   , geom = "area",fill = "red", alpha = 0.1) +
@@ -178,7 +177,7 @@ gamma.class <- R6::R6Class(classname = "gamma.class",
                               dplot <- data.frame(data=rgamma(n=100,shape=self$shape,scale=self$scale),type="prior")
                               p <- ggplot(dplot,aes(data,fill=type,color=type)) +
                                 geom_density(kernel = "gaussian",adjust=3,alpha=0.1)+
-                                theme_light()+xlab("")+ylab("")+ xlim(0,self$bsup)+
+                                theme_light()+xlab("")+ylab("")+
                                 theme(legend.position=c(0.86,0.86),
                                       legend.text=element_text(face="bold",size = '20'),
                                       legend.title=element_blank(),

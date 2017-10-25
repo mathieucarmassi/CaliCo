@@ -35,16 +35,17 @@ code <- function(X,theta)
 }
 ### Simulated data
 Yr   <- code(X,11)
-Yexp <- Yr+rnorm(100,0,0.1)
+Yexp <- Yr+rnorm(200,0,0.1)
 ### Definition of the nature of the priors
 type.prior=c("gaussian","gamma")
 ### Definition of the prior hyperparameters
 opt.prior=list(c(11,3),c(2,0.1))
 ### Definition of the estimation option
-opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(11,0.1),k=c(0.001,0.001),sig=diag(2))
+opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
 
 test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
 test$plot()
+
 
 
 ####### For the second model
@@ -61,14 +62,62 @@ Yexp <- Yr+rnorm(100,0,0.1)
 ### Definition of the nature of the priors
 type.prior=c("gaussian","gamma")
 ### Definition of the emulation options
-opt.emul=list(p=1,n.emul=100,PCA=FALSE)
+opt.emul=list(p=1,n.emul=150,PCA=FALSE)
 ### Definition of the prior hyperparameters
 opt.prior=list(c(11,3),c(2,0.1))
 ### Definition of the estimation option
-opt.estim=list(Ngibbs=3000,Nmh=10000,thetaInit=c(11,0.1),k=c(0.001,0.001),sig=diag(2))
+opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
 
 test <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
 test$plot()
+
+
+
+####### For the third model
+### The data set
+X <- seq(0,1,length.out=25)
+### The code to calibrate
+code <- function(X,theta)
+{
+  return((6*X-2)^2*sin(theta*X-4))
+}
+### Simulated data
+Yr   <- code(X,11)
+Yexp <- Yr+rnorm(25,0,0.1)
+### Definition of the nature of the priors
+type.prior=c("gaussian","gamma","unif","gamma")
+### Definition of the prior hyperparameters
+opt.prior=list(c(11,3),c(2,0.1),c(0,1),c(2,0.1))
+### Definition of the estimation option
+opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,2,0.5,0.1),k=rep(5e-4,4),sig=diag(4))
+
+test <- estim(code,X,Yr,Yexp,model="model3",type.prior,log=TRUE,opt.prior,opt.estim)
+test$plot()
+
+
+
+### For the fourth model
+X <- seq(0,1,length.out=100)
+### The code to calibrate
+code <- function(X,theta)
+{
+  return((6*X-2)^2*sin(theta*X-4))
+}
+### Simulated data
+Yr   <- code(X,11)
+Yexp <- Yr + rnorm(100,0,0.1)
+### Definition of the nature of the priors
+type.prior=c("gaussian","gamma","unif","gamma")
+### Definition of the prior hyperparameters
+opt.prior=list(c(11,3),c(2,0.1),c(0,1),c(2,0.1))
+### Definition of the estimation option
+opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,2,0.5,0.1),k=rep(0.001,4),sig=diag(4))
+### Definition of the emulation options
+opt.emul=list(p=1,n.emul=150,PCA=FALSE)
+
+test <- estim(code,X,Yr,Yexp,model="model4",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
+test$plot()
+
 }
 \seealso{
 \code{\link{model.class}}, \code{\link{prior.class}}

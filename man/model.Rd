@@ -39,17 +39,17 @@ foo <- model(code,X,Yexp,"model1")
 # Plot the results
 foo$plot(11,0.1,X)
 # Print the results for new data X
-foo$fun(11,0.1,X)
+foo$fun(11,0.1)
 # Get acces to the likelihood
-foo$likelihood(11,0.1,X)
+foo$likelihood(11,0.1)
 
 ### For the second model
-X <- seq(0,1,length.out=100)
+X <- seq(0,1,length.out=25)
 code <- function(X,theta)
 {
   return((6*X-2)^2*sin(theta*X-4))
 }
-Yexp <- code(X,11)+rnorm(100,0,0.1)
+Yexp <- code(X,11)+rnorm(25,0,0.1)
 # Generate the model with setup for the Gaussian Process
 foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=50,PCA=FALSE),binf=8,bsup=14)
 # Plot the model
@@ -69,7 +69,7 @@ code <- function(X,theta)
 Yexp <- code(X,11)+rnorm(100,0,0.1)
 foo <- model(code,X,Yexp,"model3")
 foo$plot(11,c(50,1),0.1,X)
-
+foo$likelihood(11,c(50,1),0.1)
 
 ### For the fourth model
 X <- seq(0,1,length.out=100)
@@ -81,7 +81,7 @@ Yexp <- code(X,11)+rnorm(100,0,0.1)
 foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=60,PCA=FALSE),binf=8,bsup=14)
 foo$plot(11,c(50,1),0.1,X,points=FALSE)
 
-foo$likelihood(11,c(50,1),0.1,X)
+foo$likelihood(11,c(50,1),0.1)
 
 # with the PCA in stand by
 # foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))

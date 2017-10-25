@@ -101,10 +101,10 @@ model1.class <- R6::R6Class(classname = "model1.class",
                         {
                           super$initialize(code, X, Yexp, model, binf, bsup)
                         },
-                        fun = function(theta,sig2,Newdata)
+                        fun = function(theta,sig2)
                         {
-                          y  <- self$code(Newdata,theta)+rnorm(self$n,0,sqrt(sig2))
-                          yc <- self$code(Newdata,theta)
+                          y  <- self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2))
+                          yc <- self$code(self$X,theta)
                           return(list(y=y, yc=yc))
                         },
                         likelihood = function(theta,sig2)
@@ -121,7 +121,8 @@ model1.class <- R6::R6Class(classname = "model1.class",
 model1.class$set("public","plot",
                  function(theta,sig,Newdata)
                  {
-                   res <- self$fun(theta,sig,Newdata)
+                   self$X <- Newdata
+                   res <- self$fun(theta,sig)
                    gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),type="code result")
                    gg.data.noisy <- data.frame(y=res$y,x=seq(0,1,length.out=length(res$yc)),
                                              type="noisy")
@@ -154,7 +155,7 @@ model3.class <- R6::R6Class(classname = "model3.class",
                           },
                           discrepancy = function(theta,thetaD,sig2)
                           {
-                            y   <- self$funTemp(theta,sig2,self$X)$y
+                            y   <- self$funTemp(theta,sig2)$y
                             z   <- self$Yexp - y
                             Cov <- matrix(nr=self$n,nc=self$n)
                             if (is.null(ncol(self$X)))
@@ -186,15 +187,15 @@ model3.class <- R6::R6Class(classname = "model3.class",
                             }
                             d <- diag(e)
                             Cov <- t(p)%*%d%*%p
-                            biais <- mvrnorm(n=100,rep(0,length(self$X)),Cov)
+                            biais <- mvrnorm(n=self$n,rep(0,length(self$X)),Cov)
                             biais <- apply(biais,1,mean)
                             return(list(biais=biais,cov=Cov))
                           },
-                          fun = function(theta,thetaD,sig2,Newdata)
+                          fun = function(theta,thetaD,sig2)
                           {
                             res <- self$discrepancy(theta,thetaD,sig2)
-                            foo <- self$funTemp(theta,sig2,Newdata)
-                            y   <- foo$y
+                            foo <- self$funTemp(theta,sig2)
+                            y <- foo$y
                             yc  <- foo$yc
                             return(list(y=res$biais+y,cov=res$cov,yc=yc))
                           }
@@ -205,7 +206,8 @@ model3.class <- R6::R6Class(classname = "model3.class",
 model3.class$set("public","plot",
                  function(theta,thetaD,sig,Newdata)
                  {
-                   res <- self$fun(theta,thetaD,sig,Newdata)
+                   self$X <- Newdata
+                   res <- self$fun(theta,thetaD,sig)
                    gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),type="code result")
                    gg.data.noisy <- data.frame(y=res$y,x=seq(0,1,length.out=length(res$yc)),
                                                type="with discrepancy and noise")
@@ -226,10 +228,10 @@ model3.class$set("public","plot",
 
 
 model3.class$set("public","likelihood",
-                 function(theta,thetaD,sig2,Newdata)
+                 function(theta,thetaD,sig2)
                  {
-                   self$m.exp <- self$code(Newdata,theta)
-                   temp <- self$fun(theta,thetaD,sig2,Newdata)
+                   self$m.exp <- self$code(self$X,theta)
+                   temp <- self$fun(theta,thetaD,sig2)
                    self$V.exp <- sig2*diag(self$n) + temp$cov
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                                                                 invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
@@ -312,16 +314,16 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           GP <- km(formula =~1, design=D, response = z,covtype = "matern5_2")
                           return(list(GP=GP,DOE=D))
                         },
-                        fun = function(theta,sig2,Newdata)
+                        fun = function(theta,sig2)
                         {
                           # options(warn=-1)
                           if(self$p==1)
                           {
-                            Xnew <- cbind(Newdata,rep(theta,self$n))
+                            Xnew <- cbind(self$X,rep(theta,self$n))
                           } else
                           {
                             Xtemp <- matrix(rep(theta,c(self$n,self$n)),nr=self$n,nc=self$p)
-                            Xnew  <- cbind(Newdata,Xtemp)
+                            Xnew  <- cbind(self$X,Xtemp)
                           }
                           Xnew <- as.data.frame(Xnew)
                           names(Xnew) <- c("DOE","doeParam")
@@ -364,9 +366,9 @@ model2.class$set("public","PCA.fun",
                 })
 
 model2.class$set("public","likelihood",
-                 function(theta,sig2,Newdata)
+                 function(theta,sig2)
                  {
-                   temp <- self$fun(theta,sig2,Newdata)
+                   temp <- self$fun(theta,sig2)
                    self$m.exp <- temp$yc
                    self$V.exp <- sig2*diag(self$n) + temp$Cov.GP
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
@@ -377,7 +379,8 @@ model2.class$set("public","likelihood",
 model2.class$set("public","plot",
                  function(theta,sig,Newdata,points=TRUE)
                  {
-                   res <- self$fun(theta,sig,Newdata)
+                   self$X <- Newdata
+                   res <- self$fun(theta,sig)
                    gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),
                                           lower=res$lower,upper=res$upper,type="Gaussian Process",
                                          fill="90% credibility interval")
@@ -417,7 +420,7 @@ model4.class <- R6::R6Class(classname = "model4.class",
                           },
                           discrepancy = function(theta,thetaD,sig2)
                           {
-                            y   <- self$funC(theta,sig2,self$X)$y
+                            y   <- self$funC(theta,sig2)$y
                             z   <- self$Yexp - y
                             Cov <- matrix(nr=self$n,nc=self$n)
                             if (is.null(ncol(self$X)))
@@ -453,9 +456,9 @@ model4.class <- R6::R6Class(classname = "model4.class",
                             biais <- apply(biais,1,mean)
                             return(list(biais=biais,cov=Cov))
                           },
-                          fun = function(theta,thetaD,sig2,Newdata)
+                          fun = function(theta,thetaD,sig2)
                           {
-                            foo <- self$funC(theta,sig2,Newdata)
+                            foo <- self$funC(theta,sig2)
                             res <- self$discrepancy(theta,thetaD,sig2)
                             y <- foo$y
                             Cov.GP <- foo$Cov.GP
@@ -468,9 +471,9 @@ model4.class <- R6::R6Class(classname = "model4.class",
 
 
 model4.class$set("public","likelihood",
-                 function(theta,thetaD,sig2,Newdata)
+                 function(theta,thetaD,sig2)
                  {
-                   temp <- self$fun(theta,thetaD,sig2,Newdata)
+                   temp <- self$fun(theta,thetaD,sig2)
                    self$m.exp <- temp$yc
                    self$V.exp <- sig2*diag(self$n) + temp$Cov.GP +temp$Cov.D
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
@@ -482,7 +485,8 @@ model4.class$set("public","likelihood",
 model4.class$set("public","plot",
                  function(theta,thetaD,sig,Newdata,points=TRUE)
                  {
-                   res <- self$fun(theta,thetaD,sig,Newdata)
+                   self$X <- Newdata
+                   res <- self$fun(theta,thetaD,sig)
                    gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),
                                          lower=res$lower,upper=res$upper,type="Gaussian Process",
                                          fill="90% credibility interval")
