@@ -23,8 +23,11 @@ estim.class <- R6::R6Class(classname = "estim.class",
                     md          = NULL,
                     pr          = NULL,
                     out         = NULL,
+                    outCV       = NULL,
+                    type.valid  = NULL,
+                    opt.valid   = NULL,
                     initialize = function(code=NA,X=NA,Yr=NA,Yexp=NA,model=NA,type.prior=NA,log=TRUE,
-                                          opt.emul=NA,opt.prior=NA,opt.estim=NA)
+                                          opt.emul=NA,opt.prior=NA,opt.estim=NA,type.valid=NA,opt.valid=NA)
                     {
                       self$code          <- code
                       self$X             <- X
@@ -37,25 +40,34 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       self$opt.estim     <- opt.estim
                       self$burnIn        <- 0.1*opt.estim$Nmh
                       self$type.prior    <- type.prior
+                      self$type.valid    <- type.valid
+                      self$opt.valid     <- opt.valid
+                      private$checkValid()
                       private$checkup()
                       self$pr            <- prior(self$type.prior,opt.prior,log=TRUE)
                       self$binf          <- private$boundaries()$binf
                       self$bsup          <- private$boundaries()$bsup
-                      self$md            <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1],
-                                                  bsup=self$bsup[1])
-                      logLikelihood <- function(model)
+                      if (is.null(self$type.valid))
                       {
-                        switch(model,
-                               model1={return(self$logTest)},
-                               model2={return(self$logTest)},
-                               model3={return(self$logTestD)},
-                               model4={return(self$logTestD)}
-                        )
+                        self$md <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1],
+                                                    bsup=self$bsup[1])
+                        logLikelihood <- function(model)
+                        {
+                          switch(model,
+                                 model1={return(self$logTest)},
+                                 model2={return(self$logTest)},
+                                 model3={return(self$logTestD)},
+                                 model4={return(self$logTestD)}
+                          )
+                        }
+                        self$logTest.fun   <- logLikelihood(model)
+                        self$out           <- self$estimation(self$md,self$Yexp)
+                      } else
+                      {
+                        self$outCV <- self$validation(self$type.valid,self$opt.valid)
                       }
-                      self$logTest.fun   <- logLikelihood(model)
-                      self$out           <- self$estimation()
                     },
-                    estimation = function()
+                    estimation = function(md,Yexp)
                     {
                       MCMC <- function(model)
                       {
@@ -67,9 +79,9 @@ estim.class <- R6::R6Class(classname = "estim.class",
                         )
                       }
                       MetropolisCpp <- MCMC(self$model)
-                      out <- MetropolisCpp(self$md$fun,self$opt.estim$Ngibbs,
+                      out <- MetropolisCpp(md$fun,self$opt.estim$Ngibbs,
                                                    self$opt.estim$Nmh,self$opt.estim$thetaInit,
-                                                   self$opt.estim$k,self$opt.estim$sig,self$Yexp,
+                                                   self$opt.estim$k,self$opt.estim$sig,Yexp,
                                                    self$binf,self$bsup,self$logTest.fun)
                       return(out)
                     }
@@ -86,6 +98,28 @@ estim.class$set("private","boundaries",
                     bsup <- cbind(bsup,self$pr[[i]]$bsup)
                   }
                   return(list(binf=binf,bsup=bsup))
+                })
+
+
+estim.class$set("private","checkValid",
+                function()
+                {
+                  if (self$type.valid != "loo" & self$type.valid != "kfold" & is.null(self$type.valid)!=FALSE)
+                  {
+                    stop("Plese select a validation method ('loo' or 'kfold')")
+                  }
+                  if (self$type.valid == "loo" & is.null(self$opt.valid$n.CV))
+                  {
+                    stop("You have selected the leave one out validation, please enter a number of repetition in opt.valid")
+                  }
+                  if (self$type.valid == "kfold" & is.null(self$opt.valid$n.CV))
+                  {
+                    stop("You have selected the k-fold validation, please enter a number of repetition in opt.valid")
+                  }
+                  if (self$type.valid == "kfold" & is.null(self$opt.valid$k))
+                  {
+                    stop("You have selected the k-fold validation, please enter a valid k in opt.valid")
+                  }
                 })
 
 
@@ -280,7 +314,7 @@ estim.class$set("public","plotComp",
 
 
 estim.class$set("public","plotCompD",
-                function(CI=TRUE)
+                function(CI=TRUE,depend.X=TRUE)
                 {
                   m <- self$out$THETA[-c(1:self$burnIn),]
                   Dist <- matrix(nr=nrow(m),nc=length(self$Yexp))
@@ -292,6 +326,21 @@ estim.class$set("public","plotCompD",
                   lowerPost <- apply(Dist,2,quantile,probs=0.05)
                   upperPost <- apply(Dist,2,quantile,probs=0.95)
                   meanPost  <- apply(Dist,2,quantile,probs=0.5)
+                  if (depend.X==FALSE)
+                  {
+                    X <- self$X[,1]
+                  }else
+                  {
+                    if (is.null(dim(self$X)))
+                    {
+                      X <- self$X
+                    } else{
+                      if (dim(self$X)[2]>1)
+                      {
+                        stop("You an X dimension over 2, please desactivate the option depend.X to visualize your result")
+                      }
+                    }
+                  }
                   if (CI==TRUE)
                   {
                     dplot <- data.frame(Y=meanPost,x=self$X,type='calibrated',lower=lowerPost,upper=upperPost,
@@ -324,11 +373,41 @@ estim.class$set("public","plotCompD",
                   return(p)
                 })
 
-
-
 estim.class$set("public","print",
                 function()
                 {
                   cat('the main results of the calibration are')
                 }
 )
+
+estim.class$set("public","validation",
+                function(type.valid,opt.valid)
+                {
+                  id <- matrix(nr=opt.valid$n.CV,nc=1)
+                  ResCal <- matrix(nr=opt.valid$n.CV,nc=self$opt.estim$Nmh)
+                  for (i in 1:opt.valid$n.CV)
+                  {
+                    if (type.valid=="loo")
+                    {
+                      slt <- sample(self$X,1)
+                    } else
+                    {
+                      if (type.valid == "kfold")
+                      {
+                        slt <- sample(self$X,opt.valid$k)
+                      }
+                    }
+                    id[i]  <- which(slt==self$X)
+                    dataCalib <- self$X[-id[i]]
+                    dataValid <- self$X[id[i]]
+                    Ycalib    <- self$Yexp[-id[i]]
+                    Yvalid    <- self$Yexp[id[i]]
+                    md <- model(self$code,dataCalib,self$Yexp,self$model,self$opt.emul,binf=self$binf[1],
+                                    bsup=self$bsup[1])
+                    ResCal[i] <- self$estimation(md,Ycalib)
+                  }
+                }
+)
+
+
+
