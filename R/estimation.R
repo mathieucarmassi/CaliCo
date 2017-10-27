@@ -21,6 +21,7 @@ estim.class <- R6::R6Class(classname = "estim.class",
                     bsup        = NULL,
                     logTest.fun = NULL,
                     md          = NULL,
+                    mdCV        = NULL,
                     pr          = NULL,
                     out         = NULL,
                     outCV       = NULL,
@@ -51,19 +52,20 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       {
                         self$md <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1],
                                                     bsup=self$bsup[1])
-                        logLikelihood <- function(model)
-                        {
-                          switch(model,
-                                 model1={return(self$logTest)},
-                                 model2={return(self$logTest)},
-                                 model3={return(self$logTestD)},
-                                 model4={return(self$logTestD)}
-                          )
-                        }
-                        self$logTest.fun   <- logLikelihood(model)
+                        self$logTest.fun   <- self$logLikelihood(model)
                         self$out           <- self$estimation(self$md,self$Yexp)
                       } else
                       {
+                        cat("#############################################\n")
+                        cat("##### --- Begin of the calibration --- ######\n")
+                        cat("#############################################\n")
+                        self$md <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1],
+                                         bsup=self$bsup[1])
+                        self$logTest.fun   <- self$logLikelihood(model)
+                        self$out           <- self$estimation(self$md,self$Yexp)
+                        cat("###################################################\n")
+                        cat("##### --- End of the regular calibration --- ###### \n")
+                        cat("###################################################\n")
                         self$outCV <- self$validation(self$type.valid,self$opt.valid)
                       }
                     },
@@ -79,13 +81,29 @@ estim.class <- R6::R6Class(classname = "estim.class",
                         )
                       }
                       MetropolisCpp <- MCMC(self$model)
-                      out <- MetropolisCpp(md$fun,self$opt.estim$Ngibbs,
+                      self$logTest.fun(11,0.1)
+                      self$md$fun(11,0.1)
+                      out <- MetropolisCpp(self$md$fun,self$opt.estim$Ngibbs,
                                                    self$opt.estim$Nmh,self$opt.estim$thetaInit,
                                                    self$opt.estim$k,self$opt.estim$sig,Yexp,
                                                    self$binf,self$bsup,self$logTest.fun)
                       return(out)
                     }
                    ))
+
+
+estim.class$set("public","logLikelihood",
+  function(model)
+  {
+    switch(model,
+           model1={return(self$logTest)},
+           model2={return(self$logTest)},
+           model3={return(self$logTestD)},
+           model4={return(self$logTestD)}
+    )
+  }
+)
+
 
 estim.class$set("private","boundaries",
                 function()
@@ -104,21 +122,27 @@ estim.class$set("private","boundaries",
 estim.class$set("private","checkValid",
                 function()
                 {
-                  if (self$type.valid != "loo" & self$type.valid != "kfold" & is.null(self$type.valid)!=FALSE)
+                  if (is.null(self$type.valid)==FALSE)
                   {
-                    stop("Plese select a validation method ('loo' or 'kfold')")
-                  }
-                  if (self$type.valid == "loo" & is.null(self$opt.valid$n.CV))
-                  {
-                    stop("You have selected the leave one out validation, please enter a number of repetition in opt.valid")
-                  }
-                  if (self$type.valid == "kfold" & is.null(self$opt.valid$n.CV))
-                  {
-                    stop("You have selected the k-fold validation, please enter a number of repetition in opt.valid")
-                  }
-                  if (self$type.valid == "kfold" & is.null(self$opt.valid$k))
-                  {
-                    stop("You have selected the k-fold validation, please enter a valid k in opt.valid")
+                    if(is.null(self$opt.valid)==FALSE)
+                    {
+                      if (self$type.valid != "loo" & self$type.valid != "kfold")
+                      {
+                        stop("Plese select a validation method ('loo' or 'kfold')")
+                      }
+                      if (self$type.valid == "loo" & is.null(self$opt.valid$n.CV))
+                      {
+                        stop("You have selected the leave one out validation, please enter a number of repetition in opt.valid")
+                      }
+                      if (self$type.valid == "kfold" & is.null(self$opt.valid$n.CV))
+                      {
+                        stop("You have selected the k-fold validation, please enter a number of repetition in opt.valid")
+                      }
+                      if (self$type.valid == "kfold" & is.null(self$opt.valid$k))
+                      {
+                        stop("You have selected the k-fold validation, please enter a valid k in opt.valid")
+                      }
+                    }
                   }
                 })
 
@@ -383,10 +407,19 @@ estim.class$set("public","print",
 estim.class$set("public","validation",
                 function(type.valid,opt.valid)
                 {
+                  cat("\n")
+                  cat("####################################################\n")
+                  cat("##### --- Bigining of the cross validation --- #####\n")
+                  cat("####################################################\n")
                   id <- matrix(nr=opt.valid$n.CV,nc=1)
-                  ResCal <- matrix(nr=opt.valid$n.CV,nc=self$opt.estim$Nmh)
+                  ResCal <- q5 <- m <- q95 <- list()
+                  coverTau <- 0
+                  Yc <- matrix(nr=opt.valid$n.CV,nc=1)
                   for (i in 1:opt.valid$n.CV)
                   {
+                    cat("####################################################\n")
+                    cat(paste("##### --- iteration number --- #### ",i," #### --- #####\n",sep=""))
+                    cat("####################################################\n")
                     if (type.valid=="loo")
                     {
                       slt <- sample(self$X,1)
@@ -402,10 +435,34 @@ estim.class$set("public","validation",
                     dataValid <- self$X[id[i]]
                     Ycalib    <- self$Yexp[-id[i]]
                     Yvalid    <- self$Yexp[id[i]]
-                    md <- model(self$code,dataCalib,self$Yexp,self$model,self$opt.emul,binf=self$binf[1],
+                    self$mdCV <- model(self$code,dataCalib,Ycalib,self$model,self$opt.emul,binf=self$binf[1],
                                     bsup=self$bsup[1])
-                    ResCal[i] <- self$estimation(md,Ycalib)
+                    self$logTest.fun   <- self$logLikelihood(self$model)
+                    yres <- matrix(nr=self$opt.estim$Nmh-self$burnIn,nc=length(Ycalib))
+                    ResCal[[i]] <- self$estimation(self$mdCV,Ycalib)$THETA
+                    DimC <- ncol(ResCal[[i]])
+                    for (j in self$burnIn:self$opt.estim$Nmh)
+                    {
+                      inc <- j-self$burnIn
+                      ### Introduire un newdata dans fun de model pour pouvoir dissocier calib et valid
+                      yres[inc,] <- self$mdCV$fun(ResCal[[i]][j,c(1:(DimC-1))],ResCal[[i]][j,DimC])$y
+                    }
+                    q <- apply(yres,2,quantile,ptobs=c(0.05,0.5,0.95))
+                    q5[[i]]  <- q[1,]
+                    m[[i]]   <- q[2,]
+                    q95[[i]] <- q[3,]
+                    if (sum(ifelse(Ycalib>q5[[i]],1,0))==length(Ycalib) &
+                        sum(ifelse(Ycalib<q95[[i]],1,0))==length(Ycalib))
+                    {
+                      coverTau <- coverTau+1
+                    }
+                    thetaTemp <- apply(ResCal[[i]],2,mean)
+                    ### Introduire un newdata dans fun de model pour pouvoir dissocier calib et valid
+                    Yc[i] <- self$mdCV$fun(thetaTemp[1:(DimC-1)],thetaTemp[DimC])$y
                   }
+                  print(Yvalid)
+                  err <- sqrt(mean((rep(Yvalid,length(Yc))-Yc)^2))
+                  return(list(coverTau=coverTau/opt.valid$n.CV*100,RMSE=err))
                 }
 )
 
