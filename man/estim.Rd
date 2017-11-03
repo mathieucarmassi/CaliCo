@@ -35,7 +35,7 @@ code <- function(X,theta)
 }
 ### Simulated data
 Yr   <- code(X,11)
-Yexp <- Yr+rnorm(200,0,0.1)
+Yexp <- Yr+rnorm(100,0,0.1)
 ### Definition of the nature of the priors
 type.prior=c("gaussian","gamma")
 ### Definition of the prior hyperparameters
@@ -45,6 +45,46 @@ opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2
 
 test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
 test$plot()
+
+
+#### with two parameters
+X <- seq(0,1,length.out=100)
+code <- function(X,theta)
+{
+  return((theta[2]*X-2)^2*sin(theta[1]*X-4))
+}
+### Simulated data
+Yr   <- code(X,c(11,6))
+Yexp <- Yr+rnorm(100,0,0.1)
+### Definition of the nature of the priors
+type.prior=c("gaussian","gaussian","gamma")
+### Definition of the prior hyperparameters
+opt.prior=list(c(11,3),c(6,2),c(2,0.1))
+### Definition of the estimation option
+opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,6,0.1),k=rep(5e-4,3),sig=diag(3))
+
+test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
+test$plot()
+
+
+#### with two X
+X <- cbind(seq(0,1,length.out=200),seq(0,1,length.out=200))
+code <- function(X,theta)
+{
+  return((theta[2]*X[1]-2)^2*sin(theta[1]*X[2]-4)))
+}
+### Simulated data
+Yr   <- code(X,c(11,6))
+Yexp <- Yr+rnorm(200,0,0.1)
+### Definition of the nature of the priors
+type.prior=c("gaussian","gaussian","gamma")
+### Definition of the prior hyperparameters
+opt.prior=list(c(11,3),c(6,2),c(2,0.1))
+### Definition of the estimation option
+opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,6,0.1),k=rep(5e-4,3),sig=diag(3))
+
+test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
+test$plot(depend.X=FALSE)
 
 
 

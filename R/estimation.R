@@ -102,7 +102,6 @@ estim.class$set("public","logTest",
                       {
                         s <- s + self$pr[[i]]$prior(theta[i])
                       }
-                      print(s)
                       s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
                       return(log(self$md$likelihood(theta,sig2)) + s)
                   }
