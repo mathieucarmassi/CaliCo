@@ -81,8 +81,6 @@ estim.class <- R6::R6Class(classname = "estim.class",
                         )
                       }
                       MetropolisCpp <- MCMC(self$model)
-                      self$logTest.fun(11,0.1)
-                      self$md$fun(11,0.1)
                       out <- MetropolisCpp(self$md$fun,self$opt.estim$Ngibbs,
                                                    self$opt.estim$Nmh,self$opt.estim$thetaInit,
                                                    self$opt.estim$k,self$opt.estim$sig,Yexp,
@@ -444,24 +442,30 @@ estim.class$set("public","validation",
                     for (j in self$burnIn:self$opt.estim$Nmh)
                     {
                       inc <- j-self$burnIn
-                      ### Introduire un newdata dans fun de model pour pouvoir dissocier calib et valid
                       yres[inc,] <- self$mdCV$fun(ResCal[[i]][j,c(1:(DimC-1))],ResCal[[i]][j,DimC])$y
                     }
                     q <- apply(yres,2,quantile,ptobs=c(0.05,0.5,0.95))
                     q5[[i]]  <- q[1,]
                     m[[i]]   <- q[2,]
                     q95[[i]] <- q[3,]
-                    if (sum(ifelse(Ycalib>q5[[i]],1,0))==length(Ycalib) &
-                        sum(ifelse(Ycalib<q95[[i]],1,0))==length(Ycalib))
+                    coverTau[[i]] <- 0
+                    for (k in 1:length(q5[[i]]))
                     {
-                      coverTau <- coverTau+1
+                      if (Ycalib[k]>q5[[i]][k] & Ycalib[k]<q95[[i]][k])
+                      {
+                        coverTau[[i]] <- coverTau[[i]] + 1
+                      }
+                      # if (sum(ifelse(Ycalib>q5[[i]],1,0))==length(Ycalib) &
+                      #     sum(ifelse(Ycalib<q95[[i]],1,0))==length(Ycalib))
+                      # {
+                      #   coverTau <- coverTau+1
+                      # }
                     }
                     thetaTemp <- apply(ResCal[[i]],2,mean)
-                    ### Introduire un newdata dans fun de model pour pouvoir dissocier calib et valid
-                    Yc[i] <- self$mdCV$fun(thetaTemp[1:(DimC-1)],thetaTemp[DimC])$y
+                    Yc[i,] <- self$mdCV$fun(thetaTemp[1:(DimC-1)],thetaTemp[DimC])$y
                   }
-                  print(Yvalid)
-                  err <- sqrt(mean((rep(Yvalid,length(Yc))-Yc)^2))
+                  coverTau <- mean(rapply(coverTau,mean))
+                  err <- sqrt(mean((rep(Yvalid,nrow(Yc))-Yc)^2))
                   return(list(coverTau=coverTau/opt.valid$n.CV*100,RMSE=err))
                 }
 )
