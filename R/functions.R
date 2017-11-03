@@ -228,6 +228,11 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
 #' test$plot()
 #'
+#' # With leave one out cross validation
+#' opt.valid =list(n.CV=10,k=NULL)
+#' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim,type.valid="loo",opt.valid=opt.valid)
+#'
+#'
 #'
 #' #### with two parameters
 #' X <- seq(0,1,length.out=100)
@@ -253,7 +258,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' X <- cbind(seq(0,1,length.out=200),seq(0,1,length.out=200))
 #' code <- function(X,theta)
 #' {
-#'   return((theta[2]*X[1]-2)^2*sin(theta[1]*X[2]-4)))
+#'   return((theta[2]*X[,1]-2)^2*sin(theta[1]*X[,2]-4))
 #' }
 #' ### Simulated data
 #' Yr   <- code(X,c(11,6))
@@ -292,6 +297,11 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #'
 #' test <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
 #' test$plot()
+#'
+#' # With leave one out cross validation
+#' opt.valid =list(n.CV=100,k=NULL)
+#' test <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul,type.valid="loo",opt.valid=opt.valid)
+#'
 #'
 #'
 #'
@@ -342,11 +352,57 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #'
 #' @export
 estim <-function(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE
-                  ,opt.prior,opt.estim,opt.emul=list(p=1,n.emul=100,PCA=TRUE))
+                  ,opt.prior,opt.estim,opt.emul=list(p=1,n.emul=100,PCA=TRUE),type.valid=NULL,
+                 opt.valid=NULL)
 {
-  res <- estim.class$new(code,X,Yr,Yexp,model,type.prior,log,opt.emul,opt.prior,opt.estim)
+  res <- estim.class$new(code,X,Yr,Yexp,model,type.prior,log,opt.emul,opt.prior,opt.estim,type.valid,opt.valid)
   return(res)
 }
+
+
+#' Generates \code{\link{predict.class}} objects
+#'
+#' \code{predict} is a function that allows us to generate a class in which the estimation is
+#' done
+#'
+#' The realized estimation is realized similarly as it is defined in [1]
+#'
+#' @useDynLib calibrationCode
+#'
+#' @param est a \code{\link{estim.class}} object
+#' @param x.new newdata for the prediction
+#' @return lala for the moment
+#' @author M. Carmassi
+#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}
+#' @examples
+#' ####### For the first model
+#' ### The data set
+#' X <- seq(0,1,length.out=100)
+#' ### The code to calibrate
+#' code <- function(X,theta)
+#' {
+#'   return((6*X-2)^2*sin(theta*X-4))
+#' }
+#' ### Simulated data
+#' Yr   <- code(X,11)
+#' Yexp <- Yr+rnorm(100,0,0.1)
+#' ### Definition of the nature of the priors
+#' type.prior=c("gaussian","gamma")
+#' ### Definition of the prior hyperparameters
+#' opt.prior=list(c(11,3),c(2,0.1))
+#' ### Definition of the estimation option
+#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
+#'
+#' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
+#' test$plot()
+#'
+#' @export
+prediction <-function(est,x.new)
+{
+  res <- predict.class$new(est,x.new)
+  return(res)
+}
+
 
 #' Function which unscale a vector between two bounds
 #'

@@ -5,7 +5,8 @@
 \title{Generates \code{\link{estim.class}} objects}
 \usage{
 estim(code, X, Yr, Yexp, model = "model1", type.prior, log = TRUE,
-  opt.prior, opt.estim, opt.emul = list(p = 1, n.emul = 100, PCA = TRUE))
+  opt.prior, opt.estim, opt.emul = list(p = 1, n.emul = 100, PCA = TRUE),
+  type.valid = NULL, opt.valid = list(n.CV = 10, k = 1))
 }
 \arguments{
 \item{md}{a \code{\link{model.class}} object}
@@ -42,8 +43,9 @@ type.prior=c("gaussian","gamma")
 opt.prior=list(c(11,3),c(2,0.1))
 ### Definition of the estimation option
 opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
+opt.valid =list(n.CV=10,k=NULL)
 
-test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
+test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim,type.valid="loo",opt.valid)
 test$plot()
 
 
@@ -71,7 +73,7 @@ test$plot()
 X <- cbind(seq(0,1,length.out=200),seq(0,1,length.out=200))
 code <- function(X,theta)
 {
-  return((theta[2]*X[1]-2)^2*sin(theta[1]*X[2]-4)))
+  return((theta[2]*X[,1]-2)^2*sin(theta[1]*X[,2]-4))
 }
 ### Simulated data
 Yr   <- code(X,c(11,6))
