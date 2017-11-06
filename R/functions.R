@@ -1,12 +1,18 @@
-#' Generates \code{\link{model.class}} objects
+#' Generates \code{\link{model.class}} objects.
 #'
-#' \code{model} is a function that allows us to generates a calibration model and its likelihood.
+#' \code{model} is a function that generates a calibration model and the associated likelihood.
 #'
+#'
+#' @details The different statistical models are: \itemize{\item{Model1:
+#' \deqn{\forall i \in [1,...,n]  Yexp_i=f(x_i,\Theta)+\epsilon(x_i)}}
+#' \item{Model2:
+#' \deqn{\forall i \in [1,...,n]  Yexp_i=F(x_i,\Theta)+\epsilon(x_i)}}
+#' }
 #' There is four kind of models in calibration. They are properly defined in [1].
 #'
 #'
-#' @param  code the computational code (function of X and theta)
-#' @param  X the matrix of the forced variables
+#' @param code the computational code (function of X and theta)
+#' @param X the matrix of the forced variables
 #' @param Yexp the vector of the experiments
 #' @param model string of the model chosen ("model1","model2","model3","model4")
 #' by default "model1" is choosen.

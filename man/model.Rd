@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{model}
 \alias{model}
-\title{Generates \code{\link{model.class}} objects}
+\title{Generates \code{\link{model.class}} objects.}
 \usage{
 model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
   PCA = TRUE), binf = 0, bsup = 1)
@@ -21,9 +21,14 @@ by default "model1" is choosen.}
 \code{model} returns a \code{model.class} object
 }
 \description{
-\code{model} is a function that allows us to generates a calibration model and its likelihood.
+\code{model} is a function that generates a calibration model and the associated likelihood.
 }
 \details{
+The different statistical models are: \itemize{\item{Model1:
+\deqn{\forall i \in [1,...,n]  Yexp_i=f(x_i,\Theta)+\epsilon(x_i)}}
+\item{Model2:
+\deqn{\forall i \in [1,...,n]  Yexp_i=F(x_i,\Theta)+\epsilon(x_i)}}
+}
 There is four kind of models in calibration. They are properly defined in [1].
 }
 \examples{
