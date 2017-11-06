@@ -160,7 +160,11 @@ arma::mat invMat(arma::mat V)
   return Vinv;
 }
 
-
+// [[Rcpp::export]]
+void FlushCPP()
+{
+  cout.flush();
+}
 
 // [[Rcpp::export]]
 List MetropolisHastingsCppD(Function model,int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,

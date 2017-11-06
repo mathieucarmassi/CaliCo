@@ -409,10 +409,18 @@ estim.class$set("public","validation",
                   cat("####################################################\n")
                   cat("##### --- Bigining of the cross validation --- #####\n")
                   cat("####################################################\n")
-                  id <- matrix(nr=opt.valid$n.CV,nc=1)
-                  ResCal <- q5 <- m <- q95 <- list()
-                  coverTau <- 0
-                  Yc <- matrix(nr=opt.valid$n.CV,nc=1)
+                  id       <- matrix(nr=opt.valid$n.CV,nc=1)
+                  # Generates differents lists which store results from calibration (Rescal),
+                  # the quantiles and the coverTau
+                  ResCal   <- q5 <- m <- q95  <- list()
+                  RMSE     <- coverTau  <- rep(0,opt.valid$n.CV)
+                  qtheta5  <- qtheta95 <- mtheta <- list()
+                  Yc       <- matrix(nr=opt.valid$n.CV,nc=1)
+                  # Storage of the initial data because modification of self$X will be operated later on
+                  dataInit <- self$X
+                  # Storage of the initial output because modification of self$Yexp will be operated later on
+                  YexpInit <- self$Yexp
+                  # Beginning of the cross validation
                   for (i in 1:opt.valid$n.CV)
                   {
                     cat("####################################################\n")
@@ -428,45 +436,63 @@ estim.class$set("public","validation",
                         slt <- sample(self$X,opt.valid$k)
                       }
                     }
-                    id[i]  <- which(slt==self$X)
-                    dataCalib <- self$X[-id[i]]
-                    dataValid <- self$X[id[i]]
-                    Ycalib    <- self$Yexp[-id[i]]
-                    Yvalid    <- self$Yexp[id[i]]
-                    self$mdCV <- model(self$code,dataCalib,Ycalib,self$model,self$opt.emul,binf=self$binf[1],
-                                    bsup=self$bsup[1])
-                    self$logTest.fun   <- self$logLikelihood(self$model)
-                    yres <- matrix(nr=self$opt.estim$Nmh-self$burnIn,nc=length(Ycalib))
-                    ResCal[[i]] <- self$estimation(self$mdCV,Ycalib)$THETA
-                    DimC <- ncol(ResCal[[i]])
-                    for (j in self$burnIn:self$opt.estim$Nmh)
+                    # Getting back calibration and validation data set
+                    id[i]             <- which(slt==dataInit)
+                    dataCalib         <- dataInit[-id[i]]
+                    dataValid         <- dataInit[id[i]]
+                    Ycalib            <- YexpInit[-id[i]]
+                    Yvalid            <- YexpInit[id[i]]
+                    # Generate a model.class objet from calibration data set
+                    self$mdCV         <- model(self$code,dataCalib,Ycalib,self$model,self$opt.emul,binf=self$binf[1],
+                                               bsup=self$bsup[1])
+                    # Generate a liklihood from the selected model
+                    self$X            <- dataCalib
+                    self$Yexp         <- Ycalib
+                    self$logTest.fun  <- self$logLikelihood(self$model)
+                    yres              <- matrix(nr=self$opt.estim$Nmh-self$burnIn,nc=length(Ycalib))
+                    # MCMC for the iteration i. The results are stored in ResCal
+                    ResCal[[i]]       <- self$estimation(self$mdCV,Ycalib)$THETA
+                    FlushCPP()
+                    # DimC represents the number of parameters to calibrate
+                    DimC              <- ncol(ResCal[[i]])
+                    # Construction of the posterior distribution for each points found in the MCMC
+                    for (j in self$burnIn:(self$opt.estim$Nmh-1))
                     {
-                      inc <- j-self$burnIn
+                      inc        <- j-self$burnIn+1
                       yres[inc,] <- self$mdCV$fun(ResCal[[i]][j,c(1:(DimC-1))],ResCal[[i]][j,DimC])$y
                     }
-                    q <- apply(yres,2,quantile,ptobs=c(0.05,0.5,0.95))
+                    # To let the user the acces to the 90% confidence interval a posteriori
+                    q        <- apply(yres,2,quantile,probs=c(0.05,0.5,0.95))
                     q5[[i]]  <- q[1,]
                     m[[i]]   <- q[2,]
                     q95[[i]] <- q[3,]
-                    coverTau[[i]] <- 0
-                    for (k in 1:length(q5[[i]]))
+                    # Get the estimation in the posterior distribution
+                    qtheta        <- apply(ResCal[[i]],2,quantile,probs=c(0.05,0.5,0.95))
+                    qtheta5[[i]]  <- qtheta[1,]
+                    mtheta[[i]]   <- qtheta[2,]
+                    qtheta95[[i]] <- qtheta[3,]
+                    # Generate a model.class objet from validation data set
+                    self$mdCV         <- model(self$code,dataValid,Yvalid,self$model,self$opt.emul,
+                                               binf=mean(qtheta5[[i]]),bsup=mean(qtheta95[[i]]))
+                    # Generate a liklihood from the selected model
+                    self$X            <- dataValid
+                    self$Yexp         <- Yvalid
+                    self$logTest.fun  <- self$logLikelihood(self$model)
+                    # Compute the 90% confidence interval for the validation
+                    yvalid            <- self$mdCV$fun(mtheta[[i]][c(1:(DimC-1))],mtheta[[i]][DimC])$y
+                    qvalid5           <- self$mdCV$fun(qtheta5[[i]][c(1:(DimC-1))],qtheta5[[i]][DimC])$y
+                    qvalid95          <- self$mdCV$fun(qtheta95[[i]][c(1:(DimC-1))],qtheta95[[i]][DimC])$y
+                    # For each iteration of the CV check if the point is in the 90% confidence interval
+                    # if loo is activated
+                    if (Yvalid > qvalid5 & Yvalid < qvalid95)
                     {
-                      if (Ycalib[k]>q5[[i]][k] & Ycalib[k]<q95[[i]][k])
-                      {
-                        coverTau[[i]] <- coverTau[[i]] + 1
-                      }
-                      # if (sum(ifelse(Ycalib>q5[[i]],1,0))==length(Ycalib) &
-                      #     sum(ifelse(Ycalib<q95[[i]],1,0))==length(Ycalib))
-                      # {
-                      #   coverTau <- coverTau+1
-                      # }
+                      coverTau[i] <- coverTau[i] + 1
                     }
-                    thetaTemp <- apply(ResCal[[i]],2,mean)
-                    Yc[i,] <- self$mdCV$fun(thetaTemp[1:(DimC-1)],thetaTemp[DimC])$y
+                    RMSE[i] <- sqrt(mean((yvalid-Yvalid)^2))
                   }
-                  coverTau <- mean(rapply(coverTau,mean))
-                  err <- sqrt(mean((rep(Yvalid,nrow(Yc))-Yc)^2))
-                  return(list(coverTau=coverTau/opt.valid$n.CV*100,RMSE=err))
+                  self$X    <- dataInit
+                  self$Yexp <- YexpInit
+                  return(list(coverTau=mean(coverTau),RMSE=mean(RMSE)))
                 }
 )
 

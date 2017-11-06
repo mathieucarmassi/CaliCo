@@ -2,44 +2,57 @@
 % Please edit documentation in R/functions.R
 \name{prior}
 \alias{prior}
-\title{Generates \code{\link{prior.class}} objects}
+\title{Generates \code{\link{prior.class}} objects.}
 \usage{
 prior(type.prior, opt.prior, log = FALSE)
 }
 \arguments{
-\item{type.prior}{the vector of the prior types selected}
+\item{type.prior}{the vector of the prior types selected. For example type.prior=c("gaussian","beta")}
 
-\item{opt.prior}{list of the hyperparameters relatives to the prior selected}
+\item{opt.prior}{list of the hyperparameters relatives to the prior selected. If the first prior selected is
+Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.}
 }
 \value{
-\code{prior} returns a \code{prior.class} object
+\code{prior} returns a \code{\link{prior.class}} object. Two main methods are available:
+\itemize{\item{$plot()}{ display the probability density of the prior}
+\item{$print()}{ return the main information concerning the prior distribution}}
 }
 \description{
-\code{prior} is a function that allows us to generate one or a list of classes
- in which the charasteristics of each prior are defined
+\code{prior} is a function that generates a \code{\link{prior.class}} containing information about one or
+several priors. When several priors are selected, the function \code{prior} return a list of \code{\link{prior.class}}.
 }
 \details{
-The realized estimation is realized similarly as it is defined in [1]
+The densities implemented are defined as follow
+\itemize{
+\item{The Gaussian density:
+\deqn{f(x)=1/(\sigma*\sqrt(2\pi))exp{-1/2*((x-\mu)/\sigma)^2}}
+where \strong{\eqn{\mu}} and \strong{\eqn{\sigma}} (the mean and the standard deviation)
+are the two hyperparameters. The vector \eqn{c(\mu,\sigma)} is the one looked for in opt.prior.}
+\item{The Gamma density:
+\deqn{f(x)=1/(k^a*\Gamma(a))*x^(a-1)*exp(-(x/k))}
+where \strong{\eqn{a}} and \strong{\eqn{k}} (the shape and the scale)
+are the two hyperparameters. The vector \eqn{c(a,k)} is the one looked for in opt.prior.}
+\item{The Uniform density:
+\deqn{f(x)=1/(b-a)}
+where \strong{\eqn{a}} and \strong{\eqn{b}} (the upper and the lower bound)
+are the two hyperparameters. The vector \eqn{c(a,b)} is the one looked for in opt.prior.}
+}
 }
 \examples{
-### Only one prior is wanted
-###### For a Gaussian Prior
+#### Only one prior is wanted
+## For a Gaussian Prior
 foo <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
 foo$plot()
 
-###### For a Uniform Prior
+## For a Uniform Prior
 foo <- prior(type.prior="unif",opt.prior=list(c(0,1)))
 foo$plot()
 
-###### For a Gamma Prior
+## For a Gamma Prior
 foo <- prior(type.prior="gamma",opt.prior=list(c(5,1)))
 foo$plot()
 
-##### For an inverse-Gamma Prior
-foo <- prior(type.prior="invGamma",opt.prior=list(c(0.2,0.3)))
-foo$plot()
-
-### For several priors
+#### For several priors
 foo <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
 grid.arrange(foo$Prior1$plot(),foo$Prior2$plot(),nrow=2)
 

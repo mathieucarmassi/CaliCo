@@ -9,6 +9,10 @@ invMat <- function(V) {
     .Call('_calibrationCode_invMat', PACKAGE = 'calibrationCode', V)
 }
 
+FlushCPP <- function() {
+    invisible(.Call('_calibrationCode_FlushCPP', PACKAGE = 'calibrationCode'))
+}
+
 MetropolisHastingsCppD <- function(model, Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest) {
     .Call('_calibrationCode_MetropolisHastingsCppD', PACKAGE = 'calibrationCode', model, Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest)
 }
