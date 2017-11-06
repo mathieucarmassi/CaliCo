@@ -6,7 +6,7 @@
 \usage{
 estim(code, X, Yr, Yexp, model = "model1", type.prior, log = TRUE,
   opt.prior, opt.estim, opt.emul = list(p = 1, n.emul = 100, PCA = TRUE),
-  type.valid = NULL, opt.valid = list(n.CV = 10, k = 1))
+  type.valid = NULL, opt.valid = NULL)
 }
 \arguments{
 \item{md}{a \code{\link{model.class}} object}
@@ -43,10 +43,14 @@ type.prior=c("gaussian","gamma")
 opt.prior=list(c(11,3),c(2,0.1))
 ### Definition of the estimation option
 opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
-opt.valid =list(n.CV=10,k=NULL)
 
-test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim,type.valid="loo",opt.valid)
+test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
 test$plot()
+
+# With leave one out cross validation
+opt.valid =list(n.CV=10,k=NULL)
+test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim,type.valid="loo",opt.valid=opt.valid)
+
 
 
 #### with two parameters
@@ -112,6 +116,11 @@ opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2
 
 test <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
 test$plot()
+
+# With leave one out cross validation
+opt.valid =list(n.CV=100,k=NULL)
+test <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul,type.valid="loo",opt.valid=opt.valid)
+
 
 
 
