@@ -1,18 +1,26 @@
 #' A Reference Class to generates differents model objects
 #'
-#' @description See the function blabla which produces an instance of this class
+#' @description See the function \code{\link{model}} which produces an instance of this class
 #' This class comes with a set of methods, some of them being useful for the user:
-#' See the documentation for blabla... Other methods
-#'  should not be called as they are designed to be used during the optimization process.
+#' See the documentation for \code{\link{model}}... Other methods
+#' should not be called as they are designed to be used during the calibration process.
 #'
 #' Fields should not be changed or manipulated by the user as they are updated internally
 #' during the estimation process.
 #' @field code a function which takes in entry X and theta
 #' @field X the matrix of the forced variables
-#' @field theta the vector of parameters to estimate
 #' @field Yexp the experimental output
 #' @field n the number of experiments
-#' @field model the model choice see documentation
+#' @field opt.emul a list of parameter for the surrogate \itemize{
+#' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
+#' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
+#' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
+#' \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
+#' \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
+#' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL)}}
+#' }
+#' @field model the model choice (see \code{\link{model}} for more specification).
+#' @export
 model.class <- R6::R6Class(classname = "model.class",
                  public = list(
                    code      = NULL,
@@ -25,14 +33,12 @@ model.class <- R6::R6Class(classname = "model.class",
                    emul.list = NULL,
                    model     = NULL,
                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA,
-                                        binf=NA,bsup=NA, emul.list=list(p=NA,n.emul=NA,PCA=NA))
+                                         emul.list=list(p=NA,n.emul=NA,type=NA,binf=NA,bsup=NA,DOE=NA))
                    {
                      self$code  <- code
                      self$X     <- X
                      self$Yexp  <- Yexp
                      self$n     <- length(Yexp)
-                     self$binf  <- binf
-                     self$bsup  <- bsup
                      if (is.null(dim(X)))
                      {
                        self$d       <- 1
@@ -44,7 +50,7 @@ model.class <- R6::R6Class(classname = "model.class",
                      self$model     <- model
                      private$checkModels()
                      private$checkEmul()
-                     #private$checkCode()
+                     private$checkCode()
                      private$loadPackages()
                    }
                  ))
@@ -73,7 +79,7 @@ model.class$set("private","loadPackages",
 model.class$set("private","checkEmul",
                 function()
                   {
-                  N <- c("p","n.emul","PCA")
+                  N <- c("p","n.emul","type","binf","bsup","DOE")
                   N2 <- names(self$emul.list)
                   for (i in 1:length(N))
                   {
@@ -87,7 +93,7 @@ model.class$set("private","checkEmul",
 model.class$set("private","checkCode",
                 function()
                 {
-                  if (is.na(self$code))
+                  if (is.null(self$code))
                   {stop("Please enter a valid code")}
                 })
 
@@ -97,9 +103,9 @@ model1.class <- R6::R6Class(classname = "model1.class",
                         public=list(
                         m.exp = NULL,
                         V.exp = NULL,
-                        initialize=function(code=NA, X=NA, Yexp=NA, model=NA, binf=NA, bsup=NA)
+                        initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
                         {
-                          super$initialize(code, X, Yexp, model, binf, bsup)
+                          super$initialize(code, X, Yexp, model)
                         },
                         fun = function(theta,sig2)
                         {
@@ -119,14 +125,15 @@ model1.class <- R6::R6Class(classname = "model1.class",
 
 
 model1.class$set("public","plot",
-                 function(theta,sig,Newdata)
+                 function(theta,sig,point=FALSE)
                  {
-                   self$X <- Newdata
+                   binf = min(self$X)
+                   bsup = max(self$X)
                    res <- self$fun(theta,sig)
-                   gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),type="code result")
-                   gg.data.noisy <- data.frame(y=res$y,x=seq(0,1,length.out=length(res$yc)),
+                   gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),type="code result")
+                   gg.data.noisy <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),
                                              type="noisy")
-                   gg.data.exp  <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),
+                   gg.data.exp  <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
                                               type="experiments")
                    gg.data <- rbind(gg.data,gg.data.noisy,gg.data.exp)
                    p <- ggplot(gg.data)+
@@ -141,16 +148,30 @@ model1.class$set("public","plot",
                    return(p)
                  })
 
-
+model1.class$set("public","summury",
+                 function()
+                 {
+                   cat("Call:\n")
+                   print(self$model)
+                   cat("\n")
+                   cat("With the function:\n")
+                   print(self$code)
+                   cat("\n")
+                   cat("No surrogate is selected")
+                   cat("\n")
+                   cat("No discrepancy is added")
+                 }
+)
 
 model3.class <- R6::R6Class(classname = "model3.class",
                         inherit = model1.class,
                         public=list(
                           funTemp  = NULL,
                           temp     = NULL,
-                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA, binf=NA, bsup=NA)
+                          disc     = NULL,
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
                           {
-                            super$initialize(code, X, Yexp, model,binf, bsup)
+                            super$initialize(code, X, Yexp, model)
                             self$funTemp <- super$fun
                           },
                           discrepancy = function(theta,thetaD,sig2)
@@ -193,25 +214,26 @@ model3.class <- R6::R6Class(classname = "model3.class",
                           },
                           fun = function(theta,thetaD,sig2)
                           {
-                            res <- self$discrepancy(theta,thetaD,sig2)
+                            self$disc <- self$discrepancy(theta,thetaD,sig2)
                             foo <- self$funTemp(theta,sig2)
                             y <- foo$y
                             yc  <- foo$yc
-                            return(list(y=res$biais+y,cov=res$cov,yc=yc))
+                            return(list(y=self$disc$biais+y,cov=self$disc$cov,yc=yc))
                           }
                           )
 )
 
 
 model3.class$set("public","plot",
-                 function(theta,thetaD,sig,Newdata)
+                 function(theta,thetaD,sig)
                  {
-                   self$X <- Newdata
+                   binf <- min(self$X)
+                   bsup <- max(self$X)
                    res <- self$fun(theta,thetaD,sig)
-                   gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),type="code result")
-                   gg.data.noisy <- data.frame(y=res$y,x=seq(0,1,length.out=length(res$yc)),
+                   gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),type="code result")
+                   gg.data.noisy <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),
                                                type="with discrepancy and noise")
-                   gg.data.exp  <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),
+                   gg.data.exp  <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
                                               type="experiments")
                    gg.data <- rbind(gg.data,gg.data.noisy,gg.data.exp)
                    p <- ggplot(gg.data)+
@@ -225,6 +247,25 @@ model3.class$set("public","plot",
                            axis.text=element_text(size=20))
                    return(p)
                  })
+
+model3.class$set("public","summury",
+                 function()
+                 {
+                   cat("Call:\n")
+                   print(self$model)
+                   cat("\n")
+                   cat("With the function:\n")
+                   print(self$code)
+                   cat("\n")
+                   cat("No surrogate is selected")
+                   cat("\n\n")
+                   cat("A discrepancy is added:\n")
+                   cat(paste("Mean of the biais:",round(mean(self$disc$biais),5),"\n",sep=" "))
+                   cat(paste("Covariance of the biais:",round(mean(self$disc$cov),3),"\n",sep=" "))
+                   cat("Kernel chossen: Gaussian")
+                 }
+)
+
 
 
 model3.class$set("public","likelihood",
@@ -246,22 +287,23 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           GP     = NULL,
                           DOE    = NULL,
                           p      = NULL,
-                          binf   = NULL,
-                          bsup   = NULL,
-                          PCA    = NULL,
+                          type   = NULL,
                           m.exp  = NULL,
                           V.exp  = NULL,
-                        initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA,binf=NA,bsup=NA)
+                        initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
                         {
-                          super$initialize(code, X, Yexp, model, binf, bsup, opt.emul)
-                          self$binf   <- binf
-                          self$bsup   <- bsup
+                          super$initialize(code, X, Yexp, model,opt.emul)
+                          self$binf   <- opt.emul$binf
+                          self$bsup   <- opt.emul$bsup
                           self$n.emul <- opt.emul$n.emul
                           self$p      <- opt.emul$p
-                          self$PCA    <- opt.emul$PCA
+                          self$type   <- opt.emul$type
+                          self$DOE    <- opt.emul$DOE
+                          self$binf   <- opt.emul$binf
+                          self$bsup   <- opt.emul$bsup
                           foo         <- self$surrogate()
                           self$GP     <- foo$GP
-                          self$DOE    <- foo$DOE
+                          self$design <- foo$doe
                           print("The surrogate has been set up, you can now use the function")
                         },
                         surrogate = function()
@@ -270,11 +312,18 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           V   <- attr(Xcr,"scaled:scale")
                           M   <- attr(Xcr,"scaled:center")
                           Dim <- self$p+self$d
-                          if (self$PCA==TRUE)
+                          if (is.null(self$DOE)==FALSE)
                           {
-                            D <- self$PCA.fun(X=self$X,Dim=Dim,n=self$n.emul,p=self$p,d=self$d,
-                                              binf=self$binf,bsup=self$bsup,M=M,V=V)
-                          } else
+                            D <- self$DOE
+                            ### Generating the response
+                            z <- self$code(D[,1:(Dim-self$p)],D[,(Dim-self$p+1):Dim])
+                            ### Converting D as a data.frame for the km function
+                            D <- as.data.frame(D)
+                            #colnames(D) <- c("V1","V2","V3","V4","V5","V6")
+                            ### Creation of the Gaussian Process with estimation of hyperpameters
+                            GP <- km(formula =~1, design=D, response = z,covtype = self$type)
+                            return(list(GP=GP,doe=D))
+                          }else
                           {
                             doe <- lhsDesign(self$n.emul,Dim)$design
                             doe <- maximinSA_LHS(doe)
@@ -282,37 +331,38 @@ model2.class <- R6::R6Class(classname = "model2.class",
                             ### Getting back the value of the parameter generated by the DOE
                             binf.X <- apply(Xcr,2,min)
                             bsup.X <- apply(Xcr,2,max)
-                            DOE <- unscale(doe[,1:self$d],binf.X,bsup.X)
+                            DOEtemp <- unscale(doe[,1:self$d],binf.X,bsup.X)
                             if (self$d==1)
                             {
                               for (i in 1:self$n.emul)
                               {
                                 if (self$d==1)
                                 {
-                                  DOE[i] <- DOE[i]*V+M
+                                  DOEtemp[i] <- DOEtemp[i]*V+M
                                 } else
                                 {
-                                  DOE[i] <- DOE[i]*V[i]+rep(M[i],self$n.emul)
+                                  DOEtemp[i] <- DOEtemp[i]*V[i]+rep(M[i],self$n.emul)
                                 }
                               }
                             } else {
                               for (i in 1:self$n.emul)
                               {
-                                DOE[,i] <- DOE[,i]*V[i]+rep(M[i],self$n.emul)
+                                DOEtemp[,i] <- DOEtemp[,i]*V[i]+rep(M[i],self$n.emul)
                               }
                             }
                             doeParam <- unscale(doe[,(Dim-self$p+1):Dim],self$binf,self$bsup)
                             ### Matrix D contains the final value for the DOE
-                            D <- cbind(DOE,doeParam)
+                            D <- cbind(DOEtemp,doeParam)
+                            ### Generating the response
+                            z <- self$code(D[,1:(Dim-self$p)],D[,(Dim-self$p+1):Dim])
+                            ### Converting D as a data.frame for the km function
+                            D <- as.data.frame(D)
+                            #colnames(D) <- c("V1","V2","V3","V4","V5","V6")
+                            ### Creation of the Gaussian Process with estimation of hyperpameters
+                            GP <- km(formula =~1, design=D, response = z,covtype = self$type)
+                            return(list(GP=GP,doe=D))
                           }
-                          ### Generating the response
-                          z <- self$code(D[,1:(Dim-self$p)],D[,(Dim-self$p+1):Dim])
-                          ### Converting D as a data.frame for the km function
-                          D <- as.data.frame(D)
-                          #colnames(D) <- c("V1","V2","V3","V4","V5","V6")
-                          ### Creation of the Gaussian Process with estimation of hyperpameters
-                          GP <- km(formula =~1, design=D, response = z,covtype = "matern5_2")
-                          return(list(GP=GP,DOE=D))
+
                         },
                         fun = function(theta,sig2)
                         {
@@ -334,36 +384,6 @@ model2.class <- R6::R6Class(classname = "model2.class",
                         })
                         )
 
-model2.class$set("public","PCA.fun",
-                function(X,Dim,n,p,d,binf,bsup,M,V)
-                {
-                  PCA.sim <- PCA(X,graph = FALSE)
-                  ### Coordinates in the new uncorrelated space of the initial points
-                  B <- PCA.sim$ind$coord
-                  ### Transition matrix
-                  P <- sqrt(PCA.sim$var$contrib[,1:d])/10 * sign(PCA.sim$var$coord[,1:d])
-                  ### Establishment of the DOE
-                  doe <- lhsDesign(n,Dim)$design
-                  doe <- maximinSA_LHS(doe)
-                  doe <- doe$design
-                  ### Boundaries of the points in the new coordinates
-                  binf.X <- apply(B,2,min)
-                  bsup.X <- apply(B,2,max)
-                  ### Unscaling the doe into the right bounds
-                  DOE <- unscale(doe[,1:d],binf.X,bsup.X)
-                  ### Matrix containing the points from the DOE but in the initial coordinates
-                  A <- t(P%*%t(DOE))
-                  ### Multiplication of each components by the variance and add the mean
-                  for (i in 1:d)
-                  {
-                    A[,i] <- A[,i]*V[i]+rep(M[i],n)
-                  }
-                  ### Getting back the value of the parameter generated by the DOE
-                  doeParam <- unscale(doe[,(Dim-p+1):Dim],binf,bsup)
-                  ### Matrix D contains the final value for the DOE
-                  D <- cbind(A,doeParam)
-                  return(D)
-                })
 
 model2.class$set("public","likelihood",
                  function(theta,sig2)
@@ -377,14 +397,15 @@ model2.class$set("public","likelihood",
 
 
 model2.class$set("public","plot",
-                 function(theta,sig,Newdata,points=TRUE)
+                 function(theta,sig,points=TRUE)
                  {
-                   self$X <- Newdata
+                   binf <- min(self$X)
+                   bsup <- max(self$X)
                    res <- self$fun(theta,sig)
-                   gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),
+                   gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
                                           lower=res$lower,upper=res$upper,type="Gaussian process",
                                          fill="90% credibility interval for the Gaussian process")
-                   gg.data.exp <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),lower=res$lower,
+                   gg.data.exp <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),lower=res$lower,
                                             upper=res$upper,type="experiment",
                                             fill="90% credibility interval for the Gaussian process")
                    gg.data <- rbind(gg.data,gg.data.exp)
@@ -409,14 +430,32 @@ model2.class$set("public","plot",
                  })
 
 
+model2.class$set("public","summury",
+                 function()
+                 {
+                   cat("Call:\n")
+                   print(self$model)
+                   cat("\n")
+                   cat("With the function:\n")
+                   print(self$code)
+                   cat("\n")
+                   cat("A surrogate had been set up:")
+                   print(self$GP)
+                   cat("\n")
+                   cat("No discrepancy is added\n")
+                 }
+)
+
+
 
 model4.class <- R6::R6Class(classname = "model4.class",
                         inherit = model2.class,
                         public=list(
                           funC = NULL,
-                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA,binf=NA,bsup=NA)
+                          disc = NULL,
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
                           {
-                            super$initialize(code, X, Yexp, model, opt.emul, binf, bsup)
+                            super$initialize(code, X, Yexp, model, opt.emul)
                             self$funC <- super$fun
                           },
                           discrepancy = function(theta,thetaD,sig2)
@@ -460,13 +499,14 @@ model4.class <- R6::R6Class(classname = "model4.class",
                           fun = function(theta,thetaD,sig2)
                           {
                             foo <- self$funC(theta,sig2)
-                            res <- self$discrepancy(theta,thetaD,sig2)
+                            self$disc <- self$discrepancy(theta,thetaD,sig2)
                             y <- foo$y
                             Cov.GP <- foo$Cov.GP
                             yc <- foo$yc
                             lower <- foo$lower
                             upper <- foo$upper
-                            return(list(y=res$biais+y,Cov.D=res$cov,yc=yc,lower=lower,upper=upper,Cov.GP=Cov.GP))
+                            return(list(y=self$disc$biais+y,Cov.D=self$disc$cov,yc=yc,
+                                        lower=lower,upper=upper,Cov.GP=Cov.GP))
                           })
 )
 
@@ -484,18 +524,20 @@ model4.class$set("public","likelihood",
 
 
 model4.class$set("public","plot",
-                 function(theta,thetaD,sig,Newdata,points=TRUE)
+                 function(theta,thetaD,sig,points)
                  {
-                   self$X <- Newdata
+                   binf <- min(self$X)
+                   bsup <- max(self$X)
                    res <- self$fun(theta,thetaD,sig)
-                   gg.data <- data.frame(y=res$yc,x=seq(0,1,length.out=length(res$yc)),
+                   gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
                                          lower=res$lower,upper=res$upper,type="Gaussian process",
                                          fill="90% credibility interval for the Gaussian process")
-                   gg.data.dis <- data.frame(y=res$y,x=seq(0,1,length.out=length(res$yc)),lower=res$lower,
+                   gg.data.dis <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),lower=res$lower,
                                              upper=res$upper,type="Gaussian Process with discrepancy",
                                              fill="90% credibility interval for the Gaussian process")
-                   gg.data.exp <- data.frame(y=self$Yexp,x=seq(0,1,length.out=length(res$yc)),lower=res$lower,
-                                             upper=res$upper,type="Experiment",fill="90% credibility interval")
+                   gg.data.exp <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),lower=res$lower,
+                                             upper=res$upper,type="Experiment",
+                                             fill="90% credibility interval for the Gaussian process")
                    gg.data <- rbind(gg.data,gg.data.dis,gg.data.exp)
                    gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE[,1],theta))
                    p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
@@ -516,4 +558,23 @@ model4.class$set("public","plot",
                      return(p+geom_jitter(data=gg.points,aes(x=x,y=y)))
                    }
                  })
+
+model4.class$set("public","summury",
+                 function()
+                 {
+                   cat("Call:\n")
+                   print(self$model)
+                   cat("\n")
+                   cat("With the function:\n")
+                   print(self$code)
+                   cat("\n")
+                   cat("A surrogate had been set up:")
+                   print(self$GP)
+                   cat("\n")
+                   cat("A discrepancy is added:\n")
+                   cat(paste("Mean of the biais:",round(mean(self$disc$biais),5),"\n",sep=" "))
+                   cat(paste("Covariance of the biais:",round(mean(self$disc$cov),3),"\n",sep=" "))
+                   cat("Kernel chossen: Gaussian")
+                 }
+)
 

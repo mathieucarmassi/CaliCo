@@ -4,10 +4,16 @@
 #'
 #'
 #' @details The different statistical models are: \itemize{\item{Model1:
-#' \deqn{\forall i \in [1,...,n]  Yexp_i=f(x_i,\Theta)+\epsilon(x_i)}}
+#' \deqn{for i in [1,...,n]  Yexp_i=f(x_i,\Theta)+\epsilon(x_i)}}
 #' \item{Model2:
-#' \deqn{\forall i \in [1,...,n]  Yexp_i=F(x_i,\Theta)+\epsilon(x_i)}}
+#' \deqn{for i in [1,...,n]  Yexp_i=F(x_i,\Theta)+\epsilon(x_i)}}
+#' \item{Model3:
+#' \deqn{for i in [1,...,n]  Yexp_i=f(x_i,\Theta)+\delta(x_i)+\epsilon(x_i)}}
+#' \item{Model4:
+#' \deqn{for i in [1,...,n]  Yexp_i=F(x_i,\Theta)+\delta(x_i)+\epsilon(x_i)}}
 #' }
+#' where \eqn{for i in [1,\dots,n] \epsilon(x_i)~N(0,\sigma^2)}, \eqn{F(.,.)~PG(m_1(.,.),c_1{(.,.),(.,.)})}
+#'  and \eqn{\delta(.)~PG(m_2(.),c_2(.,.))}.
 #' There is four kind of models in calibration. They are properly defined in [1].
 #'
 #'
@@ -15,9 +21,26 @@
 #' @param X the matrix of the forced variables
 #' @param Yexp the vector of the experiments
 #' @param model string of the model chosen ("model1","model2","model3","model4")
-#' by default "model1" is choosen.
-#' @return \code{model} returns a \code{model.class} object
+#' by default "model1" is choosen. See details for precisions.
+#' @param opt.emul is a list containing characteristics ahout emulation option. \itemize{
+#' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
+#' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
+#' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
+#' \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
+#' \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
+#' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL)}}
+#' }
+#' @param binf the lower bound of the parameter vector (default value 0)
+#' @param bsup the upper bound of the parameter vector (default value 1)
+#' @return \code{model} returns a \code{model.class} object. This class contains two main methods:
+#' \itemize{
+#' \item{$plot(\eqn{\Theta},\eqn{\sigma^2}, points=FALSE)}{ this metod generates the plot for a new
+#' \eqn{\Theta}, \eqn{\sigma^2} and a new set of data. The option points allows to vizualize the points from
+#' the Design Of Experiments (DOE) used for establishing the surrogate.}
+#' \item{$summury()}{ this method presents the main information about the model.}
+#' }
 #' @author M. Carmassi
+#' @references [1] Carmassi et all, Bayesian calibration
 #' @seealso \code{\link{model.class}},
 #' @examples
 #' ### For the first model
@@ -31,6 +54,8 @@
 #' foo <- model(code,X,Yexp,"model1")
 #' # Plot the results
 #' foo$plot(11,0.1,X)
+#' # summury of the foo class generated
+#' foo$summury()
 #' # Print the results for new data X
 #' foo$fun(11,0.1)
 #' # Get acces to the likelihood
@@ -44,9 +69,10 @@
 #' }
 #' Yexp <- code(X,11)+rnorm(200,0,0.1)
 #' # Generate the model with setup for the Gaussian Process
-#' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,PCA=FALSE),binf=8,bsup=14)
+#' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,type="matern5_2",PCA=FALSE,binf=8,bsup=15))
 #' # Plot the model
-#' foo$plot(11,0.1,X,points=FALSE)
+#' foo$plot(11,0.1,points=TRUE)
+#' foo$summury()
 #'
 #' # with the PCA in stand by
 #' # foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
@@ -61,8 +87,9 @@
 #'
 #' Yexp <- code(X,11)+rnorm(100,0,0.1)
 #' foo <- model(code,X,Yexp,"model3")
-#' foo$plot(11,c(50,1),0.1,X)
+#' foo$plot(11,c(50,1),0.1)
 #' foo$likelihood(11,c(50,1),0.1)
+#' foo$summury()
 #'
 #' ### For the fourth model
 #' X <- seq(0,1,length.out=100)
@@ -71,16 +98,17 @@
 #'   return((6*X-2)^2*sin(theta*X-4))
 #' }
 #' Yexp <- code(X,11)+rnorm(100,0,0.1)
-#' foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=60,PCA=FALSE),binf=8,bsup=14)
-#' foo$plot(11,c(50,1),0.1,X,points=FALSE)
-#'
+#' foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=60,type="matern5_2",PCA=FALSE,binf=8,bsup=14))
+#' foo$plot(11,c(50,1),0.1,points=FALSE)
+#' foo$summury()
 #' foo$likelihood(11,c(50,1),0.1)
 #'
 #' # with the PCA in stand by
 #' # foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
 #' # foo$fun(c(3,3),c(0.2,0.2),1)
 #' @export
-model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,PCA=TRUE),binf=0,bsup=1)
+model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="matern5_2",
+                                                           binf=0,bsup=1,DOE=NULL))
 {
   library(R6)
   library(FactoMineR)
@@ -88,19 +116,19 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,PCA=TR
   library(DiceKriging)
   switch(model,
          model1={
-           obj = model1.class$new(code,X,Yexp,model,binf,bsup)
+           obj = model1.class$new(code,X,Yexp,model)
            return(obj)
          },
          model2={
-           obj = model2.class$new(code,X,Yexp,model,opt.emul,binf,bsup)
+           obj = model2.class$new(code,X,Yexp,model,opt.emul)
            return(obj)
          },
          model3={
-           obj = model3.class$new(code,X,Yexp,model,binf,bsup)
+           obj = model3.class$new(code,X,Yexp,model)
            return(obj)
          },
          model4={
-           obj = model4.class$new(code,X,Yexp,model,opt.emul,binf,bsup)
+           obj = model4.class$new(code,X,Yexp,model,opt.emul)
            return(obj)
          }
   )

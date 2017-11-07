@@ -26,6 +26,7 @@ Collate:
     'estimation.R'
     'prior.R'
     'RcppExports.R'
+    'calibrationCode-package.R'
 LinkingTo: 
     Rcpp,
     RcppArmadillo
