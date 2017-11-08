@@ -28,10 +28,9 @@
 #' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
 #' \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
 #' \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
-#' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL)}}
+#' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
+#' generated as a maximin LHS}}
 #' }
-#' @param binf the lower bound of the parameter vector (default value 0)
-#' @param bsup the upper bound of the parameter vector (default value 1)
 #' @return \code{model} returns a \code{model.class} object. This class contains two main methods:
 #' \itemize{
 #' \item{$plot(\eqn{\Theta},\eqn{\sigma^2}, points=FALSE)}{ this metod generates the plot for a new
@@ -69,14 +68,18 @@
 #' }
 #' Yexp <- code(X,11)+rnorm(200,0,0.1)
 #' # Generate the model with setup for the Gaussian Process
-#' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,type="matern5_2",PCA=FALSE,binf=8,bsup=15))
+#' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,type="matern5_2",binf=8,bsup=15,DOE=NULL))
 #' # Plot the model
 #' foo$plot(11,0.1,points=TRUE)
+#'
+#' # Use your own design of experiments
+#' DOE <- DiceDesign::lhsDesign(100,2)$design
+#' DOE[,2] <- unscale(DOE[,2],8,15)
+#' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,type="matern5_2",binf=8,bsup=15,DOE=DOE))
+#' foo$plot(11,0.1,points=TRUE)
+#'
 #' foo$summury()
 #'
-#' # with the PCA in stand by
-#' # foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
-#' # foo$fun(c(3,3),1)
 #'
 #' ### For the third model
 #' X <- seq(0,1,length.out=100)
@@ -98,14 +101,19 @@
 #'   return((6*X-2)^2*sin(theta*X-4))
 #' }
 #' Yexp <- code(X,11)+rnorm(100,0,0.1)
-#' foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=60,type="matern5_2",PCA=FALSE,binf=8,bsup=14))
+#' foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=60,type="matern5_2",binf=8,bsup=14,DOE=NULL))
 #' foo$plot(11,c(50,1),0.1,points=FALSE)
+#'
+#' # Use your own design of experiments
+#' DOE <- DiceDesign::lhsDesign(100,2)$design
+#' DOE[,2] <- unscale(DOE[,2],8,15)
+#' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,type="matern5_2",binf=8,bsup=15,DOE=DOE))
+#' foo$plot(11,0.1,points=TRUE)
+#'
 #' foo$summury()
+#'
 #' foo$likelihood(11,c(50,1),0.1)
 #'
-#' # with the PCA in stand by
-#' # foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
-#' # foo$fun(c(3,3),c(0.2,0.2),1)
 #' @export
 model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="matern5_2",
                                                            binf=0,bsup=1,DOE=NULL))

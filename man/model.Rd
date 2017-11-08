@@ -23,12 +23,9 @@ by default "model1" is choosen. See details for precisions.}
 \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
 \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
 \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
-\item{\strong{DOE}{ design of experiments for the surrogate (default value NULL)}}
+\item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
+generated as a maximin LHS}}
 }}
-
-\item{binf}{the lower bound of the parameter vector (default value 0)}
-
-\item{bsup}{the upper bound of the parameter vector (default value 1)}
 }
 \value{
 \code{model} returns a \code{model.class} object. This class contains two main methods:
@@ -83,7 +80,7 @@ code <- function(X,theta)
 }
 Yexp <- code(X,11)+rnorm(200,0,0.1)
 # Generate the model with setup for the Gaussian Process
-foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,type="matern5_2",PCA=FALSE,binf=8,bsup=15))
+foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,type="matern5_2",binf=8,bsup=15,DOE=NULL))
 # Plot the model
 foo$plot(11,0.1,points=TRUE)
 foo$summury()

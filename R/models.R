@@ -111,11 +111,15 @@ model1.class <- R6::R6Class(classname = "model1.class",
                         {
                           y  <- self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2))
                           yc <- self$code(self$X,theta)
+                          if (is.na(mean(yc)))
+                          {stop('You have given the wrong number of parameter')}
                           return(list(y=y, yc=yc))
                         },
                         likelihood = function(theta,sig2)
                         {
                           self$m.exp = self$code(self$X,theta)
+                          if (is.na(mean(self$m.exp)))
+                          {stop('You have given the wrong number of parameter')}
                           self$V.exp = sig2*diag(self$n)
                           return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                                                           invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
@@ -127,9 +131,13 @@ model1.class <- R6::R6Class(classname = "model1.class",
 model1.class$set("public","plot",
                  function(theta,sig,point=FALSE)
                  {
+                   if(is.null(dim(self$X))==FALSE)
+                   {stop('Graphic representation is not available in dimension >1')}
                    binf = min(self$X)
                    bsup = max(self$X)
                    res <- self$fun(theta,sig)
+                   if (is.na(mean(res$yc)))
+                   {stop('You have given the wrong number of parameter')}
                    gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),type="code result")
                    gg.data.noisy <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),
                                              type="noisy")
@@ -208,7 +216,8 @@ model3.class <- R6::R6Class(classname = "model3.class",
                             }
                             d <- diag(e)
                             Cov <- t(p)%*%d%*%p
-                            biais <- mvrnorm(n=self$n,rep(0,length(self$X)),Cov)
+                            if (is.null(dim(self$X))){long <- length(self$X)}else{long <- dim(self$X)[1]}
+                            biais <- mvrnorm(n=self$n,rep(0,long),Cov)
                             biais <- apply(biais,1,mean)
                             return(list(biais=biais,cov=Cov))
                           },
@@ -227,6 +236,8 @@ model3.class <- R6::R6Class(classname = "model3.class",
 model3.class$set("public","plot",
                  function(theta,thetaD,sig)
                  {
+                   if(is.null(dim(self$X))==FALSE)
+                   {stop('Graphic representation is not available in dimension >1')}
                    binf <- min(self$X)
                    bsup <- max(self$X)
                    res <- self$fun(theta,thetaD,sig)
@@ -286,6 +297,7 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           n.emul = NULL,
                           GP     = NULL,
                           DOE    = NULL,
+                          design = NULL,
                           p      = NULL,
                           type   = NULL,
                           m.exp  = NULL,
@@ -316,10 +328,16 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           {
                             D <- self$DOE
                             ### Generating the response
-                            z <- self$code(D[,1:(Dim-self$p)],D[,(Dim-self$p+1):Dim])
+                            z <- matrix(nr=self$n.emul,nc=1)
+                            for (i in 1:self$n.emul)
+                            {
+                              covariates <- as.matrix(D[i,1:(Dim-self$p)])
+                              dim(covariates) <- c(1,self$d)
+                              z[i] <- self$code(covariates,D[i,(Dim-self$p+1):Dim])
+                            }
+                            #z <- self$code(D[,1:(Dim-self$p)],D[,(Dim-self$p+1):Dim])
                             ### Converting D as a data.frame for the km function
                             D <- as.data.frame(D)
-                            #colnames(D) <- c("V1","V2","V3","V4","V5","V6")
                             ### Creation of the Gaussian Process with estimation of hyperpameters
                             GP <- km(formula =~1, design=D, response = z,covtype = self$type)
                             return(list(GP=GP,doe=D))
@@ -336,25 +354,29 @@ model2.class <- R6::R6Class(classname = "model2.class",
                             {
                               for (i in 1:self$n.emul)
                               {
-                                if (self$d==1)
-                                {
-                                  DOEtemp[i] <- DOEtemp[i]*V+M
-                                } else
-                                {
-                                  DOEtemp[i] <- DOEtemp[i]*V[i]+rep(M[i],self$n.emul)
-                                }
+                                DOEtemp[i] <- DOEtemp[i]*V+M
                               }
                             } else {
                               for (i in 1:self$n.emul)
                               {
-                                DOEtemp[,i] <- DOEtemp[,i]*V[i]+rep(M[i],self$n.emul)
+                                DOEtemp[i,] <- DOEtemp[i,]*V+M
                               }
                             }
+                            if (length(self$binf)!=self$p | length(self$bsup)!=self$p)
+                            {stop('Mismatch between the size of the upper, lower bounds and the parameter vector')}
                             doeParam <- unscale(doe[,(Dim-self$p+1):Dim],self$binf,self$bsup)
                             ### Matrix D contains the final value for the DOE
                             D <- cbind(DOEtemp,doeParam)
+                            self$DOE <- D
                             ### Generating the response
-                            z <- self$code(D[,1:(Dim-self$p)],D[,(Dim-self$p+1):Dim])
+                            z <- matrix(nr=self$n.emul,nc=1)
+                            for (i in 1:self$n.emul)
+                            {
+                              covariates <- as.matrix(D[i,1:(Dim-self$p)])
+                              dim(covariates) <- c(1,self$d)
+                              z[i] <- self$code(covariates,D[i,(Dim-self$p+1):Dim])
+                            }
+                            #z <- self$code(D[,1:(Dim-self$p)],D[,(Dim-self$p+1):Dim])
                             ### Converting D as a data.frame for the km function
                             D <- as.data.frame(D)
                             #colnames(D) <- c("V1","V2","V3","V4","V5","V6")
@@ -378,7 +400,7 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           Xnew <- as.data.frame(Xnew)
                           names(Xnew) <- c("DOE","doeParam")
                           pr <- predict(self$GP,newdata=as.data.frame(Xnew),type="UK",
-                                        cov.compute=TRUE,interval="confidence")
+                                        cov.compute=TRUE,interval="confidence",checkNames=FALSE)
                           err <- rnorm(n=self$n,mean = 0,sd=sqrt(sig2))
                           return(list(y=pr$mean+err,Cov.GP=pr$cov,yc=pr$mean,lower=pr$lower95,upper=pr$upper95))
                         })
@@ -390,6 +412,8 @@ model2.class$set("public","likelihood",
                  {
                    temp <- self$fun(theta,sig2)
                    self$m.exp <- temp$yc
+                   if (length(theta)!=self$p)
+                   {stop('You have given the wrong number of parameter')}
                    self$V.exp <- sig2*diag(self$n) + temp$Cov.GP
                    return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                                                                   invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
@@ -399,9 +423,13 @@ model2.class$set("public","likelihood",
 model2.class$set("public","plot",
                  function(theta,sig,points=TRUE)
                  {
+                   if (length(theta)!=self$p)
+                   {stop('You have given the wrong number of parameter')}
+                   if(self$d>1)
+                   {stop('Graphic representation is not available in dimension >1')}
+                   res <- self$fun(theta,sig)
                    binf <- min(self$X)
                    bsup <- max(self$X)
-                   res <- self$fun(theta,sig)
                    gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
                                           lower=res$lower,upper=res$upper,type="Gaussian process",
                                          fill="90% credibility interval for the Gaussian process")
