@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{model}
 \alias{model}
-\title{Generates \code{\link{model.class}} objects}
+\title{Generates \code{\link{model.class}} objects.}
 \usage{
 model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
   PCA = TRUE), binf = 0, bsup = 1)
@@ -21,9 +21,14 @@ by default "model1" is choosen.}
 \code{model} returns a \code{model.class} object
 }
 \description{
-\code{model} is a function that allows us to generates a calibration model and its likelihood.
+\code{model} is a function that generates a calibration model and the associated likelihood.
 }
 \details{
+The different statistical models are: \itemize{\item{Model1:
+\deqn{\forall i \in [1,...,n]  Yexp_i=f(x_i,\Theta)+\epsilon(x_i)}}
+\item{Model2:
+\deqn{\forall i \in [1,...,n]  Yexp_i=F(x_i,\Theta)+\epsilon(x_i)}}
+}
 There is four kind of models in calibration. They are properly defined in [1].
 }
 \examples{
@@ -44,16 +49,16 @@ foo$fun(11,0.1)
 foo$likelihood(11,0.1)
 
 ### For the second model
-X <- seq(0,1,length.out=25)
+X <- seq(0,1,length.out=200)
 code <- function(X,theta)
 {
   return((6*X-2)^2*sin(theta*X-4))
 }
-Yexp <- code(X,11)+rnorm(25,0,0.1)
+Yexp <- code(X,11)+rnorm(200,0,0.1)
 # Generate the model with setup for the Gaussian Process
-foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=50,PCA=FALSE),binf=8,bsup=14)
+foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,PCA=FALSE),binf=8,bsup=14)
 # Plot the model
-foo$plot(11,0.1,X,points=TRUE)
+foo$plot(11,0.1,X,points=FALSE)
 
 # with the PCA in stand by
 # foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))

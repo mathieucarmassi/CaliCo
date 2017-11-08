@@ -1,12 +1,18 @@
-#' Generates \code{\link{model.class}} objects
+#' Generates \code{\link{model.class}} objects.
 #'
-#' \code{model} is a function that allows us to generates a calibration model and its likelihood.
+#' \code{model} is a function that generates a calibration model and the associated likelihood.
 #'
+#'
+#' @details The different statistical models are: \itemize{\item{Model1:
+#' \deqn{\forall i \in [1,...,n]  Yexp_i=f(x_i,\Theta)+\epsilon(x_i)}}
+#' \item{Model2:
+#' \deqn{\forall i \in [1,...,n]  Yexp_i=F(x_i,\Theta)+\epsilon(x_i)}}
+#' }
 #' There is four kind of models in calibration. They are properly defined in [1].
 #'
 #'
-#' @param  code the computational code (function of X and theta)
-#' @param  X the matrix of the forced variables
+#' @param code the computational code (function of X and theta)
+#' @param X the matrix of the forced variables
 #' @param Yexp the vector of the experiments
 #' @param model string of the model chosen ("model1","model2","model3","model4")
 #' by default "model1" is choosen.
@@ -31,16 +37,16 @@
 #' foo$likelihood(11,0.1)
 #'
 #' ### For the second model
-#' X <- seq(0,1,length.out=25)
+#' X <- seq(0,1,length.out=200)
 #' code <- function(X,theta)
 #' {
 #'   return((6*X-2)^2*sin(theta*X-4))
 #' }
-#' Yexp <- code(X,11)+rnorm(25,0,0.1)
+#' Yexp <- code(X,11)+rnorm(200,0,0.1)
 #' # Generate the model with setup for the Gaussian Process
-#' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=50,PCA=FALSE),binf=8,bsup=14)
+#' foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,PCA=FALSE),binf=8,bsup=14)
 #' # Plot the model
-#' foo$plot(11,0.1,X,points=TRUE)
+#' foo$plot(11,0.1,X,points=FALSE)
 #'
 #' # with the PCA in stand by
 #' # foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
@@ -101,39 +107,52 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,PCA=TR
 }
 
 
-#' Generates \code{\link{prior.class}} objects
+#' Generates \code{\link{prior.class}} objects.
 #'
-#' \code{prior} is a function that allows us to generate one or a list of classes
-#'  in which the charasteristics of each prior are defined
+#' \code{prior} is a function that generates a \code{\link{prior.class}} containing information about one or
+#' several priors. When several priors are selected, the function \code{prior} return a list of \code{\link{prior.class}}.
 #'
-#' The realized estimation is realized similarly as it is defined in [1]
+#' @details The densities implemented are defined as follow
+#' \itemize{
+#' \item{The Gaussian density:
+#' \deqn{f(x)=1/(\sigma*\sqrt(2\pi))exp{-1/2*((x-\mu)/\sigma)^2}}
+#' where \strong{\eqn{\mu}} and \strong{\eqn{\sigma}} (the mean and the standard deviation)
+#' are the two hyperparameters. The vector \eqn{c(\mu,\sigma)} is the one looked for in opt.prior.}
+#' \item{The Gamma density:
+#' \deqn{f(x)=1/(k^a*\Gamma(a))*x^(a-1)*exp(-(x/k))}
+#' where \strong{\eqn{a}} and \strong{\eqn{k}} (the shape and the scale)
+#' are the two hyperparameters. The vector \eqn{c(a,k)} is the one looked for in opt.prior.}
+#' \item{The Uniform density:
+#' \deqn{f(x)=1/(b-a)}
+#' where \strong{\eqn{a}} and \strong{\eqn{b}} (the upper and the lower bound)
+#' are the two hyperparameters. The vector \eqn{c(a,b)} is the one looked for in opt.prior.}
+#' }
 #'
 #' @import ggplot2
 #' @import gridExtra
-#' @param  type.prior the vector of the prior types selected
-#' @param opt.prior list of the hyperparameters relatives to the prior selected
-#' @return \code{prior} returns a \code{prior.class} object
+#' @param  type.prior the vector of the prior types selected. For example type.prior=c("gaussian","beta")
+#' @param opt.prior list of the hyperparameters relatives to the prior selected. If the first prior selected is
+#' Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.
+#' @return \code{prior} returns a \code{\link{prior.class}} object. Two main methods are available:
+#' \itemize{\item{$plot()}{ display the probability density of the prior}
+#' \item{$print()}{ return the main information concerning the prior distribution}}
 #' @author M. Carmassi
 #' @seealso \code{\link{model.class}}, \code{\link{estim.class}}
 #' @examples
-#' ### Only one prior is wanted
-#' ###### For a Gaussian Prior
+#' #### Only one prior is wanted
+#' ## For a Gaussian Prior
 #' foo <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
 #' foo$plot()
 #'
-#' ###### For a Uniform Prior
+#' ## For a Uniform Prior
 #' foo <- prior(type.prior="unif",opt.prior=list(c(0,1)))
 #' foo$plot()
 #'
-#' ###### For a Gamma Prior
+#' ## For a Gamma Prior
 #' foo <- prior(type.prior="gamma",opt.prior=list(c(5,1)))
 #' foo$plot()
 #'
-#' ##### For an inverse-Gamma Prior
-#' foo <- prior(type.prior="invGamma",opt.prior=list(c(0.2,0.3)))
-#' foo$plot()
-#'
-#' ### For several priors
+#' #### For several priors
 #' foo <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
 #' grid.arrange(foo$Prior1$plot(),foo$Prior2$plot(),nrow=2)
 #'
@@ -224,14 +243,32 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' opt.prior=list(c(11,3),c(2,0.1))
 #' ### Definition of the estimation option
 #' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
+#' ### Definition of the emulation options (for Model2 and Model4 exclusively)
+#' opt.emul=list(p=1,n.emul=150,PCA=FALSE)
 #'
 #' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
 #' test$plot()
+#' test2 <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
+#' test2$plot()
+#'
+#'
+#' type.prior=c("gaussian","gamma","unif","gamma")
+#' opt.prior=list(c(11,3),c(2,0.1),c(0,1),c(2,0.1))
+#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1,0.1,0.1),k=rep(5e-4,4),sig=diag(4))
+#'
+#' test3 <- estim(code,X,Yr,Yexp,model="model3",type.prior,log=TRUE,opt.prior,opt.estim)
+#' test3$plot()
+#' test4 <- estim(code,X,Yr,Yexp,model="model4",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
+#' test4$plot()
 #'
 #' # With leave one out cross validation
+#' type.prior=c("gaussian","gamma")
+#' opt.prior=list(c(11,3),c(2,0.1))
+#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
 #' opt.valid =list(n.CV=10,k=NULL)
 #' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim,type.valid="loo",opt.valid=opt.valid)
-#'
+#' test2 <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul,type.valid="loo",opt.valid=opt.valid)
+#' test$plot()
 #'
 #'
 #' #### with two parameters
@@ -249,9 +286,17 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' opt.prior=list(c(11,3),c(6,2),c(2,0.1))
 #' ### Definition of the estimation option
 #' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,6,0.1),k=rep(5e-4,3),sig=diag(3))
+#' ### Definition of the emulation options
+#' opt.emul=list(p=1,n.emul=150,PCA=FALSE)
 #'
 #' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
 #' test$plot()
+#' test2 <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
+#' test2$plot()
+#' test3 <- estim(code,X,Yr,Yexp,model="model3",type.prior,log=TRUE,opt.prior,opt.estim)
+#' test3$plot()
+#' test4 <- estim(code,X,Yr,Yexp,model="model4",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
+#' test4$plot()
 #'
 #'
 #' #### with two X
@@ -271,89 +316,18 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,6,0.1),k=rep(5e-4,3),sig=diag(3))
 #'
 #' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
+#' test2 <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
+#' test3 <- estim(code,X,Yr,Yexp,model="model3",type.prior,log=TRUE,opt.prior,opt.estim)
+#' test4 <- estim(code,X,Yr,Yexp,model="model4",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
 #' test$plot(depend.X=FALSE)
+#' test2$plot(depend.X=FALSE)
+#' test3$plot(depend.X=FALSE)
+#' test4$plot(depend.X=FALSE)
 #'
-#'
-#'
-#' ####### For the second model
-#' ### The data set
-#' X <- seq(0,1,length.out=100)
-#' ### The code to calibrate
-#' code <- function(X,theta)
-#' {
-#'   return((6*X-2)^2*sin(theta*X-4))
-#' }
-#' ### Simulated data
-#' Yr   <- code(X,11)
-#' Yexp <- Yr+rnorm(100,0,0.1)
-#' ### Definition of the nature of the priors
-#' type.prior=c("gaussian","gamma")
-#' ### Definition of the emulation options
-#' opt.emul=list(p=1,n.emul=150,PCA=FALSE)
-#' ### Definition of the prior hyperparameters
-#' opt.prior=list(c(11,3),c(2,0.1))
-#' ### Definition of the estimation option
-#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
-#'
-#' test <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
-#' test$plot()
-#'
-#' # With leave one out cross validation
-#' opt.valid =list(n.CV=100,k=NULL)
-#' test <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul,type.valid="loo",opt.valid=opt.valid)
-#'
-#'
-#'
-#'
-#' ####### For the third model
-#' ### The data set
-#' X <- seq(0,1,length.out=25)
-#' ### The code to calibrate
-#' code <- function(X,theta)
-#' {
-#'   return((6*X-2)^2*sin(theta*X-4))
-#' }
-#' ### Simulated data
-#' Yr   <- code(X,11)
-#' Yexp <- Yr+rnorm(25,0,0.1)
-#' ### Definition of the nature of the priors
-#' type.prior=c("gaussian","gamma","unif","gamma")
-#' ### Definition of the prior hyperparameters
-#' opt.prior=list(c(11,3),c(2,0.1),c(0,1),c(2,0.1))
-#' ### Definition of the estimation option
-#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,2,0.5,0.1),k=rep(5e-4,4),sig=diag(4))
-#'
-#' test <- estim(code,X,Yr,Yexp,model="model3",type.prior,log=TRUE,opt.prior,opt.estim)
-#' test$plot()
-#'
-#'
-#'
-#' ### For the fourth model
-#' X <- seq(0,1,length.out=100)
-#' ### The code to calibrate
-#' code <- function(X,theta)
-#' {
-#'   return((6*X-2)^2*sin(theta*X-4))
-#' }
-#' ### Simulated data
-#' Yr   <- code(X,11)
-#' Yexp <- Yr + rnorm(100,0,0.1)
-#' ### Definition of the nature of the priors
-#' type.prior=c("gaussian","gamma","unif","gamma")
-#' ### Definition of the prior hyperparameters
-#' opt.prior=list(c(11,3),c(2,0.1),c(0,1),c(2,0.1))
-#' ### Definition of the estimation option
-#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,2,0.5,0.1),k=rep(0.001,4),sig=diag(4))
-#' ### Definition of the emulation options
-#' opt.emul=list(p=1,n.emul=150,PCA=FALSE)
-#'
-#' test <- estim(code,X,Yr,Yexp,model="model4",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
-#' test$plot()
 #'
 #' @export
 estim <-function(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE
-                  ,opt.prior,opt.estim,opt.emul=list(p=1,n.emul=100,PCA=TRUE),type.valid=NULL,
-                 opt.valid=NULL)
+                  ,opt.prior,opt.estim,opt.emul=list(p=1,n.emul=100,PCA=TRUE),type.valid=NULL,opt.valid=NULL)
 {
   res <- estim.class$new(code,X,Yr,Yexp,model,type.prior,log,opt.emul,opt.prior,opt.estim,type.valid,opt.valid)
   return(res)
