@@ -5,7 +5,7 @@
 \title{Generates \code{\link{model.class}} objects.}
 \usage{
 model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
-  PCA = TRUE), binf = 0, bsup = 1)
+  type = "matern5_2", binf = 0, bsup = 1, DOE = NULL))
 }
 \arguments{
 \item{code}{the computational code (function of X and theta)}
@@ -15,20 +15,42 @@ model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
 \item{Yexp}{the vector of the experiments}
 
 \item{model}{string of the model chosen ("model1","model2","model3","model4")
-by default "model1" is choosen.}
+by default "model1" is choosen. See details for precisions.}
+
+\item{opt.emul}{is a list containing characteristics ahout emulation option. \itemize{
+\item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
+\item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
+\item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
+\item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
+\item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
+\item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
+generated as a maximin LHS}}
+}}
 }
 \value{
-\code{model} returns a \code{model.class} object
+\code{model} returns a \code{model.class} object. This class contains two main methods:
+\itemize{
+\item{$plot(\eqn{\Theta},\eqn{\sigma^2}, points=FALSE)}{ this metod generates the plot for a new
+\eqn{\Theta}, \eqn{\sigma^2} and a new set of data. The option points allows to vizualize the points from
+the Design Of Experiments (DOE) used for establishing the surrogate.}
+\item{$summury()}{ this method presents the main information about the model.}
+}
 }
 \description{
 \code{model} is a function that generates a calibration model and the associated likelihood.
 }
 \details{
 The different statistical models are: \itemize{\item{Model1:
-\deqn{\forall i \in [1,...,n]  Yexp_i=f(x_i,\Theta)+\epsilon(x_i)}}
+\deqn{for i in [1,...,n]  Yexp_i=f(x_i,\Theta)+\epsilon(x_i)}}
 \item{Model2:
-\deqn{\forall i \in [1,...,n]  Yexp_i=F(x_i,\Theta)+\epsilon(x_i)}}
+\deqn{for i in [1,...,n]  Yexp_i=F(x_i,\Theta)+\epsilon(x_i)}}
+\item{Model3:
+\deqn{for i in [1,...,n]  Yexp_i=f(x_i,\Theta)+\delta(x_i)+\epsilon(x_i)}}
+\item{Model4:
+\deqn{for i in [1,...,n]  Yexp_i=F(x_i,\Theta)+\delta(x_i)+\epsilon(x_i)}}
 }
+where \eqn{for i in [1,\dots,n] \epsilon(x_i)~N(0,\sigma^2)}, \eqn{F(.,.)~PG(m_1(.,.),c_1{(.,.),(.,.)})}
+ and \eqn{\delta(.)~PG(m_2(.),c_2(.,.))}.
 There is four kind of models in calibration. They are properly defined in [1].
 }
 \examples{
@@ -43,6 +65,8 @@ Yexp <- code(X,11)+rnorm(100,0,0.1)
 foo <- model(code,X,Yexp,"model1")
 # Plot the results
 foo$plot(11,0.1,X)
+# summury of the foo class generated
+foo$summury()
 # Print the results for new data X
 foo$fun(11,0.1)
 # Get acces to the likelihood
@@ -56,9 +80,10 @@ code <- function(X,theta)
 }
 Yexp <- code(X,11)+rnorm(200,0,0.1)
 # Generate the model with setup for the Gaussian Process
-foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,PCA=FALSE),binf=8,bsup=14)
+foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,type="matern5_2",binf=8,bsup=15,DOE=NULL))
 # Plot the model
-foo$plot(11,0.1,X,points=FALSE)
+foo$plot(11,0.1,points=TRUE)
+foo$summury()
 
 # with the PCA in stand by
 # foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
@@ -73,8 +98,9 @@ code <- function(X,theta)
 
 Yexp <- code(X,11)+rnorm(100,0,0.1)
 foo <- model(code,X,Yexp,"model3")
-foo$plot(11,c(50,1),0.1,X)
+foo$plot(11,c(50,1),0.1)
 foo$likelihood(11,c(50,1),0.1)
+foo$summury()
 
 ### For the fourth model
 X <- seq(0,1,length.out=100)
@@ -83,14 +109,17 @@ code <- function(X,theta)
   return((6*X-2)^2*sin(theta*X-4))
 }
 Yexp <- code(X,11)+rnorm(100,0,0.1)
-foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=60,PCA=FALSE),binf=8,bsup=14)
-foo$plot(11,c(50,1),0.1,X,points=FALSE)
-
+foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=60,type="matern5_2",PCA=FALSE,binf=8,bsup=14))
+foo$plot(11,c(50,1),0.1,points=FALSE)
+foo$summury()
 foo$likelihood(11,c(50,1),0.1)
 
 # with the PCA in stand by
 # foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
 # foo$fun(c(3,3),c(0.2,0.2),1)
+}
+\references{
+[1] Carmassi et all, Bayesian calibration
 }
 \seealso{
 \code{\link{model.class}},

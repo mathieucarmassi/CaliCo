@@ -9,10 +9,10 @@
 model.class
 }
 \description{
-See the function blabla which produces an instance of this class
+See the function \code{\link{model}} which produces an instance of this class
 This class comes with a set of methods, some of them being useful for the user:
-See the documentation for blabla... Other methods
- should not be called as they are designed to be used during the optimization process.
+See the documentation for \code{\link{model}}... Other methods
+should not be called as they are designed to be used during the calibration process.
 
 Fields should not be changed or manipulated by the user as they are updated internally
 during the estimation process.
@@ -24,13 +24,20 @@ during the estimation process.
 
 \item{\code{X}}{the matrix of the forced variables}
 
-\item{\code{theta}}{the vector of parameters to estimate}
-
 \item{\code{Yexp}}{the experimental output}
 
 \item{\code{n}}{the number of experiments}
 
-\item{\code{model}}{the model choice see documentation}
+\item{\code{opt.emul}}{a list of parameter for the surrogate \itemize{
+\item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
+\item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
+\item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
+\item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
+\item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
+\item{\strong{DOE}{ design of experiments for the surrogate (default value NULL)}}
+}}
+
+\item{\code{model}}{the model choice (see \code{\link{model}} for more specification).}
 }}
 
 \keyword{datasets}
