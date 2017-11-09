@@ -26,14 +26,14 @@ done
 The realized estimation is realized similarly as it is defined in [1]
 }
 \examples{
-####### For the first model
-### The data set
-X <- seq(0,1,length.out=100)
 ### The code to calibrate
+X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
 code <- function(X,theta)
 {
-  return((6*X-2)^2*sin(theta*X-4))
+  return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 }
+Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
+
 ### Simulated data
 Yr   <- code(X,11)
 Yexp <- Yr+rnorm(100,0,0.1)
@@ -46,8 +46,8 @@ opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2
 ### Definition of the emulation options (for Model2 and Model4 exclusively)
 opt.emul=list(p=1,n.emul=150,PCA=FALSE)
 
-test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
-test$plot()
+R <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
+R$plot()
 test2 <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul)
 test2$plot()
 

@@ -54,69 +54,69 @@ where \eqn{for i in [1,\dots,n] \epsilon(x_i)~N(0,\sigma^2)}, \eqn{F(.,.)~PG(m_1
 There is four kind of models in calibration. They are properly defined in [1].
 }
 \examples{
-### For the first model
-X <- seq(0,1,length.out=100)
+### The code to calibrate
+X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
 code <- function(X,theta)
 {
-  return((6*X-2)^2*sin(theta*X-4))
+  return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 }
-Yexp <- code(X,11)+rnorm(100,0,0.1)
+Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
+
+### For the first model
 # Generate the model
-foo <- model(code,X,Yexp,"model1")
-# Plot the results
-foo$plot(11,0.1,X)
+model1 <- model(code,X,Yexp,"model1")
+# Plot the results with the first column of X
+model1$plot(c(1,1,11),0.1,select.X=X[,1])
 # summury of the foo class generated
-foo$summury()
-# Print the results for new data X
-foo$fun(11,0.1)
+model1$summury()
+# Acces of the fun in the model
+model1$fun(c(1,1,11),0.1)
 # Get acces to the likelihood
-foo$likelihood(11,0.1)
+model1$likelihood(c(1,1,11),0.1)
 
 ### For the second model
-X <- seq(0,1,length.out=200)
-code <- function(X,theta)
-{
-  return((6*X-2)^2*sin(theta*X-4))
-}
-Yexp <- code(X,11)+rnorm(200,0,0.1)
 # Generate the model with setup for the Gaussian Process
-foo <- model(code,X,Yexp,"model2",opt.emul=list(p=1,n.emul=100,type="matern5_2",binf=8,bsup=15,DOE=NULL))
+binf <- c(0.9,0.9,10.5)
+bsup <- c(1.1,1.1,11.5)
+opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+model2 <- model(code,X,Yexp,"model2",opt.emul)
 # Plot the model
-foo$plot(11,0.1,points=TRUE)
-foo$summury()
+model2$plot(c(1,1,11),0.1,points=FALSE,select.X=X[,1])
 
-# with the PCA in stand by
-# foo <- model(code,X,Yexp,"model2",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
-# foo$fun(c(3,3),1)
+# Use your own design of experiments
+DOE <- DiceDesign::lhsDesign(100,5)$design
+DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
+opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=DOE)
+model2 <- model(code,X,Yexp,"model2",opt.emul)
+model2$plot(c(1,1,11),0.1,points=FALSE,select.X=X[,1])
+
+model2$summury()
+
 
 ### For the third model
-X <- seq(0,1,length.out=100)
-code <- function(X,theta)
-{
-  return((6*X-2)^2*sin(theta*X-4))
-}
+model3 <- model(code,X,Yexp,"model3")
+model3$plot(c(1,1,11),c(2,0.5),0.1,select.X=X[,1])
+model3$likelihood(c(1,1,11),c(2,0.5),0.1)
+model3$summury()
 
-Yexp <- code(X,11)+rnorm(100,0,0.1)
-foo <- model(code,X,Yexp,"model3")
-foo$plot(11,c(50,1),0.1)
-foo$likelihood(11,c(50,1),0.1)
-foo$summury()
 
 ### For the fourth model
-X <- seq(0,1,length.out=100)
-code <- function(X,theta)
-{
-  return((6*X-2)^2*sin(theta*X-4))
-}
-Yexp <- code(X,11)+rnorm(100,0,0.1)
-foo <- model(code,X,Yexp,"model4",opt.emul=list(p=1,n.emul=60,type="matern5_2",PCA=FALSE,binf=8,bsup=14))
-foo$plot(11,c(50,1),0.1,points=FALSE)
-foo$summury()
-foo$likelihood(11,c(50,1),0.1)
+# Desactivation of the input DOE
+opt.emul=list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+model4 <- model(code,X,Yexp,"model4",opt.emul)
+model4$plot(c(1,1,11),c(2,0.5),0.1,points=FALSE,select.X=X[,1])
 
-# with the PCA in stand by
-# foo <- model(code,X,Yexp,"model4",opt.emul=list(p=2,n.emul=100,PCA=TRUE),binf=c(0,0),bsup=c(1,1))
-# foo$fun(c(3,3),c(0.2,0.2),1)
+# Use your own design of experiments
+DOE <- DiceDesign::lhsDesign(100,5)$design
+DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
+opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=DOE)
+model4 <- model(code,X,Yexp,"model4",opt.emul=list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=DOE))
+model4$plot(c(1,1,11),c(2,0.5),0.1,points=FALSE,select.X=X[,1])
+
+model4$summury()
+
+model4$likelihood(c(1,1,11),c(2,0.5),0.1)
+
 }
 \references{
 [1] Carmassi et all, Bayesian calibration

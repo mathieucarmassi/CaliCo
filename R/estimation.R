@@ -12,7 +12,6 @@ estim.class <- R6::R6Class(classname = "estim.class",
                     Yexp        = NULL,
                     model       = NULL,
                     type.prior  = NULL,
-                    log         = NULL,
                     opt.emul    = NULL,
                     opt.prior   = NULL,
                     opt.estim   = NULL,
@@ -27,15 +26,13 @@ estim.class <- R6::R6Class(classname = "estim.class",
                     outCV       = NULL,
                     type.valid  = NULL,
                     opt.valid   = NULL,
-                    initialize = function(code=NA,X=NA,Yr=NA,Yexp=NA,model=NA,type.prior=NA,log=TRUE,
+                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA,type.prior=NA,
                                           opt.emul=NA,opt.prior=NA,opt.estim=NA,type.valid=NA,opt.valid=NA)
                     {
                       self$code          <- code
                       self$X             <- X
-                      self$Yr            <- Yr
                       self$Yexp          <- Yexp
                       self$model         <- model
-                      self$log           <- log
                       self$opt.emul      <- opt.emul
                       self$opt.prior     <- opt.prior
                       self$opt.estim     <- opt.estim
@@ -48,10 +45,13 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       self$pr            <- prior(self$type.prior,opt.prior,log=TRUE)
                       self$binf          <- private$boundaries()$binf
                       self$bsup          <- private$boundaries()$bsup
+                      bound <- private$boundaries()
+                      bound <- list(binf=bound[[1]][1:length(bound[[1]])-1],bsup=bound[[2]][1:length(bound[[2]])-1])
+                      self$opt.emul      <- c(self$opt.emul,bound,list(DOE=NULL))
+                      self$Yr            <- self$code(self$X,self$opt.estim$thetaInit)
                       if (is.null(self$type.valid))
                       {
-                        self$md <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1],
-                                                    bsup=self$bsup[1])
+                        self$md <- model(code,X,Yexp,model,self$opt.emul)
                         self$logTest.fun   <- self$logLikelihood(model)
                         self$out           <- self$estimation(self$md,self$Yexp)
                       } else
@@ -110,8 +110,8 @@ estim.class$set("private","boundaries",
                   bsup <- self$pr[[1]]$bsup
                   for (i in 2:length(self$type.prior))
                   {
-                    binf <- cbind(binf,self$pr[[i]]$binf)
-                    bsup <- cbind(bsup,self$pr[[i]]$bsup)
+                    binf <- c(binf,self$pr[[i]]$binf)
+                    bsup <- c(bsup,self$pr[[i]]$bsup)
                   }
                   return(list(binf=binf,bsup=bsup))
                 })
@@ -198,12 +198,22 @@ estim.class$set("private","checkup",
 		)
 
 estim.class$set("public","plot",
-               function(separated=FALSE,CI=TRUE,depend.X=TRUE)
+               function(graph=c("acf","chains","densities","output"),separated=FALSE,CI=TRUE,select.X=NULL)
                  {
                     n      <- length(self$type.prior)
                     a      <- list()
                     m      <- list()
                     p      <- list()
+                    output <- function()
+                    {
+                      if (self$md$model=="model1" | self$md$model=="model2")
+                      {
+                        return(self$plotComp(CI,select.X))
+                      }else
+                      {
+                        return(self$plotCompD(CI,select.X))
+                      }
+                    }
                     for (i in 1:n)
                     {
                       dplot2  <- data.frame(data=self$out$THETA[-c(1:self$burnIn),i],type="posterior")
@@ -213,20 +223,63 @@ estim.class$set("public","plot",
                     }
                     if (separated==TRUE)
                     {
-                      a
-                      m
-                      p
+                      if (length(graph)==1)
+                      {
+                        if (graph=="acf"){return(a)}
+                        if (graph=="chains"){return(m)}
+                        if (graph=="densities"){return(p)}
+                        if (graph=="output"){return(output())}
+                      }
+                      if (length(graph)>1)
+                      {
+                        if (graph==c("acf","chains")){a;m}
+                        if (graph==c("acf","densities")){a;p}
+                        if (graph==c("acf","output")){a;output()}
+                        if (graph==c("chains","densities")){m;p}
+                        if (graph==c("chains","output")){m;output()}
+                        if (graph==c("densities","output")){p;output()}
+                      }
+                      if (length(graph)>2)
+                      {
+                        if (graph==c("acf","chains","densities")){a;m;p}
+                        if (graph==c("acf","chains","output")){a;m;output()}
+                        if (graph==c("acf","densities","output")){a;p;output()}
+                        if (graph==c("chains","densities","output")){m;p;output()}
+                      }
+                      if (length(graph)>3)
+                      {
+                        if (graph==c("acf","chains","densities","output")){a;m;p;output}
+                      }
                     } else{
-                      do.call(grid.arrange,a)
-                      do.call(grid.arrange,m)
-                      do.call(grid.arrange,p)
-                    }
-                    if (self$md$model=="model1" | self$md$model=="model2")
-                    {
-                      self$plotComp(CI,depend.X)
-                    }else
-                    {
-                      self$plotCompD(CI,depend.X)
+                      if (length(graph)==1)
+                      {
+                        if (graph=="acf"){return(do.call(grid.arrange,a))}
+                        if (graph=="chains"){return(do.call(grid.arrange,m))}
+                        if (graph=="densities"){return(do.call(grid.arrange,p))}
+                        if (graph=="output"){return(output())}
+                      }
+                      if (length(graph)>1)
+                      {
+                        if (graph==c("acf","chains")){do.call(grid.arrange,a);do.call(grid.arrange,m)}
+                        if (graph==c("acf","densities")){do.call(grid.arrange,a);do.call(grid.arrange,p)}
+                        if (graph==c("acf","output")){do.call(grid.arrange,a);output()}
+                        if (graph==c("chains","densities")){do.call(grid.arrange,m);do.call(grid.arrange,p)}
+                        if (graph==c("chains","output")){do.call(grid.arrange,m);output()}
+                        if (graph==c("densities","output")){do.call(grid.arrange,p);output()}
+                      }
+                      if (length(graph)>2)
+                      {
+                        if (graph==c("acf","chains","densities")){do.call(grid.arrange,a);do.call(grid.arrange,m);
+                          do.call(grid.arrange,p)}
+                        if (graph==c("acf","chains","output")){do.call(grid.arrange,a);do.call(grid.arrange,m);output()}
+                        if (graph==c("acf","densities","output")){do.call(grid.arrange,a);do.call(grid.arrange,p);output()}
+                        if (graph==c("chains","densities","output")){do.call(grid.arrange,m);do.call(grid.arrange,p);output()}
+                      }
+                      if (length(graph)>3)
+                      {
+                        if (graph==c("acf","chains","densities","output")){do.call(grid.arrange,a);
+                          do.call(grid.arrange,m);do.call(grid.arrange,p);output()}
+                      }
                     }
                })
 
