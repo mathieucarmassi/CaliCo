@@ -54,7 +54,7 @@ where \eqn{for i in [1,\dots,n] \epsilon(x_i)~N(0,\sigma^2)}, \eqn{F(.,.)~PG(m_1
 There is four kind of models in calibration. They are properly defined in [1].
 }
 \examples{
-### The code to calibrate
+###### The code to calibrate
 X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
 code <- function(X,theta)
 {
@@ -62,59 +62,54 @@ code <- function(X,theta)
 }
 Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
 
-### For the first model
-# Generate the model
+###### For the first model
+### Generate the model
 model1 <- model(code,X,Yexp,"model1")
-# Plot the results with the first column of X
+### Plot the results with the first column of X
 model1$plot(c(1,1,11),0.1,select.X=X[,1])
-# summury of the foo class generated
+### Summury of the foo class generated
 model1$summury()
-# Acces of the fun in the model
+### Acces of the fun in the model
 model1$fun(c(1,1,11),0.1)
-# Get acces to the likelihood
+### Get acces to the likelihood
 model1$likelihood(c(1,1,11),0.1)
 
-### For the second model
-# Generate the model with setup for the Gaussian Process
+###### For the second model
+### Generate the model with setup for the Gaussian Process
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
 opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 model2 <- model(code,X,Yexp,"model2",opt.emul)
-# Plot the model
+### Plot the model
 model2$plot(c(1,1,11),0.1,points=FALSE,select.X=X[,1])
 
-# Use your own design of experiments
+### Use your own design of experiments
 DOE <- DiceDesign::lhsDesign(100,5)$design
 DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
 opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=DOE)
 model2 <- model(code,X,Yexp,"model2",opt.emul)
 model2$plot(c(1,1,11),0.1,points=FALSE,select.X=X[,1])
-
 model2$summury()
 
-
-### For the third model
+###### For the third model
 model3 <- model(code,X,Yexp,"model3")
 model3$plot(c(1,1,11),c(2,0.5),0.1,select.X=X[,1])
 model3$likelihood(c(1,1,11),c(2,0.5),0.1)
 model3$summury()
 
-
-### For the fourth model
-# Desactivation of the input DOE
+###### For the fourth model
+### Desactivation of the input DOE
 opt.emul=list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 model4 <- model(code,X,Yexp,"model4",opt.emul)
 model4$plot(c(1,1,11),c(2,0.5),0.1,points=FALSE,select.X=X[,1])
 
-# Use your own design of experiments
+### Use your own design of experiments
 DOE <- DiceDesign::lhsDesign(100,5)$design
 DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
 opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=DOE)
 model4 <- model(code,X,Yexp,"model4",opt.emul=list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=DOE))
 model4$plot(c(1,1,11),c(2,0.5),0.1,points=FALSE,select.X=X[,1])
-
 model4$summury()
-
 model4$likelihood(c(1,1,11),c(2,0.5),0.1)
 
 }

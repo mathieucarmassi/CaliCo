@@ -32,10 +32,9 @@ during the estimation process.
 \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
 \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
 \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
-\item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
-\item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
-\item{\strong{DOE}{ design of experiments for the surrogate (default value NULL)}}
-}}
+\item{\strong{binf}}{ the lower bound of the parameter vector (default value 0)}
+\item{\strong{bsup}}{ the upper bound of the parameter vector (default value 1)}
+\item{\strong{DOE}}{ design of experiments for the surrogate (default value NULL)}}}
 
 \item{\code{model}}{the model choice (see \code{\link{model}} for more specification).}
 }}

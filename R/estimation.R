@@ -208,10 +208,12 @@ estim.class$set("public","plot",
                     {
                       if (self$md$model=="model1" | self$md$model=="model2")
                       {
-                        return(self$plotComp(CI,select.X))
+                        pp <- self$plotComp(CI,select.X)
+                        return(print(pp))
                       }else
                       {
-                        return(self$plotCompD(CI,select.X))
+                        pp <- self$plotCompD(CI,select.X)
+                        return(print(pp))
                       }
                     }
                     for (i in 1:n)
@@ -230,25 +232,25 @@ estim.class$set("public","plot",
                         if (graph=="densities"){return(p)}
                         if (graph=="output"){return(output())}
                       }
-                      if (length(graph)>1)
+                      if (length(graph)==2)
                       {
-                        if (graph==c("acf","chains")){a;m}
-                        if (graph==c("acf","densities")){a;p}
-                        if (graph==c("acf","output")){a;output()}
-                        if (graph==c("chains","densities")){m;p}
-                        if (graph==c("chains","output")){m;output()}
-                        if (graph==c("densities","output")){p;output()}
+                        if (all(graph==c("acf","chains"),TRUE)){a;m}
+                        if (all(graph==c("acf","densities"),TRUE)){a;p}
+                        if (all(graph==c("acf","output"),TRUE)){a;output()}
+                        if (all(graph==c("chains","densities"),TRUE)){m;p}
+                        if (all(graph==c("chains","output"),TRUE)){m;output()}
+                        if (all(graph==c("densities","output"),TRUE)){p;output()}
                       }
-                      if (length(graph)>2)
+                      if (length(graph)==3)
                       {
-                        if (graph==c("acf","chains","densities")){a;m;p}
-                        if (graph==c("acf","chains","output")){a;m;output()}
-                        if (graph==c("acf","densities","output")){a;p;output()}
-                        if (graph==c("chains","densities","output")){m;p;output()}
+                        if (all(graph==c("acf","chains","densities"),TRUE)){a;m;p}
+                        if (all(graph==c("acf","chains","output"),TRUE)){a;m;output()}
+                        if (all(graph==c("acf","densities","output"),TRUE)){a;p;output()}
+                        if (all(graph==c("chains","densities","output"),TRUE)){m;p;output()}
                       }
                       if (length(graph)>3)
                       {
-                        if (graph==c("acf","chains","densities","output")){a;m;p;output}
+                        if (all(graph==c("acf","chains","densities","output"),TRUE)){a;m;p;output()}
                       }
                     } else{
                       if (length(graph)==1)
@@ -258,26 +260,26 @@ estim.class$set("public","plot",
                         if (graph=="densities"){return(do.call(grid.arrange,p))}
                         if (graph=="output"){return(output())}
                       }
-                      if (length(graph)>1)
+                      if (length(graph)==2)
                       {
-                        if (graph==c("acf","chains")){do.call(grid.arrange,a);do.call(grid.arrange,m)}
-                        if (graph==c("acf","densities")){do.call(grid.arrange,a);do.call(grid.arrange,p)}
-                        if (graph==c("acf","output")){do.call(grid.arrange,a);output()}
-                        if (graph==c("chains","densities")){do.call(grid.arrange,m);do.call(grid.arrange,p)}
-                        if (graph==c("chains","output")){do.call(grid.arrange,m);output()}
-                        if (graph==c("densities","output")){do.call(grid.arrange,p);output()}
+                        if (all(graph==c("acf","chains"),TRUE)){do.call(grid.arrange,a);do.call(grid.arrange,m)}
+                        if (all(graph==c("acf","densities"),TRUE)){do.call(grid.arrange,a);do.call(grid.arrange,p)}
+                        if (all(graph==c("acf","output"),TRUE)){do.call(grid.arrange,a);output()}
+                        if (all(graph==c("chains","densities"),TRUE)){do.call(grid.arrange,m);do.call(grid.arrange,p)}
+                        if (all(graph==c("chains","output"),TRUE)){do.call(grid.arrange,m);output()}
+                        if (all(graph==c("densities","output"),TRUE)){do.call(grid.arrange,p);output()}
                       }
-                      if (length(graph)>2)
+                      if (length(graph)==3)
                       {
-                        if (graph==c("acf","chains","densities")){do.call(grid.arrange,a);do.call(grid.arrange,m);
+                        if (all(graph==c("acf","chains","densities"),TRUE)){do.call(grid.arrange,a);do.call(grid.arrange,m);
                           do.call(grid.arrange,p)}
-                        if (graph==c("acf","chains","output")){do.call(grid.arrange,a);do.call(grid.arrange,m);output()}
-                        if (graph==c("acf","densities","output")){do.call(grid.arrange,a);do.call(grid.arrange,p);output()}
-                        if (graph==c("chains","densities","output")){do.call(grid.arrange,m);do.call(grid.arrange,p);output()}
+                        if (all(graph==c("acf","chains","output"),TRUE)){do.call(grid.arrange,a);do.call(grid.arrange,m);output()}
+                        if (all(graph==c("acf","densities","output"),TRUE)){do.call(grid.arrange,a);do.call(grid.arrange,p);output()}
+                        if (all(graph==c("chains","densities","output"),TRUE)){do.call(grid.arrange,m);do.call(grid.arrange,p);output()}
                       }
                       if (length(graph)>3)
                       {
-                        if (graph==c("acf","chains","densities","output")){do.call(grid.arrange,a);
+                        if (all(graph==c("acf","chains","densities","output"),TRUE)){do.call(grid.arrange,a);
                           do.call(grid.arrange,m);do.call(grid.arrange,p);output()}
                       }
                     }
@@ -328,7 +330,7 @@ estim.class$set("public","mcmc",
 )
 
 estim.class$set("public","plotComp",
-                function(CI=TRUE,depend.X=TRUE)
+                function(CI=TRUE,select.X)
                 {
                   m <- self$out$THETA[-c(1:self$burnIn),]
                   Dist <- matrix(nr=nrow(m),nc=length(self$Yexp))
@@ -340,7 +342,7 @@ estim.class$set("public","plotComp",
                   lowerPost <- apply(Dist,2,quantile,probs=0.05)
                   upperPost <- apply(Dist,2,quantile,probs=0.95)
                   meanPost  <- apply(Dist,2,quantile,probs=0.5)
-                  if (depend.X==FALSE)
+                  if (is.null(select.X))
                   {
                     X <- self$X[,1]
                   }else
@@ -351,7 +353,7 @@ estim.class$set("public","plotComp",
                     } else{
                       if (dim(self$X)[2]>1)
                       {
-                        stop("You an X dimension over 2, please desactivate the option depend.X to visualize your result")
+                        stop("X has a dimension over 2, please activate the option select.X to visualize your result")
                       }
                     }
                   }
@@ -389,7 +391,7 @@ estim.class$set("public","plotComp",
 
 
 estim.class$set("public","plotCompD",
-                function(CI=TRUE,depend.X=TRUE)
+                function(CI=TRUE,select.X)
                 {
                   m <- self$out$THETA[-c(1:self$burnIn),]
                   Dist <- matrix(nr=nrow(m),nc=length(self$Yexp))
@@ -401,7 +403,7 @@ estim.class$set("public","plotCompD",
                   lowerPost <- apply(Dist,2,quantile,probs=0.05)
                   upperPost <- apply(Dist,2,quantile,probs=0.95)
                   meanPost  <- apply(Dist,2,quantile,probs=0.5)
-                  if (depend.X==FALSE)
+                  if (is.null(select.X))
                   {
                     X <- self$X[,1]
                   }else
@@ -412,7 +414,7 @@ estim.class$set("public","plotCompD",
                     } else{
                       if (dim(self$X)[2]>1)
                       {
-                        stop("You an X dimension over 2, please desactivate the option depend.X to visualize your result")
+                        stop("X has a dimension over 2, please activate the option select.X to visualize your result")
                       }
                     }
                   }

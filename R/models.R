@@ -15,10 +15,9 @@
 #' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
 #' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
 #' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
-#' \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
-#' \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
-#' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL)}}
-#' }
+#' \item{\strong{binf}}{ the lower bound of the parameter vector (default value 0)}
+#' \item{\strong{bsup}}{ the upper bound of the parameter vector (default value 1)}
+#' \item{\strong{DOE}}{ design of experiments for the surrogate (default value NULL)}}
 #' @field model the model choice (see \code{\link{model}} for more specification).
 #' @export
 model.class <- R6::R6Class(classname = "model.class",
@@ -112,14 +111,14 @@ model1.class <- R6::R6Class(classname = "model1.class",
                           y  <- self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2))
                           yc <- self$code(self$X,theta)
                           if (is.na(mean(yc)))
-                          {stop('You have given the wrong number of parameter')}
+                          {stop('Wrong number of parameter in the function')}
                           return(list(y=y, yc=yc))
                         },
                         likelihood = function(theta,sig2)
                         {
                           self$m.exp = self$code(self$X,theta)
                           if (is.na(mean(self$m.exp)))
-                          {stop('You have given the wrong number of parameter')}
+                          {stop('Wrong number of parameter in the function')}
                           self$V.exp = sig2*diag(self$n)
                           return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                                                           invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
