@@ -347,9 +347,9 @@ estim.class$set("public","plotComp",
                     X <- self$X[,1]
                   }else
                   {
-                    if (is.null(dim(self$X)))
+                    if (is.null(dim(self$X))==FALSE)
                     {
-                      X <- self$X
+                      X <- select.X
                     } else{
                       if (dim(self$X)[2]>1)
                       {
@@ -405,10 +405,10 @@ estim.class$set("public","plotCompD",
                   meanPost  <- apply(Dist,2,quantile,probs=0.5)
                   if (is.null(select.X))
                   {
-                    X <- self$X[,1]
+                    X <- select.X
                   }else
                   {
-                    if (is.null(dim(self$X)))
+                    if (is.null(dim(self$X))==FALSE)
                     {
                       X <- self$X
                     } else{
@@ -447,6 +447,7 @@ estim.class$set("public","plotCompD",
                             legend.key=element_rect(colour=NA),
                             axis.text=element_text(size=20))
                   }
+                  print(p)
                   return(p)
                 })
 

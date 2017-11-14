@@ -64,7 +64,7 @@ opt.prior=list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1))
 ### Definition of the estimation option
 opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4))
 ### Definition of the emulation options (for Model2 and Model4 exclusively)
-opt.emul <- list(p=3,n.emul=200,type="matern5_2")
+opt.emul <- list(p=3,n.emul=200,type="matern3_2")
 
 modelfit <- estim(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim)
 modelfit$plot(graph=c("chains","densities","output"))
