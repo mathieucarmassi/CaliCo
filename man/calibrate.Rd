@@ -46,6 +46,8 @@ Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
 
 # Definition of the different models
 md1 <- model(code,X,Yexp,"model1")
+binf <- c(0.9,0.9,10.5)
+bsup <- c(1.1,1.1,11.5)
 opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 md2 <- model(code,X,Yexp,"model2",opt.emul)
 md3 <- model(code,X,Yexp,"model3")
@@ -68,11 +70,14 @@ modelfit2 <- calibrate(md2,pr1,opt.estim1)
 modelfit2$plot(graph="output")
 
 modelfit3 <- calibrate(md3,pr2,opt.estim2)
-modelfit3$plot()
+modelfit3$plot(graph="output")
 
 modelfit4 <- calibrate(md4,pr2,opt.estim2)
 modelfit4$plot()
 
+}
+\seealso{
+\code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}}
 }
 \author{
 M. Carmassi

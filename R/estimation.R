@@ -26,6 +26,8 @@ estim.class <- R6::R6Class(classname = "estim.class",
                     outCV       = NULL,
                     type.valid  = NULL,
                     opt.valid   = NULL,
+                    MAP         = NULL,
+                    Mean        = NULL,
                     initialize = function(code=NA,X=NA,Yexp=NA,model=NA,type.prior=NA,
                                           opt.emul=NA,opt.prior=NA,opt.estim=NA,type.valid=NA,opt.valid=NA)
                     {
@@ -81,11 +83,12 @@ estim.class <- R6::R6Class(classname = "estim.class",
                         )
                       }
                       MetropolisCpp <- MCMC(self$model)
-                      out <- MetropolisCpp(self$md$fun,self$opt.estim$Ngibbs,
+                      self$out <- MetropolisCpp(self$md$fun,self$opt.estim$Ngibbs,
                                                    self$opt.estim$Nmh,self$opt.estim$thetaInit,
                                                    self$opt.estim$k,self$opt.estim$sig,Yexp,
                                                    self$binf,self$bsup,self$logTest.fun)
-                      return(out)
+                      self$print()
+                      return(self$out)
                     }
                    ))
 
@@ -454,7 +457,28 @@ estim.class$set("public","plotCompD",
 estim.class$set("public","print",
                 function()
                 {
-                  cat('the main results of the calibration are')
+                  cat("Call:\n")
+                  print(self$model)
+                  cat("\n")
+                  cat("With the function:\n")
+                  print(self$code)
+                  cat("\n")
+                  cat("Converged")
+                  cat("\n\n")
+                  cat("Burn-in length:")
+                  print(self$burnIn)
+                  dsity     <- apply(self$out$THETA[-c(1:self$burnIn),],2,density)
+                  self$MAP  <- rep(1,nr=length(dsity))
+                  self$Mean <- apply(self$out$THETA[-c(1:self$burnIn),],2,mean)
+                  for (i in 1:length(dsity))
+                  {
+                    self$MAP[i] <- dsity[[i]]$x[which(dsity[[i]]$y==max(dsity[[i]]$y))]
+                  }
+                  cat("MAP estimator:\n")
+                  print(round(self$MAP,5))
+                  cat("\n")
+                  cat("Mean:\n")
+                  print(round(self$Mean,5))
                 }
 )
 

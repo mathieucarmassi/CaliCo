@@ -391,7 +391,6 @@ model2.class <- R6::R6Class(classname = "model2.class",
                         },
                         fun = function(theta,sig2)
                         {
-                          # options(warn=-1)
                           if(self$p==1)
                           {
                             Xnew <- cbind(self$X,rep(theta,self$n))

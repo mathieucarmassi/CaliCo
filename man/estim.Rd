@@ -64,7 +64,9 @@ opt.prior=list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1))
 ### Definition of the estimation option
 opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4))
 ### Definition of the emulation options (for Model2 and Model4 exclusively)
-opt.emul <- list(p=3,n.emul=200,type="matern3_2")
+binf <- c(0.9,0.9,10.5)
+bsup <- c(1.1,1.1,11.5)
+opt.emul <- list(p=3,n.emul=200,type="matern3_2",binf=binf,bsup=bsup)
 
 modelfit <- estim(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim)
 modelfit$plot(graph=c("chains","densities","output"))
@@ -87,6 +89,9 @@ test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.es
 test2 <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul,type.valid="loo",opt.valid=opt.valid)
 test$plot()
 
+}
+\seealso{
+\code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}}
 }
 \author{
 M. Carmassi

@@ -69,7 +69,7 @@
 #' opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 #' model2 <- model(code,X,Yexp,"model2",opt.emul)
 #' ### Plot the model
-#' model2$plot(c(1,1,11),0.1,points=FALSE,select.X=X[,1])
+#' model2$plot(c(1,1,11),0.1,select.X=X[,1])
 #'
 #' ### Use your own design of experiments
 #' DOE <- DiceDesign::lhsDesign(100,5)$design
@@ -266,7 +266,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' allows to choose one X for the x scale in the output plot}}
 #' \item{$sumarize()}{ return the main information concerning the estim.class object}}
 #' @author M. Carmassi
-#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}
+#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}}
 #' @examples
 #' ### The code to calibrate
 #' X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
@@ -345,7 +345,7 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' allows to choose one X for the x scale in the output plot}}
 #' \item{$sumarize()}{ return the main information concerning the estim.class object}}
 #' @author M. Carmassi
-#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}
+#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}}
 #' @examples
 #' ### The code to calibrate
 #' X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
@@ -359,7 +359,7 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' md1 <- model(code,X,Yexp,"model1")
 #' binf <- c(0.9,0.9,10.5)
 #' bsup <- c(1.1,1.1,11.5)
-#' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+#' opt.emul <- list(p=3,n.emul=300,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 #' md2 <- model(code,X,Yexp,"model2",opt.emul)
 #' md3 <- model(code,X,Yexp,"model3")
 #' md4 <- model(code,X,Yexp,"model4",opt.emul)
@@ -412,9 +412,6 @@ calibrate <-function(md,pr,opt.estim,type.valid=NULL,opt.valid=NULL)
 }
 
 
-
-
-
 #' Generates \code{\link{predict.class}} objects
 #'
 #' \code{predict} is a function that allows us to generate a class in which the estimation is
@@ -424,37 +421,38 @@ calibrate <-function(md,pr,opt.estim,type.valid=NULL,opt.valid=NULL)
 #'
 #' @useDynLib calibrationCode
 #'
-#' @param est a \code{\link{estim.class}} object
-#' @param x.new newdata for the prediction
-#' @return lala for the moment
+#' @param modelfit a \code{\link{estim.class}} object
+#' @param newdata newdata for the prediction
+#' @return return a \code{\link{predict.class}} object with two main methods
 #' @author M. Carmassi
-#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}
+#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{esim.class}}
 #' @examples
-#' ####### For the first model
-#' ### The data set
-#' X <- seq(0,1,length.out=100)
 #' ### The code to calibrate
+#' X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
 #' code <- function(X,theta)
 #' {
-#'   return((6*X-2)^2*sin(theta*X-4))
+#'   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 #' }
-#' ### Simulated data
-#' Yr   <- code(X,11)
-#' Yexp <- Yr+rnorm(100,0,0.1)
-#' ### Definition of the nature of the priors
-#' type.prior=c("gaussian","gamma")
-#' ### Definition of the prior hyperparameters
-#' opt.prior=list(c(11,3),c(2,0.1))
-#' ### Definition of the estimation option
-#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
+#' Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
 #'
-#' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
+#' # Definition of the different models
+#' md <- model(code,X,Yexp,"model1")
+#' binf <- c(0.9,0.9,10.5)
+#' bsup <- c(1.1,1.1,11.5)
+#' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+#' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
+#' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
+#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4))
+#' modelfit <- calibrate(md,pr,opt.estim)
+#'
+#' x.new <- seq(1,1.1,length.out=10)
+#' emul <- prediction(modelfit,x.new)
 #' test$plot()
 #'
 #' @export
-prediction <-function(est,x.new)
+prediction <-function(modelfit,x.new)
 {
-  res <- predict.class$new(est,x.new)
+  res <- predict.class$new(modelfit,x.new)
   return(res)
 }
 
