@@ -15,10 +15,9 @@
 #' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
 #' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
 #' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
-#' \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
-#' \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
-#' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL)}}
-#' }
+#' \item{\strong{binf}}{ the lower bound of the parameter vector (default value 0)}
+#' \item{\strong{bsup}}{ the upper bound of the parameter vector (default value 1)}
+#' \item{\strong{DOE}}{ design of experiments for the surrogate (default value NULL)}}
 #' @field model the model choice (see \code{\link{model}} for more specification).
 #' @export
 model.class <- R6::R6Class(classname = "model.class",
@@ -112,14 +111,14 @@ model1.class <- R6::R6Class(classname = "model1.class",
                           y  <- self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2))
                           yc <- self$code(self$X,theta)
                           if (is.na(mean(yc)))
-                          {stop('You have given the wrong number of parameter')}
+                          {stop('Wrong number of parameter in the function')}
                           return(list(y=y, yc=yc))
                         },
                         likelihood = function(theta,sig2)
                         {
                           self$m.exp = self$code(self$X,theta)
                           if (is.na(mean(self$m.exp)))
-                          {stop('You have given the wrong number of parameter')}
+                          {stop('Wrong number of parameter in the function')}
                           self$V.exp = sig2*diag(self$n)
                           return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                                                           invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
@@ -129,13 +128,15 @@ model1.class <- R6::R6Class(classname = "model1.class",
 
 
 model1.class$set("public","plot",
-                 function(theta,sig,point=FALSE)
+                 function(theta,sig,select.X=NULL)
                  {
-                   if(is.null(dim(self$X))==FALSE)
+                   if(is.null(dim(self$X))==FALSE & is.null(select.X))
                    {stop('Graphic representation is not available in dimension >1')}
-                   binf = min(self$X)
-                   bsup = max(self$X)
                    res <- self$fun(theta,sig)
+                   Xplot <- self$X
+                   if(is.null(select.X)==FALSE){Xplot <- select.X}
+                   binf = min(Xplot)
+                   bsup = max(Xplot)
                    if (is.na(mean(res$yc)))
                    {stop('You have given the wrong number of parameter')}
                    gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),type="code result")
@@ -234,13 +235,15 @@ model3.class <- R6::R6Class(classname = "model3.class",
 
 
 model3.class$set("public","plot",
-                 function(theta,thetaD,sig)
+                 function(theta,thetaD,sig,select.X=NULL)
                  {
-                   if(is.null(dim(self$X))==FALSE)
+                   if(is.null(dim(self$X))==FALSE & is.null(select.X))
                    {stop('Graphic representation is not available in dimension >1')}
-                   binf <- min(self$X)
-                   bsup <- max(self$X)
                    res <- self$fun(theta,thetaD,sig)
+                   Xplot <- self$X
+                   if(is.null(select.X)==FALSE){Xplot <- select.X}
+                   binf <- min(Xplot)
+                   bsup <- max(Xplot)
                    gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),type="code result")
                    gg.data.noisy <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),
                                                type="with discrepancy and noise")
@@ -388,13 +391,12 @@ model2.class <- R6::R6Class(classname = "model2.class",
                         },
                         fun = function(theta,sig2)
                         {
-                          # options(warn=-1)
                           if(self$p==1)
                           {
                             Xnew <- cbind(self$X,rep(theta,self$n))
                           } else
                           {
-                            Xtemp <- matrix(rep(theta,c(self$n,self$n)),nr=self$n,nc=self$p)
+                            Xtemp <- matrix(rep(theta,rep(self$n,self$p)),nr=self$n,nc=self$p)
                             Xnew  <- cbind(self$X,Xtemp)
                           }
                           Xnew <- as.data.frame(Xnew)
@@ -421,15 +423,24 @@ model2.class$set("public","likelihood",
 
 
 model2.class$set("public","plot",
-                 function(theta,sig,points=TRUE)
+                 function(theta,sig,points=FALSE,select.X=NULL)
                  {
                    if (length(theta)!=self$p)
                    {stop('You have given the wrong number of parameter')}
-                   if(self$d>1)
+                   if(self$d>1 & is.null(select.X))
                    {stop('Graphic representation is not available in dimension >1')}
                    res <- self$fun(theta,sig)
-                   binf <- min(self$X)
-                   bsup <- max(self$X)
+                   Xplot <- self$X
+                   if(is.null(select.X)==FALSE){
+                     Xplot <- select.X
+                     if(points==TRUE)
+                     {
+                       points <- FALSE
+                       print('The option point is automatically disabled because the representation would not have any sense')
+                     }
+                   }
+                   binf <- min(Xplot)
+                   bsup <- max(Xplot)
                    gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
                                           lower=res$lower,upper=res$upper,type="Gaussian process",
                                          fill="90% credibility interval for the Gaussian process")
@@ -437,7 +448,7 @@ model2.class$set("public","plot",
                                             upper=res$upper,type="experiment",
                                             fill="90% credibility interval for the Gaussian process")
                    gg.data <- rbind(gg.data,gg.data.exp)
-                   gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE[,1],theta))
+                   gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE,theta))
                    p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
                      geom_line(aes(y=y,x=x,col=type))+
                      theme_light()+
@@ -491,36 +502,34 @@ model4.class <- R6::R6Class(classname = "model4.class",
                             y   <- self$funC(theta,sig2)$y
                             z   <- self$Yexp - y
                             Cov <- matrix(nr=self$n,nc=self$n)
-                            if (is.null(ncol(self$X)))
+                            if (self$d==1)
                             {
-                              Cov <- matrix(nr=self$n,nc=self$n)
                               for (j in 1:self$n)
                               {
                                 for (i in 1:self$n)
                                 {
-                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[i]-self$X[j])^2)/thetaD[2])^2)
+                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sqrt(sum((self$X[i]-self$X[j])^2))/thetaD[2])^2)
                                 }
                               }
                             } else
                             {
-                              Cov <- matrix(nr=self$n,nc=self$n)
                               for (j in 1:self$n)
                               {
                                 for (i in 1:self$n)
                                 {
-                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[,i]-self$X[,j])^2)/thetaD[2])^2)
+                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sqrt(sum((self$X[i,]-self$X[j,])^2))/thetaD[2])^2)
                                 }
                               }
                             }
-                            p <- eigen(Cov)$vectors
-                            e <- eigen(Cov)$values
-                            if (all(e>0)){} else
-                            {
-                              e[which(e<0)] <- 1e-4
-                            }
-                            d <- diag(e)
-                            Cov <- t(p)%*%d%*%p
-                            biais <- mvrnorm(n=100,rep(0,length(self$X)),Cov)
+                            # p <- eigen(Cov)$vectors
+                            # e <- eigen(Cov)$values
+                            # if (all(e>0)){} else
+                            # {
+                            #   e[which(e<0)] <- 1e-4
+                            # }
+                            # d <- diag(e)
+                            # Cov <- t(p)%*%d%*%p
+                            biais <- mvrnorm(n=self$n,rep(0,self$n),Cov)
                             biais <- apply(biais,1,mean)
                             return(list(biais=biais,cov=Cov))
                           },
@@ -552,11 +561,17 @@ model4.class$set("public","likelihood",
 
 
 model4.class$set("public","plot",
-                 function(theta,thetaD,sig,points)
+                 function(theta,thetaD,sig,points=FALSE,select.X=NULL)
                  {
-                   binf <- min(self$X)
-                   bsup <- max(self$X)
+                   if (length(theta)!=self$p)
+                   {stop('You have given the wrong number of parameter')}
+                   if(self$d>1 & is.null(select.X))
+                   {stop('Graphic representation is not available in dimension >1')}
                    res <- self$fun(theta,thetaD,sig)
+                   Xplot <- self$X
+                   if(is.null(select.X)==FALSE){Xplot <- select.X}
+                   binf <- min(Xplot)
+                   bsup <- max(Xplot)
                    gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
                                          lower=res$lower,upper=res$upper,type="Gaussian process",
                                          fill="90% credibility interval for the Gaussian process")
@@ -567,7 +582,7 @@ model4.class$set("public","plot",
                                              upper=res$upper,type="Experiment",
                                              fill="90% credibility interval for the Gaussian process")
                    gg.data <- rbind(gg.data,gg.data.dis,gg.data.exp)
-                   gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE[,1],theta))
+                   gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE,theta))
                    p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
                      geom_line(aes(y=y,x=x,col=type))+
                      theme_light()+

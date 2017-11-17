@@ -12,7 +12,6 @@ estim.class <- R6::R6Class(classname = "estim.class",
                     Yexp        = NULL,
                     model       = NULL,
                     type.prior  = NULL,
-                    log         = NULL,
                     opt.emul    = NULL,
                     opt.prior   = NULL,
                     opt.estim   = NULL,
@@ -27,15 +26,15 @@ estim.class <- R6::R6Class(classname = "estim.class",
                     outCV       = NULL,
                     type.valid  = NULL,
                     opt.valid   = NULL,
-                    initialize = function(code=NA,X=NA,Yr=NA,Yexp=NA,model=NA,type.prior=NA,log=TRUE,
+                    MAP         = NULL,
+                    Mean        = NULL,
+                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA,type.prior=NA,
                                           opt.emul=NA,opt.prior=NA,opt.estim=NA,type.valid=NA,opt.valid=NA)
                     {
                       self$code          <- code
                       self$X             <- X
-                      self$Yr            <- Yr
                       self$Yexp          <- Yexp
                       self$model         <- model
-                      self$log           <- log
                       self$opt.emul      <- opt.emul
                       self$opt.prior     <- opt.prior
                       self$opt.estim     <- opt.estim
@@ -48,10 +47,13 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       self$pr            <- prior(self$type.prior,opt.prior,log=TRUE)
                       self$binf          <- private$boundaries()$binf
                       self$bsup          <- private$boundaries()$bsup
+                      bound <- private$boundaries()
+                      bound <- list(binf=bound[[1]][1:length(bound[[1]])-1],bsup=bound[[2]][1:length(bound[[2]])-1])
+                      self$opt.emul      <- c(self$opt.emul,bound,list(DOE=NULL))
+                      self$Yr            <- self$code(self$X,self$opt.estim$thetaInit)
                       if (is.null(self$type.valid))
                       {
-                        self$md <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1],
-                                                    bsup=self$bsup[1])
+                        self$md <- model(code,X,Yexp,model,self$opt.emul)
                         self$logTest.fun   <- self$logLikelihood(model)
                         self$out           <- self$estimation(self$md,self$Yexp)
                       } else
@@ -81,11 +83,12 @@ estim.class <- R6::R6Class(classname = "estim.class",
                         )
                       }
                       MetropolisCpp <- MCMC(self$model)
-                      out <- MetropolisCpp(self$md$fun,self$opt.estim$Ngibbs,
+                      self$out <- MetropolisCpp(self$md$fun,self$opt.estim$Ngibbs,
                                                    self$opt.estim$Nmh,self$opt.estim$thetaInit,
                                                    self$opt.estim$k,self$opt.estim$sig,Yexp,
                                                    self$binf,self$bsup,self$logTest.fun)
-                      return(out)
+                      self$print()
+                      return(self$out)
                     }
                    ))
 
@@ -110,8 +113,8 @@ estim.class$set("private","boundaries",
                   bsup <- self$pr[[1]]$bsup
                   for (i in 2:length(self$type.prior))
                   {
-                    binf <- cbind(binf,self$pr[[i]]$binf)
-                    bsup <- cbind(bsup,self$pr[[i]]$bsup)
+                    binf <- c(binf,self$pr[[i]]$binf)
+                    bsup <- c(bsup,self$pr[[i]]$bsup)
                   }
                   return(list(binf=binf,bsup=bsup))
                 })
@@ -198,12 +201,24 @@ estim.class$set("private","checkup",
 		)
 
 estim.class$set("public","plot",
-               function(separated=FALSE,CI=TRUE,depend.X=TRUE)
+               function(graph=c("acf","chains","densities","output"),separated=FALSE,CI=TRUE,select.X=NULL)
                  {
                     n      <- length(self$type.prior)
                     a      <- list()
                     m      <- list()
                     p      <- list()
+                    output <- function()
+                    {
+                      if (self$md$model=="model1" | self$md$model=="model2")
+                      {
+                        pp <- self$plotComp(CI,select.X)
+                        return(print(pp))
+                      }else
+                      {
+                        pp <- self$plotCompD(CI,select.X)
+                        return(print(pp))
+                      }
+                    }
                     for (i in 1:n)
                     {
                       dplot2  <- data.frame(data=self$out$THETA[-c(1:self$burnIn),i],type="posterior")
@@ -213,20 +228,63 @@ estim.class$set("public","plot",
                     }
                     if (separated==TRUE)
                     {
-                      a
-                      m
-                      p
+                      if (length(graph)==1)
+                      {
+                        if (graph=="acf"){return(a)}
+                        if (graph=="chains"){return(m)}
+                        if (graph=="densities"){return(p)}
+                        if (graph=="output"){return(output())}
+                      }
+                      if (length(graph)==2)
+                      {
+                        if (all(graph==c("acf","chains"),TRUE)){a;m}
+                        if (all(graph==c("acf","densities"),TRUE)){a;p}
+                        if (all(graph==c("acf","output"),TRUE)){a;output()}
+                        if (all(graph==c("chains","densities"),TRUE)){m;p}
+                        if (all(graph==c("chains","output"),TRUE)){m;output()}
+                        if (all(graph==c("densities","output"),TRUE)){p;output()}
+                      }
+                      if (length(graph)==3)
+                      {
+                        if (all(graph==c("acf","chains","densities"),TRUE)){a;m;p}
+                        if (all(graph==c("acf","chains","output"),TRUE)){a;m;output()}
+                        if (all(graph==c("acf","densities","output"),TRUE)){a;p;output()}
+                        if (all(graph==c("chains","densities","output"),TRUE)){m;p;output()}
+                      }
+                      if (length(graph)>3)
+                      {
+                        if (all(graph==c("acf","chains","densities","output"),TRUE)){a;m;p;output()}
+                      }
                     } else{
-                      do.call(grid.arrange,a)
-                      do.call(grid.arrange,m)
-                      do.call(grid.arrange,p)
-                    }
-                    if (self$md$model=="model1" | self$md$model=="model2")
-                    {
-                      self$plotComp(CI,depend.X)
-                    }else
-                    {
-                      self$plotCompD(CI,depend.X)
+                      if (length(graph)==1)
+                      {
+                        if (graph=="acf"){return(do.call(grid.arrange,a))}
+                        if (graph=="chains"){return(do.call(grid.arrange,m))}
+                        if (graph=="densities"){return(do.call(grid.arrange,p))}
+                        if (graph=="output"){return(output())}
+                      }
+                      if (length(graph)==2)
+                      {
+                        if (all(graph==c("acf","chains"),TRUE)){do.call(grid.arrange,a);do.call(grid.arrange,m)}
+                        if (all(graph==c("acf","densities"),TRUE)){do.call(grid.arrange,a);do.call(grid.arrange,p)}
+                        if (all(graph==c("acf","output"),TRUE)){do.call(grid.arrange,a);output()}
+                        if (all(graph==c("chains","densities"),TRUE)){do.call(grid.arrange,m);do.call(grid.arrange,p)}
+                        if (all(graph==c("chains","output"),TRUE)){do.call(grid.arrange,m);output()}
+                        if (all(graph==c("densities","output"),TRUE)){do.call(grid.arrange,p);output()}
+                      }
+                      if (length(graph)==3)
+                      {
+                        if (all(graph==c("acf","chains","densities"),TRUE)){do.call(grid.arrange,a);do.call(grid.arrange,m);
+                          do.call(grid.arrange,p)}
+                        if (all(graph==c("acf","chains","output"),TRUE)){do.call(grid.arrange,a);do.call(grid.arrange,m);output()}
+                        if (all(graph==c("acf","densities","output"),TRUE)){do.call(grid.arrange,a);do.call(grid.arrange,p);output()}
+                        if (all(graph==c("chains","densities","output"),TRUE)){do.call(grid.arrange,m);do.call(grid.arrange,p);output()}
+                      }
+                      if (length(graph)>3)
+                      {
+                        if (all(graph==c("acf","chains","densities","output"),TRUE)){do.call(grid.arrange,a);
+                          do.call(grid.arrange,m);do.call(grid.arrange,p);output()}
+                      }
                     }
                })
 
@@ -275,7 +333,7 @@ estim.class$set("public","mcmc",
 )
 
 estim.class$set("public","plotComp",
-                function(CI=TRUE,depend.X=TRUE)
+                function(CI=TRUE,select.X)
                 {
                   m <- self$out$THETA[-c(1:self$burnIn),]
                   Dist <- matrix(nr=nrow(m),nc=length(self$Yexp))
@@ -287,18 +345,18 @@ estim.class$set("public","plotComp",
                   lowerPost <- apply(Dist,2,quantile,probs=0.05)
                   upperPost <- apply(Dist,2,quantile,probs=0.95)
                   meanPost  <- apply(Dist,2,quantile,probs=0.5)
-                  if (depend.X==FALSE)
+                  if (is.null(select.X))
                   {
                     X <- self$X[,1]
                   }else
                   {
-                    if (is.null(dim(self$X)))
+                    if (is.null(dim(self$X))==FALSE)
                     {
-                      X <- self$X
+                      X <- select.X
                     } else{
                       if (dim(self$X)[2]>1)
                       {
-                        stop("You an X dimension over 2, please desactivate the option depend.X to visualize your result")
+                        stop("X has a dimension over 2, please activate the option select.X to visualize your result")
                       }
                     }
                   }
@@ -336,7 +394,7 @@ estim.class$set("public","plotComp",
 
 
 estim.class$set("public","plotCompD",
-                function(CI=TRUE,depend.X=TRUE)
+                function(CI=TRUE,select.X)
                 {
                   m <- self$out$THETA[-c(1:self$burnIn),]
                   Dist <- matrix(nr=nrow(m),nc=length(self$Yexp))
@@ -348,18 +406,18 @@ estim.class$set("public","plotCompD",
                   lowerPost <- apply(Dist,2,quantile,probs=0.05)
                   upperPost <- apply(Dist,2,quantile,probs=0.95)
                   meanPost  <- apply(Dist,2,quantile,probs=0.5)
-                  if (depend.X==FALSE)
+                  if (is.null(select.X))
                   {
-                    X <- self$X[,1]
+                    X <- select.X
                   }else
                   {
-                    if (is.null(dim(self$X)))
+                    if (is.null(dim(self$X))==FALSE)
                     {
                       X <- self$X
                     } else{
                       if (dim(self$X)[2]>1)
                       {
-                        stop("You an X dimension over 2, please desactivate the option depend.X to visualize your result")
+                        stop("X has a dimension over 2, please activate the option select.X to visualize your result")
                       }
                     }
                   }
@@ -392,13 +450,35 @@ estim.class$set("public","plotCompD",
                             legend.key=element_rect(colour=NA),
                             axis.text=element_text(size=20))
                   }
+                  print(p)
                   return(p)
                 })
 
 estim.class$set("public","print",
                 function()
                 {
-                  cat('the main results of the calibration are')
+                  cat("Call:\n")
+                  print(self$model)
+                  cat("\n")
+                  cat("With the function:\n")
+                  print(self$code)
+                  cat("\n")
+                  cat("Converged")
+                  cat("\n\n")
+                  cat("Burn-in length:")
+                  print(self$burnIn)
+                  dsity     <- apply(self$out$THETA[-c(1:self$burnIn),],2,density)
+                  self$MAP  <- rep(1,nr=length(dsity))
+                  self$Mean <- apply(self$out$THETA[-c(1:self$burnIn),],2,mean)
+                  for (i in 1:length(dsity))
+                  {
+                    self$MAP[i] <- dsity[[i]]$x[which(dsity[[i]]$y==max(dsity[[i]]$y))]
+                  }
+                  cat("MAP estimator:\n")
+                  print(round(self$MAP,5))
+                  cat("\n")
+                  cat("Mean:\n")
+                  print(round(self$Mean,5))
                 }
 )
 

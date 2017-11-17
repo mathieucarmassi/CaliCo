@@ -4,15 +4,15 @@
 \alias{prediction}
 \title{Generates \code{\link{predict.class}} objects}
 \usage{
-prediction(est, x.new)
+prediction(modelfit, x.new)
 }
 \arguments{
-\item{est}{a \code{\link{estim.class}} object}
+\item{modelfit}{a \code{\link{estim.class}} object}
 
-\item{x.new}{newdata for the prediction}
+\item{newdata}{newdata for the prediction}
 }
 \value{
-lala for the moment
+return a \code{\link{predict.class}} object with two main methods
 }
 \description{
 \code{predict} is a function that allows us to generate a class in which the estimation is
@@ -22,30 +22,31 @@ done
 The realized estimation is realized similarly as it is defined in [1]
 }
 \examples{
-####### For the first model
-### The data set
-X <- seq(0,1,length.out=100)
 ### The code to calibrate
+X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
 code <- function(X,theta)
 {
-  return((6*X-2)^2*sin(theta*X-4))
+  return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 }
-### Simulated data
-Yr   <- code(X,11)
-Yexp <- Yr+rnorm(100,0,0.1)
-### Definition of the nature of the priors
-type.prior=c("gaussian","gamma")
-### Definition of the prior hyperparameters
-opt.prior=list(c(11,3),c(2,0.1))
-### Definition of the estimation option
-opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
+Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
 
-test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim)
+# Definition of the different models
+md <- model(code,X,Yexp,"model1")
+binf <- c(0.9,0.9,10.5)
+bsup <- c(1.1,1.1,11.5)
+opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
+list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
+opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4))
+modelfit <- calibrate(md,pr,opt.estim)
+
+x.new <- seq(1,1.1,length.out=10)
+emul <- prediction(modelfit,x.new)
 test$plot()
 
 }
 \seealso{
-\code{\link{model.class}}, \code{\link{prior.class}}
+\code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{esim.class}}
 }
 \author{
 M. Carmassi

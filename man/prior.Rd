@@ -41,20 +41,20 @@ are the two hyperparameters. The vector \eqn{c(a,b)} is the one looked for in op
 \examples{
 #### Only one prior is wanted
 ## For a Gaussian Prior
-foo <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
-foo$plot()
+gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
+gaussian$plot()
 
 ## For a Uniform Prior
-foo <- prior(type.prior="unif",opt.prior=list(c(0,1)))
-foo$plot()
+unif <- prior(type.prior="unif",opt.prior=list(c(0,1)))
+unif$plot()
 
 ## For a Gamma Prior
-foo <- prior(type.prior="gamma",opt.prior=list(c(5,1)))
-foo$plot()
+gamma <- prior(type.prior="gamma",opt.prior=list(c(5,1)))
+gamma$plot()
 
 #### For several priors
-foo <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
-grid.arrange(foo$Prior1$plot(),foo$Prior2$plot(),nrow=2)
+priors <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
+grid.arrange(priors$Prior1$plot(),priors$Prior2$plot(),nrow=2)
 
 }
 \seealso{
