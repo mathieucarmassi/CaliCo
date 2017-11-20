@@ -78,7 +78,7 @@ model1$likelihood(c(1,1,11),0.1)
 ### Generate the model with setup for the Gaussian Process
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
-opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 model2 <- model(code,X,Yexp,"model2",opt.emul)
 ### Plot the model
 model2$plot(c(1,1,11),0.1,select.X=X[,1])

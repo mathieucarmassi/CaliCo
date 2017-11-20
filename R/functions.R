@@ -66,7 +66,7 @@
 #' ### Generate the model with setup for the Gaussian Process
 #' binf <- c(0.9,0.9,10.5)
 #' bsup <- c(1.1,1.1,11.5)
-#' opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+#' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 #' model2 <- model(code,X,Yexp,"model2",opt.emul)
 #' ### Plot the model
 #' model2$plot(c(1,1,11),0.1,select.X=X[,1])
@@ -285,7 +285,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' ### Definition of the emulation options (for Model2 and Model4 exclusively)
 #' binf <- c(0.9,0.9,10.5)
 #' bsup <- c(1.1,1.1,11.5)
-#' opt.emul <- list(p=3,n.emul=200,type="matern3_2",binf=binf,bsup=bsup)
+#' opt.emul <- list(p=3,n.emul=200,type="matern3_2",binf=binf,bsup=bsup,DOE=NULL)
 #'
 #' modelfit <- estim(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim)
 #' modelfit$plot(graph=c("chains","densities","output"))
@@ -359,7 +359,7 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' md1 <- model(code,X,Yexp,"model1")
 #' binf <- c(0.9,0.9,10.5)
 #' bsup <- c(1.1,1.1,11.5)
-#' opt.emul <- list(p=3,n.emul=300,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+#' opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 #' md2 <- model(code,X,Yexp,"model2",opt.emul)
 #' md3 <- model(code,X,Yexp,"model3")
 #' md4 <- model(code,X,Yexp,"model4",opt.emul)
@@ -384,7 +384,7 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' modelfit3$plot(graph="output")
 #'
 #' modelfit4 <- calibrate(md4,pr2,opt.estim2)
-#' modelfit4$plot()
+#' modelfit4$plot(graph="output")
 #'
 #' @export
 calibrate <-function(md,pr,opt.estim,type.valid=NULL,opt.valid=NULL)
@@ -452,7 +452,7 @@ calibrate <-function(md,pr,opt.estim,type.valid=NULL,opt.valid=NULL)
 #' @export
 prediction <-function(modelfit,x.new)
 {
-  res <- predict.class$new(modelfit,x.new)
+  res <- prediction.class$new(modelfit,x.new)
   return(res)
 }
 

@@ -66,7 +66,7 @@ opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=dia
 ### Definition of the emulation options (for Model2 and Model4 exclusively)
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
-opt.emul <- list(p=3,n.emul=200,type="matern3_2",binf=binf,bsup=bsup)
+opt.emul <- list(p=3,n.emul=200,type="matern3_2",binf=binf,bsup=bsup,DOE=NULL)
 
 modelfit <- estim(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim)
 modelfit$plot(graph=c("chains","densities","output"))

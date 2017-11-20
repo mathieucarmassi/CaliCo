@@ -48,7 +48,7 @@ Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
 md1 <- model(code,X,Yexp,"model1")
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
-opt.emul <- list(p=3,n.emul=300,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 md2 <- model(code,X,Yexp,"model2",opt.emul)
 md3 <- model(code,X,Yexp,"model3")
 md4 <- model(code,X,Yexp,"model4",opt.emul)
@@ -73,7 +73,7 @@ modelfit3 <- calibrate(md3,pr2,opt.estim2)
 modelfit3$plot(graph="output")
 
 modelfit4 <- calibrate(md4,pr2,opt.estim2)
-modelfit4$plot()
+modelfit4$plot(graph="output")
 
 }
 \seealso{

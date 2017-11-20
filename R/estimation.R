@@ -399,21 +399,28 @@ estim.class$set("public","plotCompD",
                   m <- self$out$THETA[-c(1:self$burnIn),]
                   Dist <- matrix(nr=nrow(m),nc=length(self$Yexp))
                   Dim <- length(self$type.prior)
-                  for (i in 1:nrow(m))
+                  if (CI==TRUE)
                   {
-                    Dist[i,] <- self$md$fun(m[i,1:(Dim-3)],m[i,(Dim-2):(Dim-1)],m[i,Dim])$y
+                    for (i in 1:nrow(m))
+                    {
+                      Dist[i,] <- self$md$fun(m[i,1:(Dim-3)],m[i,(Dim-2):(Dim-1)],m[i,Dim])$y
+                    }
+                    lowerPost <- apply(Dist,2,quantile,probs=0.05)
+                    upperPost <- apply(Dist,2,quantile,probs=0.95)
+                    meanPost  <- apply(Dist,2,quantile,probs=0.5)
+                  } else
+                  {
+                    meanTemp <- apply(m,2,mean)
+                    meanPost <- self$md$fun(meanTemp[1:(Dim-3)],meanTemp[(Dim-2):(Dim-1)],meanTemp[Dim])$y
                   }
-                  lowerPost <- apply(Dist,2,quantile,probs=0.05)
-                  upperPost <- apply(Dist,2,quantile,probs=0.95)
-                  meanPost  <- apply(Dist,2,quantile,probs=0.5)
                   if (is.null(select.X))
                   {
-                    X <- select.X
+                    X <- self$X[,1]
                   }else
                   {
                     if (is.null(dim(self$X))==FALSE)
                     {
-                      X <- self$X
+                      X <- select.X
                     } else{
                       if (dim(self$X)[2]>1)
                       {
@@ -423,9 +430,9 @@ estim.class$set("public","plotCompD",
                   }
                   if (CI==TRUE)
                   {
-                    dplot <- data.frame(Y=meanPost,x=self$X,type='calibrated',lower=lowerPost,upper=upperPost,
+                    dplot <- data.frame(Y=meanPost,x=X,type='calibrated',lower=lowerPost,upper=upperPost,
                                         fill="90% credibility interval a posteriori")
-                    dplot2 <- data.frame(Y=self$Yr, x=self$X, type='experiment',lower=lowerPost,upper=upperPost,
+                    dplot2 <- data.frame(Y=self$Yr, x=X, type='experiment',lower=lowerPost,upper=upperPost,
                                          fill="90% credibility interval a posteriori")
                     dplot <- rbind(dplot,dplot2)
                     p <- ggplot(dplot) + geom_line(aes(x=x,y=Y,color=type))+
@@ -439,8 +446,8 @@ estim.class$set("public","plotCompD",
                             axis.text=element_text(size=20))
                   } else
                   {
-                    dplot  <- data.frame(x=self$X,data=meanPost,type="calibrated")
-                    dplot2 <- data.frame(x=self$X,data=self$Yr,type="experiments")
+                    dplot  <- data.frame(x=X,data=meanPost,type="calibrated")
+                    dplot2 <- data.frame(x=X,data=self$Yr,type="experiments")
                     dplot  <- rbind(dplot,dplot2)
                     p <- ggplot(data=dplot, aes(x=x,y=data,color=type))+geom_line()+ylab("")+xlab("")+
                       theme_light()+
