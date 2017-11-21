@@ -281,7 +281,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' ### Definition of the prior hyperparameters
 #' opt.prior=list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1))
 #' ### Definition of the estimation option
-#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4))
+#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
 #' ### Definition of the emulation options (for Model2 and Model4 exclusively)
 #' binf <- c(0.9,0.9,10.5)
 #' bsup <- c(1.1,1.1,11.5)
@@ -302,7 +302,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' # With leave one out cross validation
 #' type.prior=c("gaussian","gamma")
 #' opt.prior=list(c(11,3),c(2,0.1))
-#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
+#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2),Nchains=1)
 #' opt.valid =list(n.CV=10,k=NULL)
 #' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim,type.valid="loo",opt.valid=opt.valid)
 #' test2 <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul,type.valid="loo",opt.valid=opt.valid)
@@ -371,8 +371,8 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 #'
 #' ### Calibration with estimation options
-#' opt.estim1=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4))
-#' opt.estim2=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-4,6),sig=diag(6))
+#' opt.estim1=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=2)
+#' opt.estim2=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-4,6),sig=diag(6),Nchains=1)
 #'
 #' modelfit <- calibrate(md1,pr1,opt.estim1)
 #' modelfit$plot(graph=c("chains","densities","output"))
@@ -442,10 +442,10 @@ calibrate <-function(md,pr,opt.estim,type.valid=NULL,opt.valid=NULL)
 #' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 #' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
-#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4))
+#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
 #' modelfit <- calibrate(md,pr,opt.estim)
 #'
-#' x.new <- seq(1,1.1,length.out=10)
+#' x.new <- cbind(seq(1,1.1,length.out=10),seq(1,1.1,length.out=10))
 #' emul <- prediction(modelfit,x.new)
 #' test$plot()
 #'

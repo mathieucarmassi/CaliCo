@@ -62,7 +62,7 @@ type.prior=c("gaussian","gaussian","gaussian","gamma")
 ### Definition of the prior hyperparameters
 opt.prior=list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1))
 ### Definition of the estimation option
-opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4))
+opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
 ### Definition of the emulation options (for Model2 and Model4 exclusively)
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
@@ -83,7 +83,7 @@ modelfit4$plot()
 # With leave one out cross validation
 type.prior=c("gaussian","gamma")
 opt.prior=list(c(11,3),c(2,0.1))
-opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2))
+opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2),Nchains=1)
 opt.valid =list(n.CV=10,k=NULL)
 test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim,type.valid="loo",opt.valid=opt.valid)
 test2 <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul,type.valid="loo",opt.valid=opt.valid)

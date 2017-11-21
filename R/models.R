@@ -73,6 +73,7 @@ model.class$set("private","loadPackages",
                   library(Rcpp)
                   library(RcppArmadillo)
                   library(MASS)
+                  library(coda)
                 })
 
 model.class$set("private","checkEmul",
@@ -110,6 +111,15 @@ model1.class <- R6::R6Class(classname = "model1.class",
                         {
                           y  <- self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2))
                           yc <- self$code(self$X,theta)
+                          if (is.na(mean(yc)))
+                          {stop('Wrong number of parameter in the function')}
+                          return(list(y=y, yc=yc))
+                        },
+                        pred = function(theta,sig2,x.new)
+                        {
+                          if (is.matrix(x.new)){l <- nrow(x.new)} else{l <- length(x.new)}
+                          y  <- self$code(x.new,theta)+rnorm(l,0,sqrt(sig2))
+                          yc <- self$code(x.new,theta)
                           if (is.na(mean(yc)))
                           {stop('Wrong number of parameter in the function')}
                           return(list(y=y, yc=yc))

@@ -17,7 +17,8 @@ Imports:
     DiceDesign,
     Rcpp (>= 0.12.12),
     RcppArmadillo,
-    MASS
+    MASS,
+    coda
 RoxygenNote: 6.0.1
 Collate: 
     'functions.R'

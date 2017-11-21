@@ -28,6 +28,7 @@ estim.class <- R6::R6Class(classname = "estim.class",
                     opt.valid   = NULL,
                     MAP         = NULL,
                     Mean        = NULL,
+                    chains      = NULL,
                     initialize = function(code=NA,X=NA,Yexp=NA,model=NA,type.prior=NA,
                                           opt.emul=NA,opt.prior=NA,opt.estim=NA,type.valid=NA,opt.valid=NA)
                     {
@@ -53,18 +54,45 @@ estim.class <- R6::R6Class(classname = "estim.class",
                       self$Yr            <- self$code(self$X,self$opt.estim$thetaInit)
                       if (is.null(self$type.valid))
                       {
-                        self$md <- model(code,X,Yexp,model,self$opt.emul)
-                        self$logTest.fun   <- self$logLikelihood(model)
-                        self$out           <- self$estimation(self$md,self$Yexp)
+                        if (self$opt.estim$Nchains==1)
+                        {
+                          self$md <- model(code,X,Yexp,model,self$opt.emul)
+                          self$logTest.fun   <- self$logLikelihood(model)
+                          self$out           <- self$estimation(self$md,self$Yexp)
+                        } else
+                        {
+                          self$md <- model(code,X,Yexp,model,self$opt.emul)
+                          self$logTest.fun   <- self$logLikelihood(model)
+                          self$out           <- self$estimation(self$md,self$Yexp)
+                          self$chains        <- list(chain1=as.mcmc(self$out$THETA))
+                          for (i in 2:self$opt.estim$Nchains)
+                          {
+                            self$chains[[i]] <- as.mcmc(self$estimation(self$md,self$Yexp)$THETA)
+                            names(self$chains)[i] <- paste("chain",i,sep="")
+                          }
+                        }
                       } else
                       {
                         cat("#############################################\n")
                         cat("##### --- Begin of the calibration --- ######\n")
                         cat("#############################################\n")
-                        self$md <- model(code,X,Yexp,model,opt.emul,binf=self$binf[1],
-                                         bsup=self$bsup[1])
-                        self$logTest.fun   <- self$logLikelihood(model)
-                        self$out           <- self$estimation(self$md,self$Yexp)
+                        if (self$opt.estim$Nchains==1)
+                        {
+                          self$md <- model(code,X,Yexp,model,self$opt.emul)
+                          self$logTest.fun   <- self$logLikelihood(model)
+                          self$out           <- self$estimation(self$md,self$Yexp)
+                        } else
+                        {
+                          self$md <- model(code,X,Yexp,model,self$opt.emul)
+                          self$logTest.fun   <- self$logLikelihood(model)
+                          self$out           <- self$estimation(self$md,self$Yexp)
+                          self$chains        <- list(chain1=as.mcmc(self$out$THETA))
+                          for (i in 2:self$opt.estim$Nchains)
+                          {
+                            self$chains[[i]] <- as.mcmc(self$estimation(self$md,self$Yexp)$THETA)
+                            names(self$chains)[i] <- paste("chain",i,sep="")
+                          }
+                        }
                         cat("###################################################\n")
                         cat("##### --- End of the regular calibration --- ###### \n")
                         cat("###################################################\n")
@@ -186,7 +214,7 @@ estim.class$set("public","logTestD",
 estim.class$set("private","checkup",
                 function()
                 {
-                 N <- c("Ngibbs","Nmh","thetaInit","k","sig")
+                 N <- c("Ngibbs","Nmh","thetaInit","k","sig","Nchains")
                  for (i in 1:length(N))
                  {
                    if(names(self$opt.estim)[i]!=N[i])

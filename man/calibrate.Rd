@@ -60,8 +60,8 @@ pr2 <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","g
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 
 ### Calibration with estimation options
-opt.estim1=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4))
-opt.estim2=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-4,6),sig=diag(6))
+opt.estim1=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=2)
+opt.estim2=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-4,6),sig=diag(6),Nchains=1)
 
 modelfit <- calibrate(md1,pr1,opt.estim1)
 modelfit$plot(graph=c("chains","densities","output"))

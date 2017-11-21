@@ -37,7 +37,7 @@ bsup <- c(1.1,1.1,11.5)
 opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
-opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4))
+opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
 modelfit <- calibrate(md,pr,opt.estim)
 
 x.new <- seq(1,1.1,length.out=10)
