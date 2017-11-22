@@ -37,33 +37,83 @@ prediction.class <- R6::R6Class(classname = "predict.class",
                                {
                                  res[,i] <- self$modelfit$md$pred(s[i,1:(Dim-1)],s[i,Dim],x.new)$y
                                }
-                               self$lowerPred <- apply(res,2,quantile,probs=0.05)
-                               self$upperPred <- apply(res,2,quantile,probs=0.95)
-                               self$meanPred  <- apply(res,2,quantile,probs=0.5)
+                               self$lowerPred <- apply(res,1,quantile,probs=0.05)
+                               self$upperPred <- apply(res,1,quantile,probs=0.95)
+                               self$meanPred  <- apply(res,1,quantile,probs=0.5)
                                self$print()
                              },
                              print = function()
                                {
                                  cat("Call:\n")
-                                 print(self$model)
+                                 print(self$modelfit$model)
                                  cat("\n")
                                  cat("With the function:\n")
-                                 print(self$code)
+                                 print(self$modelfit$code)
                                  cat("\n")
-                                 cat("Converged")
-                                 cat("\n\n")
                                  cat("MAP estimator:\n")
                                  print(round(self$modelfit$MAP,5))
                                  cat("\n")
                                  cat("Mean:\n")
                                  print(round(self$modelfit$Mean,5))
                                },
-                             plot = function(rdata=NULL)
+                             plot = function(select.X=NULL,rdata=NULL)
                              {
-                               ggdata <- data.frame(lower=self$lowerPred,upper=self$upperPred,x=x.new,y=self$meanPred)
-                               p <- ggplot(ggdata)+geom_line(aes(y=y,x=x))+
-                                 geom_ribbon(aes(ymin=lower, ymax=upper, x=x), alpha = 0.3)
-                               return(p)
+                               if (is.null(rdata)==TRUE)
+                               {
+                                 if (is.null(select.X)==TRUE)
+                                 {
+                                   ggdata <- data.frame(lower=self$lowerPred,upper=self$upperPred,x=self$x.new,
+                                                        y=self$meanPred,fill="credibility interval at 90%",
+                                                        type="predicted data")
+                                 } else
+                                 {
+                                   ggdata <- data.frame(lower=self$lowerPred,upper=self$upperPred,x=select.X,
+                                                        y=self$meanPred,fill="credibility interval at 90%",
+                                                        type="predicted data")
+                                 }
+                                 p <- ggplot(ggdata)+geom_line(aes(y=y,x=x,col=type))+
+                                   geom_ribbon(aes(ymin=lower, ymax=upper, x=x,fill=fill), alpha = 0.3)+
+                                   theme_light()+xlab("")+ylab("")+
+                                   scale_fill_manual("",values="blue4")+
+                                   theme(legend.position=c(0.3,0.86),
+                                         legend.text=element_text(face="bold",size = '20'),
+                                         legend.title=element_blank(),
+                                         legend.key=element_rect(colour=NA),
+                                         axis.text=element_text(size=20))
+                                 return(p)
+                               } else
+                               {
+                                 if (is.null(select.X)==TRUE)
+                                 {
+                                   ggdata  <- data.frame(lower=self$lowerPred,upper=self$upperPred,x=self$x.new,
+                                                        y=self$meanPred,type="predicted data"
+                                                        ,fill="credibility interval at 90%")
+                                   ggdata2 <- data.frame(lower=self$lowerPred,upper=self$upperPred,
+                                                         x=self$x.new,y=rdata,type="real data",
+                                                         fill="credibility interval at 90%")
+                                   ggdata  <- rbind(ggdata,ggdata2)
+                                 } else
+                                 {
+                                   ggdata  <- data.frame(lower=self$lowerPred,upper=self$upperPred,x=select.X,
+                                                        y=self$meanPred,type="predicted data",
+                                                        fill="credibility interval at 90%")
+                                   ggdata2 <- data.frame(lower=self$lowerPred,upper=self$upperPred,x=select.X,
+                                                         y=rdata,type="real data",
+                                                         fill="credibility interval at 90%")
+                                   ggdata  <- rbind(ggdata,ggdata2)
+                                 }
+                                 p <- ggplot(ggdata)+geom_line(aes(y=y,x=x,col=type))+
+                                   geom_ribbon(aes(ymin=lower, ymax=upper, x=x,fill=fill), alpha = 0.3)+
+                                   theme_light()+xlab("")+ylab("")+
+                                   scale_fill_manual("",values="blue4")+
+                                   theme(legend.position=c(0.3,0.86),
+                                         legend.text=element_text(face="bold",size = '20'),
+                                         legend.title=element_blank(),
+                                         legend.key=element_rect(colour=NA),
+                                         axis.text=element_text(size=20))
+                                 return(p)
+                               }
+
                               },
                              checkNewdata = function(x.new)
                              {

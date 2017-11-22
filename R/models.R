@@ -31,6 +31,7 @@ model.class <- R6::R6Class(classname = "model.class",
                    bsup      = NULL,
                    emul.list = NULL,
                    model     = NULL,
+                   opt.disc  = NULL,
                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA,
                                          emul.list=list(p=NA,n.emul=NA,type=NA,binf=NA,bsup=NA,DOE=NA))
                    {
@@ -40,10 +41,10 @@ model.class <- R6::R6Class(classname = "model.class",
                      self$n     <- length(Yexp)
                      if (is.null(dim(X)))
                      {
-                       self$d       <- 1
+                       self$d   <- 1
                      } else
                      {
-                       self$d       <- dim(X)[2]
+                       self$d   <- dim(X)[2]
                      }
                      self$emul.list <- emul.list
                      self$model     <- model
@@ -188,8 +189,14 @@ model3.class <- R6::R6Class(classname = "model3.class",
                           funTemp  = NULL,
                           temp     = NULL,
                           disc     = NULL,
-                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,
+                                              opt.disc=list(kernel.type=NULL))
                           {
+                            self$opt.disc  <- list(kernel.type=opt.disc$kernel.type)
+                            if (is.null(self$opt.disc$kernel.type)==TRUE)
+                            {
+                              self$opt.disc$kernel.type="gauss"
+                            }
                             super$initialize(code, X, Yexp, model)
                             self$funTemp <- super$fun
                           },
@@ -197,28 +204,29 @@ model3.class <- R6::R6Class(classname = "model3.class",
                           {
                             y   <- self$funTemp(theta,sig2)$y
                             z   <- self$Yexp - y
-                            Cov <- matrix(nr=self$n,nc=self$n)
-                            if (is.null(ncol(self$X)))
-                            {
-                              Cov <- matrix(nr=self$n,nc=self$n)
-                              for (j in 1:self$n)
-                              {
-                                for (i in 1:self$n)
-                                {
-                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[i]-self$X[j])^2)/thetaD[2])^2)
-                                }
-                              }
-                            } else
-                            {
-                              Cov <- matrix(nr=self$n,nc=self$n)
-                              for (j in 1:self$n)
-                              {
-                                for (i in 1:self$n)
-                                {
-                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[i,]-self$X[j,])^2)/thetaD[2])^2)
-                                }
-                              }
-                            }
+                            Cov <- kernelFun(self$X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
+                            # matrix(nr=self$n,nc=self$n)
+                            # if (is.null(ncol(self$X)))
+                            # {
+                            #   Cov <- matrix(nr=self$n,nc=self$n)
+                            #   for (j in 1:self$n)
+                            #   {
+                            #     for (i in 1:self$n)
+                            #     {
+                            #       Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[i]-self$X[j])^2)/thetaD[2])^2)
+                            #     }
+                            #   }
+                            # } else
+                            # {
+                            #   Cov <- matrix(nr=self$n,nc=self$n)
+                            #   for (j in 1:self$n)
+                            #   {
+                            #     for (i in 1:self$n)
+                            #     {
+                            #       Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[i,]-self$X[j,])^2)/thetaD[2])^2)
+                            #     }
+                            #   }
+                            #}
                             p <- eigen(Cov)$vectors
                             e <- eigen(Cov)$values
                             if (all(e>0)){} else
@@ -286,7 +294,7 @@ model3.class$set("public","summury",
                    cat("A discrepancy is added:\n")
                    cat(paste("Mean of the biais:",round(mean(self$disc$biais),5),"\n",sep=" "))
                    cat(paste("Covariance of the biais:",round(mean(self$disc$cov),3),"\n",sep=" "))
-                   cat("Kernel chossen: Gaussian")
+                   cat(paste("Kernel chossen: ",self$opt.disc$kernel.type,sep=""))
                  }
 )
 

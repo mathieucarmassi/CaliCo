@@ -66,6 +66,9 @@ opt.estim2=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-4,6),
 modelfit <- calibrate(md1,pr1,opt.estim1)
 modelfit$plot(graph=c("chains","densities","output"))
 
+# With cross validation
+modelfit <- calibrate(md1,pr1,opt.estim1,type.valid='loo',opt.valid=list(n.CV=10,k=NULL))
+
 modelfit2 <- calibrate(md2,pr1,opt.estim1)
 modelfit2$plot(graph="output")
 

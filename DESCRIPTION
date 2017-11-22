@@ -28,6 +28,7 @@ Collate:
     'prior.R'
     'RcppExports.R'
     'calibrationCode-package.R'
+    'Kernel.R'
 LinkingTo: 
     Rcpp,
     RcppArmadillo

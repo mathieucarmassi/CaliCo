@@ -80,7 +80,7 @@
 #' model2$summury()
 #'
 #' ###### For the third model
-#' model3 <- model(code,X,Yexp,"model3")
+#' model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
 #' model3$plot(c(1,1,11),c(2,0.5),0.1,select.X=X[,1])
 #' model3$likelihood(c(1,1,11),c(2,0.5),0.1)
 #' model3$summury()
@@ -102,7 +102,7 @@
 #'
 #' @export
 model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="matern5_2",
-                                                           binf=0,bsup=1,DOE=NULL))
+                                                           binf=0,bsup=1,DOE=NULL),opt.disc=list(kernel.type=NULL))
 {
   library(R6)
   library(FactoMineR)
@@ -118,11 +118,11 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
            return(obj)
          },
          model3={
-           obj = model3.class$new(code,X,Yexp,model)
+           obj = model3.class$new(code,X,Yexp,model,opt.disc)
            return(obj)
          },
          model4={
-           obj = model4.class$new(code,X,Yexp,model,opt.emul)
+           obj = model4.class$new(code,X,Yexp,model,opt.emul,opt.disc)
            return(obj)
          }
   )
@@ -377,6 +377,9 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' modelfit <- calibrate(md1,pr1,opt.estim1)
 #' modelfit$plot(graph=c("chains","densities","output"))
 #'
+#' # With cross validation
+#' modelfit <- calibrate(md1,pr1,opt.estim1,type.valid='loo',opt.valid=list(n.CV=10,k=NULL))
+#'
 #' modelfit2 <- calibrate(md2,pr1,opt.estim1)
 #' modelfit2$plot(graph="output")
 #'
@@ -435,6 +438,7 @@ calibrate <-function(md,pr,opt.estim,type.valid=NULL,opt.valid=NULL)
 #' }
 #' Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
 #'
+#'
 #' # Definition of the different models
 #' md <- model(code,X,Yexp,"model1")
 #' binf <- c(0.9,0.9,10.5)
@@ -445,9 +449,11 @@ calibrate <-function(md,pr,opt.estim,type.valid=NULL,opt.valid=NULL)
 #' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
 #' modelfit <- calibrate(md,pr,opt.estim)
 #'
-#' x.new <- cbind(seq(1,1.1,length.out=10),seq(1,1.1,length.out=10))
+#' x.new <- cbind(seq(1,1.5,length.out=10),seq(1,1.5,length.out=10))
 #' emul <- prediction(modelfit,x.new)
-#' test$plot()
+#' emul$plot(select.X=x.new[,1])
+#' realData <- code(x.new,c(1,1,11))
+#' emul$plot(select.X=x.new[,1],rdata=realData)
 #'
 #' @export
 prediction <-function(modelfit,x.new)
@@ -455,6 +461,51 @@ prediction <-function(modelfit,x.new)
   res <- prediction.class$new(modelfit,x.new)
   return(res)
 }
+
+
+#' Generates \code{\link{Kernel.class}} covariances matrices
+#'
+#' \code{Kernel} is a function that allows us to generate covariances matrices from data
+#'
+#' The realized estimation is realized similarly as it is defined in [1]
+#'
+#'
+#' @param X data
+#' @param newdata newdata for the prediction
+#' @return return a \code{\link{predict.class}} object with two main methods
+#' @author M. Carmassi
+#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{esim.class}}
+#' @examples
+#' X <- cbind(seq(0,10,length.out=10),seq(8,20,length.out=10))
+#' var <- 2
+#' theta <- 0.1
+#' Cov <- kernelFun(X,var,theta,kernel.type="matern5_2")
+#'
+#' @export
+kernelFun <- function(X,var,theta,kernel.type)
+{
+  library(R6)
+  switch(kernel.type,
+         gauss={
+           obj = gauss.class$new(X,var,theta,kernel.type)
+           return(obj$Cov)
+         },
+         exp={
+           obj = exp.class$new(X,var,theta,kernel.type)
+           return(obj$Cov)
+         },
+         matern3_2={
+           obj = matern3_2.class$new(X,var,theta,kernel.type)
+           return(obj$Cov)
+         },
+         matern5_2={
+           obj = matern5_2.class$new(X,var,theta,kernel.type)
+           return(obj$Cov)
+         }
+  )
+}
+
+
 
 
 #' Function which unscale a vector between two bounds

@@ -30,6 +30,7 @@ code <- function(X,theta)
 }
 Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
 
+
 # Definition of the different models
 md <- model(code,X,Yexp,"model1")
 binf <- c(0.9,0.9,10.5)
@@ -40,9 +41,11 @@ list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
 opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
 modelfit <- calibrate(md,pr,opt.estim)
 
-x.new <- seq(1,1.1,length.out=10)
+x.new <- cbind(seq(1,1.5,length.out=10),seq(1,1.5,length.out=10))
 emul <- prediction(modelfit,x.new)
-test$plot()
+emul$plot(select.X=x.new[,1])
+realData <- code(x.new,c(1,1,11))
+emul$plot(select.X=x.new[,1],rdata=realData)
 
 }
 \seealso{
