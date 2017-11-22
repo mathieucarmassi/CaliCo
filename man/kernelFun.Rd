@@ -24,7 +24,7 @@ The realized estimation is realized similarly as it is defined in [1]
 X <- cbind(seq(0,10,length.out=10),seq(8,20,length.out=10))
 var <- 2
 theta <- 0.1
-test <- kernelFun(X,var,theta,kernel.type="gauss")
+Cov <- kernelFun(X,var,theta,kernel.type="matern5_2")
 
 }
 \seealso{

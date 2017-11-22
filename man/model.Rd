@@ -5,7 +5,8 @@
 \title{Generates \code{\link{model.class}} objects.}
 \usage{
 model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
-  type = "matern5_2", binf = 0, bsup = 1, DOE = NULL))
+  type = "matern5_2", binf = 0, bsup = 1, DOE = NULL),
+  opt.disc = list(kernel.type = NULL))
 }
 \arguments{
 \item{code}{the computational code (function of X and theta)}
@@ -92,7 +93,7 @@ model2$plot(c(1,1,11),0.1,points=FALSE,select.X=X[,1])
 model2$summury()
 
 ###### For the third model
-model3 <- model(code,X,Yexp,"model3")
+model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
 model3$plot(c(1,1,11),c(2,0.5),0.1,select.X=X[,1])
 model3$likelihood(c(1,1,11),c(2,0.5),0.1)
 model3$summury()
