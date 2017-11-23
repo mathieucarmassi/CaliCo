@@ -304,7 +304,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' opt.prior=list(c(11,3),c(2,0.1))
 #' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2),Nchains=1)
 #' opt.valid =list(n.CV=10,k=NULL)
-#' test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim,type.valid="loo",opt.valid=opt.valid)
+#' test <- estim(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,type.valid="loo",opt.valid=opt.valid)
 #' test2 <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul,type.valid="loo",opt.valid=opt.valid)
 #' test$plot()
 #'
@@ -390,7 +390,7 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' modelfit4$plot(graph="output")
 #'
 #' @export
-calibrate <-function(md,pr,opt.estim,type.valid=NULL,opt.valid=NULL)
+calibrate <-function(md,pr,opt.estim,opt.valid=NULL)
 {
   code       <- md$code
   X          <- md$X
@@ -411,6 +411,100 @@ calibrate <-function(md,pr,opt.estim,type.valid=NULL,opt.valid=NULL)
     }
   }
   res <- estim.class$new(code,X,Yexp,model,type.prior,opt.emul,opt.prior,opt.estim,type.valid,opt.valid)
+  return(res)
+}
+
+
+#' Generates \code{\link{estim.class}} objects
+#'
+#' \code{calibration} is a function that allows us to generate a class in which the estimation is
+#' done from a \code{\link{model.class}} and a \code{\link{prior.class}} objects.
+#'
+#' @useDynLib calibrationCode
+#' @importFrom Rcpp evalCpp
+#'
+#' @param md a \code{\link{model.class}} object
+#' @param pr a \code{\link{prior.class}} object
+#' @param opt.estim estimation optiions \itemize{\item{Ngibbs}{Number of iteration of the algorithm Metropolis within Gibbs}
+#' \item{Nmh}{ Number of iteration of the Metropolis Hastings algorithm}
+#' \item{thetaInit}{ Initial point}
+#' \item{k}{ Tuning parameter for the covariance matrix sig}
+#' \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}}
+#' @return \code{estim} returns a \code{\link{estim.class}} object. Two main methods are available:
+#' \itemize{\item{$plot()}{ display the probability density of the prior with different options:}
+#' \itemize{
+#' \item {graph}{ The vector of the graph wanted. By default all the graph are displayed and graph=c("acf","chains","densities","output").
+#' "acf" displays the correlation graph of the MCMC chains, "chains" plot the chains, "densities" shows the comparison of the
+#' densities a priori and a posteriori, and "output" displays the output of the code with the calibrated one and its credibility
+#' interval (if CI=TRUE).}
+#' \item {separated}{ Allows to separate each graphs by displying one by one all the graphs. By default separated=FALSE}
+#' \item {CI}{ Allows to add the posterior credibility interval to the output plot. By default CI=TRUE}
+#' \item {select.X}{ When the number of X is >1, this option has to be activated to display the output plot. select.X
+#' allows to choose one X for the x scale in the output plot}}
+#' \item{$sumarize()}{ return the main information concerning the estim.class object}}
+#' @author M. Carmassi
+#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}}
+#' @examples
+#' ### The code to calibrate
+#' X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
+#' code <- function(X,theta)
+#' {
+#'   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
+#' }
+#' Yexp <- code(X,c(1,1,11))+rnorm(10,0,0.1)
+#'
+#' # Definition of the different models
+#' md1 <- model(code,X,Yexp,"model1")
+#' binf <- c(0.9,0.9,10.5)
+#' bsup <- c(1.1,1.1,11.5)
+#' opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+#' md2 <- model(code,X,Yexp,"model2",opt.emul)
+#' md3 <- model(code,X,Yexp,"model3")
+#' md4 <- model(code,X,Yexp,"model4",opt.emul)
+#'
+#' # Definition of the priors
+#' pr1 <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
+#' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
+#' pr2 <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
+#' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
+#'
+#' ### Calibration with estimation options
+#' opt.estim1=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
+#' opt.estim2=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-4,6),sig=diag(6),Nchains=1)
+#'
+#' modelfit <- calibrate2(md1,pr1,opt.estim1)
+#' opt.valid <- list(type.valid='loo',nCV=10)
+#' modelfitCV <- calibrate2(md1,pr1,opt.estim1,opt.valid)
+#'
+#' modelfit2 <- calibrate2(md2,pr1,opt.estim1)
+#' opt.valid <- list(type.valid='loo',nCV=10)
+#' modelfitCV <- calibrate2(md2,pr1,opt.estim1,opt.valid)
+#'
+#'
+#' #### A partir d'ici ne fonctionne pas.....
+#' ### La fonction pred est manquante sur les deux derniers modèles
+#' #### Attention au nombre de paramètres qui varie notamment dans predition et dans calibration
+#'
+#'
+#' modelfit3 <- calibrate2(md3,pr2,opt.estim2)
+#'
+#' modelfit$plot(graph=c("chains","densities","output"))
+#'
+#'
+#'
+#' modelfit2 <- calibrate2(md2,pr1,opt.estim1)
+#' modelfit2$plot(graph="output")
+#'
+#' modelfit3 <- calibrate2(md3,pr2,opt.estim2)
+#' modelfit3$plot(graph="output")
+#'
+#' modelfit4 <- calibrate2(md4,pr2,opt.estim2)
+#' modelfit4$plot(graph="output")
+#'
+#' @export
+calibrate2 <-function(md,pr,opt.estim,opt.valid=NULL)
+{
+  res <- calibrate.class$new(md,pr,opt.estim,opt.valid)
   return(res)
 }
 

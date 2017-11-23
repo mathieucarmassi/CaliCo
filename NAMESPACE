@@ -2,6 +2,8 @@
 
 export(Kernel.class)
 export(calibrate)
+export(calibrate.class)
+export(calibrate2)
 export(estim)
 export(estim.class)
 export(kernelFun)

@@ -12,7 +12,7 @@ using namespace arma;
 
 // [[Rcpp::export]]
 List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,
-                           arma::vec binf, arma::vec bsup, Function LogTest)
+                           arma::vec binf, arma::vec bsup, Function LogTest, int stream)
 {
   double Dim = theta_init.size();
   int D;
@@ -33,25 +33,31 @@ List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_i
   // arma::vec Yg=as<arma::vec>(model(theta,Verr));
   double alpha = as<double>(LogTest(theta,Verr));
   double alpha2 = alpha;
-  cout << "Begin of the Metropolis within Gibbs algorithm" << endl;
-  cout << "Number of iterations "<< Ngibbs << endl;
+  if (stream==1)
+  {
+    cout << "Begin of the Metropolis within Gibbs algorithm" << endl;
+    cout << "Number of iterations "<< Ngibbs << endl;
+  }
   int barWidth = 40;
   int q = 0;
   for (int i=0; i<(Ngibbs-1); i++)
   {
-    // beggining of the bar progress
-    cout.flush();
-    if ((i+2)%(Ngibbs/barWidth)==0)
+    if (stream==1)
     {
-      float progress = (float)(i+2)/(float)(Ngibbs);
-      cout << "[";
-      q = ((float)(i+2)*(float)barWidth)/(float)(Ngibbs);
-      if (q<barWidth) cout << string(q, '=');
-      else if (q==barWidth) cout << string(q, '>');
-      else cout << " ";
-      cout << "] " << int(progress * 100.0) << " %\r";
+      // beggining of the bar progress
+      cout.flush();
+      if ((i+2)%(Ngibbs/barWidth)==0)
+      {
+        float progress = (float)(i+2)/(float)(Ngibbs);
+        cout << "[";
+        q = ((float)(i+2)*(float)barWidth)/(float)(Ngibbs);
+        if (q<barWidth) cout << string(q, '=');
+        else if (q==barWidth) cout << string(q, '>');
+        else cout << " ";
+        cout << "] " << int(progress * 100.0) << " %\r";
+      }
+      // end bar progress
     }
-    // end bar progress
     vec phi_star = PHIwg.row(i).t();
     vec theta_star = THETAwg.row(i).t();
     for (int j=0; j<Dim; j++)
@@ -88,33 +94,39 @@ List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_i
     }*/
   }
   mat S = cov(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
-  cout << endl;
-  cout << endl;
-  cout << "Estimation of the covariance matrix...." <<endl;
   mat NewPhi=mean(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
-  cout << "End of the within gibbs algorithm"<< endl;
-  cout << endl;
-  /*cout << "The acceptance rate is: " << AcceptationRatioWg/Ngibbs << endl;*/
-  cout << "Begin of the metropolis hastings algorithm using the covariance computed" << endl;
-  cout << "Number of iterations "<< Nmh <<endl;
+  if (stream==1)
+  {
+    cout << endl;
+    cout << endl;
+    cout << "Estimation of the covariance matrix...." <<endl;
+    cout << "End of the within gibbs algorithm"<< endl;
+    cout << endl;
+    /*cout << "The acceptance rate is: " << AcceptationRatioWg/Ngibbs << endl;*/
+    cout << "Begin of the metropolis hastings algorithm using the covariance computed" << endl;
+    cout << "Number of iterations "<< Nmh <<endl;
+  }
   q = 0;
   if (Nmh!=0)
   {
   for (int i=0; i<(Nmh-1); i++)
   {
-    // beggining of the bar progress
-    cout.flush();
-    if ((i+2)%(Nmh/barWidth)==0)
+    if (stream==1)
     {
-      float progress = (float)(i+2)/(float)(Nmh);
-      cout << "[";
-      q = ((float)(i+2)*(float)barWidth)/(float)(Nmh);
-      if (q<barWidth) cout << string(q, '=');
-      else if (q==barWidth) cout << string(q, '>');
-      else cout << " ";
-      cout << "] " << int(progress * 100.0) << " %\r";
+      // beggining of the bar progress
+      cout.flush();
+      if ((i+2)%(Nmh/barWidth)==0)
+      {
+        float progress = (float)(i+2)/(float)(Nmh);
+        cout << "[";
+        q = ((float)(i+2)*(float)barWidth)/(float)(Nmh);
+        if (q<barWidth) cout << string(q, '=');
+        else if (q==barWidth) cout << string(q, '>');
+        else cout << " ";
+        cout << "] " << int(progress * 100.0) << " %\r";
+      }
+      // end bar progress
     }
-    // end bar progress
     vec phi_star = as<vec>(mvrnorm(1,NewPhi.t(),S));
     vec theta_star = as<vec>(unscale(exp(phi_star.t()),binf,bsup));
     theta = theta_init.rows(0,Dim-2);
@@ -137,8 +149,11 @@ List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_i
       THETA.row(i+1)=THETA.row(i);
     }
   }
-  std::cout << std::endl;
-  cout << "End of the Metropolis Hastings algorithm"<< endl;
+  if (stream==1)
+  {
+    std::cout << std::endl;
+    cout << "End of the Metropolis Hastings algorithm"<< endl;
+  }
   return List::create(Named("PHIwg")=PHIwg,Named("THETAwg")=THETAwg,Named("PHI")=PHI,Named("THETA")=THETA,
                             Named("AcceptationRatio")=AcceptationRatio, Named("AcceptationRatioWg")=AcceptationRatioWg
                         , Named("S")=S);

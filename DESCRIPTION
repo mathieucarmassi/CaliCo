@@ -18,7 +18,8 @@ Imports:
     Rcpp (>= 0.12.12),
     RcppArmadillo,
     MASS,
-    coda
+    coda,
+    parallel
 RoxygenNote: 6.0.1
 Collate: 
     'functions.R'
@@ -29,6 +30,7 @@ Collate:
     'RcppExports.R'
     'calibrationCode-package.R'
     'Kernel.R'
+    'calibration.R'
 LinkingTo: 
     Rcpp,
     RcppArmadillo

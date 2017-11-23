@@ -85,7 +85,7 @@ type.prior=c("gaussian","gamma")
 opt.prior=list(c(11,3),c(2,0.1))
 opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2),Nchains=1)
 opt.valid =list(n.CV=10,k=NULL)
-test <- estim(code,X,Yr,Yexp,model="model1",type.prior,log=TRUE,opt.prior,opt.estim,type.valid="loo",opt.valid=opt.valid)
+test <- estim(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,type.valid="loo",opt.valid=opt.valid)
 test2 <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul,type.valid="loo",opt.valid=opt.valid)
 test$plot()
 

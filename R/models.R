@@ -315,28 +315,28 @@ model3.class$set("public","likelihood",
 model2.class <- R6::R6Class(classname = "model2.class",
                         inherit = model.class,
                         public = list(
-                          n.emul = NULL,
-                          GP     = NULL,
-                          DOE    = NULL,
-                          design = NULL,
-                          p      = NULL,
-                          type   = NULL,
-                          m.exp  = NULL,
-                          V.exp  = NULL,
+                          n.emul   = NULL,
+                          opt.emul = NULL,
+                          GP       = NULL,
+                          DOE      = NULL,
+                          design   = NULL,
+                          p        = NULL,
+                          type     = NULL,
+                          m.exp    = NULL,
+                          V.exp    = NULL,
                         initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
                         {
                           super$initialize(code, X, Yexp, model,opt.emul)
-                          self$binf   <- opt.emul$binf
-                          self$bsup   <- opt.emul$bsup
-                          self$n.emul <- opt.emul$n.emul
-                          self$p      <- opt.emul$p
-                          self$type   <- opt.emul$type
-                          self$DOE    <- opt.emul$DOE
-                          self$binf   <- opt.emul$binf
-                          self$bsup   <- opt.emul$bsup
-                          foo         <- self$surrogate()
-                          self$GP     <- foo$GP
-                          self$design <- foo$doe
+                          self$opt.emul <- opt.emul
+                          self$binf     <- opt.emul$binf
+                          self$bsup     <- opt.emul$bsup
+                          self$n.emul   <- opt.emul$n.emul
+                          self$p        <- opt.emul$p
+                          self$type     <- opt.emul$type
+                          self$DOE      <- opt.emul$DOE
+                          foo           <- self$surrogate()
+                          self$GP       <- foo$GP
+                          self$design   <- foo$doe
                           print("The surrogate has been set up, you can now use the function")
                         },
                         surrogate = function()
@@ -405,7 +405,6 @@ model2.class <- R6::R6Class(classname = "model2.class",
                             GP <- km(formula =~1, design=D, response = z,covtype = self$type)
                             return(list(GP=GP,doe=D))
                           }
-
                         },
                         fun = function(theta,sig2)
                         {
@@ -416,6 +415,24 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           {
                             Xtemp <- matrix(rep(theta,rep(self$n,self$p)),nr=self$n,nc=self$p)
                             Xnew  <- cbind(self$X,Xtemp)
+                          }
+                          Xnew <- as.data.frame(Xnew)
+                          names(Xnew) <- c("DOE","doeParam")
+                          pr <- predict(self$GP,newdata=as.data.frame(Xnew),type="UK",
+                                        cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                          err <- rnorm(n=self$n,mean = 0,sd=sqrt(sig2))
+                          return(list(y=pr$mean+err,Cov.GP=pr$cov,yc=pr$mean,lower=pr$lower95,upper=pr$upper95))
+                        },
+                        pred = function(theta,sig2,x.new)
+                        {
+                          if (is.matrix(x.new)){l <- nrow(x.new)} else{l <- length(x.new)}
+                          if(self$p==1)
+                          {
+                            Xnew <- cbind(x.new,rep(theta,l))
+                          } else
+                          {
+                            Xtemp <- matrix(rep(theta,rep(l,self$p)),nr=l,nc=self$p)
+                            Xnew  <- cbind(x.new,Xtemp)
                           }
                           Xnew <- as.data.frame(Xnew)
                           names(Xnew) <- c("DOE","doeParam")
@@ -510,7 +527,8 @@ model4.class <- R6::R6Class(classname = "model4.class",
                         public=list(
                           funC = NULL,
                           disc = NULL,
-                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA)
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA,
+                                              opt.disc=list(kernel.type=NULL))
                           {
                             super$initialize(code, X, Yexp, model, opt.emul)
                             self$funC <- super$fun
@@ -519,26 +537,27 @@ model4.class <- R6::R6Class(classname = "model4.class",
                           {
                             y   <- self$funC(theta,sig2)$y
                             z   <- self$Yexp - y
-                            Cov <- matrix(nr=self$n,nc=self$n)
-                            if (self$d==1)
-                            {
-                              for (j in 1:self$n)
-                              {
-                                for (i in 1:self$n)
-                                {
-                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sqrt(sum((self$X[i]-self$X[j])^2))/thetaD[2])^2)
-                                }
-                              }
-                            } else
-                            {
-                              for (j in 1:self$n)
-                              {
-                                for (i in 1:self$n)
-                                {
-                                  Cov[i,j] <- thetaD[1]*exp(-1/2*(sqrt(sum((self$X[i,]-self$X[j,])^2))/thetaD[2])^2)
-                                }
-                              }
-                            }
+                            Cov <- kernelFun(self$X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
+                            # Cov <- matrix(nr=self$n,nc=self$n)
+                            # if (self$d==1)
+                            # {
+                            #   for (j in 1:self$n)
+                            #   {
+                            #     for (i in 1:self$n)
+                            #     {
+                            #       Cov[i,j] <- thetaD[1]*exp(-1/2*(sqrt(sum((self$X[i]-self$X[j])^2))/thetaD[2])^2)
+                            #     }
+                            #   }
+                            # } else
+                            # {
+                            #   for (j in 1:self$n)
+                            #   {
+                            #     for (i in 1:self$n)
+                            #     {
+                            #       Cov[i,j] <- thetaD[1]*exp(-1/2*(sqrt(sum((self$X[i,]-self$X[j,])^2))/thetaD[2])^2)
+                            #     }
+                            #   }
+                            # }
                             # p <- eigen(Cov)$vectors
                             # e <- eigen(Cov)$values
                             # if (all(e>0)){} else
