@@ -469,16 +469,20 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL)
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 #'
 #' ### Calibration with estimation options
-#' opt.estim1=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
-#' opt.estim2=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-4,6),sig=diag(6),Nchains=1)
+#' opt.estim1=list(Ngibbs=400,Nmh=700,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
+#' opt.estim2=list(Ngibbs=400,Nmh=700,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1)
 #'
 #' modelfit <- calibrate2(md1,pr1,opt.estim1)
 #' opt.valid <- list(type.valid='loo',nCV=10)
 #' modelfitCV <- calibrate2(md1,pr1,opt.estim1,opt.valid)
 #'
 #' modelfit2 <- calibrate2(md2,pr1,opt.estim1)
-#' opt.valid <- list(type.valid='loo',nCV=10)
+#' opt.valid <- list(type.valid='loo',nCV=4)
 #' modelfitCV <- calibrate2(md2,pr1,opt.estim1,opt.valid)
+#'
+#' modelfit3 <- calibrate2(md3,pr2,opt.estim2)
+#' opt.valid <- list(type.valid='loo',nCV=4)
+#' modelfit3 <- calibrate2(md3,pr2,opt.estim2,opt.valid)
 #'
 #'
 #' #### A partir d'ici ne fonctionne pas.....
@@ -486,7 +490,6 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL)
 #' #### Attention au nombre de paramètres qui varie notamment dans predition et dans calibration
 #'
 #'
-#' modelfit3 <- calibrate2(md3,pr2,opt.estim2)
 #'
 #' modelfit$plot(graph=c("chains","densities","output"))
 #'

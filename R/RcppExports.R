@@ -13,7 +13,7 @@ FlushCPP <- function() {
     invisible(.Call('_calibrationCode_FlushCPP', PACKAGE = 'calibrationCode'))
 }
 
-MetropolisHastingsCppD <- function(model, Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest) {
-    .Call('_calibrationCode_MetropolisHastingsCppD', PACKAGE = 'calibrationCode', model, Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest)
+MetropolisHastingsCppD <- function(model, Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream) {
+    .Call('_calibrationCode_MetropolisHastingsCppD', PACKAGE = 'calibrationCode', model, Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream)
 }
 

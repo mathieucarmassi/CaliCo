@@ -37,10 +37,11 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                    self$mcmc[[i]] <- as.mcmc(self$output[[i]]$out$THETA)
                                  }
                                }
+                               cat("\nEnd of the regular calibration\n\n")
                                if (is.null(self$opt.valid)==FALSE)
                                {
                                  cat(paste("\nThe cross validation is currently running on your ",
-                                             n.cores," cores available....\n\nThanks for waiting\n",sep=""))
+                                             n.cores," cores available....\n",sep=""))
                                  self$errorCV <- mean(unlist(mclapply(c(1:opt.valid$nCV),
                                                                        self$CV,mc.cores = n.cores)))
                                }
@@ -75,7 +76,14 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                  mdTemp      <- model(code=self$md$code,dataCal,Ycal,self$md$model,self$md$opt.emul)
                                  mdTempfit   <- self$calibrationCV(mdTemp,Ycal)
                                  Dim         <- length(self$pr)
-                                 Ytemp       <- mdTemp$pred(mdTempfit$MAP[1:(Dim-1)],mdTempfit$MAP[Dim],dataVal)$y
+                                 if (mdTemp$model=="model1" | mdTemp$model=="model2")
+                                 {
+                                    Ytemp <- mdTemp$pred(mdTempfit$MAP[1:(Dim-1)],mdTempfit$MAP[Dim],dataVal)$y
+                                 } else
+                                 {
+                                   Ytemp <- mdTemp$pred(mdTempfit$MAP[1:(Dim-3)],mdTempfit$MAP[(Dim-3):(Dim-1)]
+                                                        ,mdTempfit$MAP[Dim],dataVal)$y
+                                 }
                                  return(sqrt((Ytemp-Yval)^2))
                                }
                              },

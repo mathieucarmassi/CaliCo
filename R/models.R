@@ -187,6 +187,7 @@ model3.class <- R6::R6Class(classname = "model3.class",
                         inherit = model1.class,
                         public=list(
                           funTemp  = NULL,
+                          predTemp = NULL,
                           temp     = NULL,
                           disc     = NULL,
                           initialize=function(code=NA, X=NA, Yexp=NA, model=NA,
@@ -198,52 +199,40 @@ model3.class <- R6::R6Class(classname = "model3.class",
                               self$opt.disc$kernel.type="gauss"
                             }
                             super$initialize(code, X, Yexp, model)
-                            self$funTemp <- super$fun
+                            self$funTemp  <- super$fun
+                            self$predTemp <- super$pred
                           },
-                          discrepancy = function(theta,thetaD,sig2)
+                          discrepancy = function(theta,thetaD,sig2,X=self$X)
                           {
                             y   <- self$funTemp(theta,sig2)$y
                             z   <- self$Yexp - y
-                            Cov <- kernelFun(self$X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
-                            # matrix(nr=self$n,nc=self$n)
-                            # if (is.null(ncol(self$X)))
+                            Cov <- kernelFun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
+                            # p <- eigen(Cov)$vectors
+                            # e <- eigen(Cov)$values
+                            # if (all(e>0)){} else
                             # {
-                            #   Cov <- matrix(nr=self$n,nc=self$n)
-                            #   for (j in 1:self$n)
-                            #   {
-                            #     for (i in 1:self$n)
-                            #     {
-                            #       Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[i]-self$X[j])^2)/thetaD[2])^2)
-                            #     }
-                            #   }
-                            # } else
-                            # {
-                            #   Cov <- matrix(nr=self$n,nc=self$n)
-                            #   for (j in 1:self$n)
-                            #   {
-                            #     for (i in 1:self$n)
-                            #     {
-                            #       Cov[i,j] <- thetaD[1]*exp(-1/2*(sum((self$X[i,]-self$X[j,])^2)/thetaD[2])^2)
-                            #     }
-                            #   }
-                            #}
-                            p <- eigen(Cov)$vectors
-                            e <- eigen(Cov)$values
-                            if (all(e>0)){} else
-                            {
-                              e[which(e<0)] <- 1e-4
-                            }
-                            d <- diag(e)
-                            Cov <- t(p)%*%d%*%p
-                            if (is.null(dim(self$X))){long <- length(self$X)}else{long <- dim(self$X)[1]}
+                            #   e[which(e<0)] <- 1e-4
+                            # }
+                            # d <- diag(e)
+                            # Cov <- t(p)%*%d%*%p
+                            if (is.null(dim(X))){long <- length(X)}else{long <- dim(X)[1]}
                             biais <- mvrnorm(n=self$n,rep(0,long),Cov)
                             biais <- apply(biais,1,mean)
                             return(list(biais=biais,cov=Cov))
                           },
-                          fun = function(theta,thetaD,sig2)
+                          fun = function(theta,thetaD,sig2,X=self$X)
                           {
-                            self$disc <- self$discrepancy(theta,thetaD,sig2)
+                            self$disc <- self$discrepancy(theta,thetaD,sig2,X)
                             foo <- self$funTemp(theta,sig2)
+                            y <- foo$y
+                            yc  <- foo$yc
+                            return(list(y=self$disc$biais+y,cov=self$disc$cov,yc=yc))
+                          },
+                          pred = function(theta,thetaD,sig2,x.new)
+                          {
+                            browser()
+                            self$disc <- self$discrepancy(theta,thetaD,sig2,x.new)
+                            foo <- self$predTemp(theta,sig2,x.new)
                             y <- foo$y
                             yc  <- foo$yc
                             return(list(y=self$disc$biais+y,cov=self$disc$cov,yc=yc))
