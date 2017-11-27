@@ -17,6 +17,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                              initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL)
                              {
                                library(parallel)
+                               "You want to make a calibration? Yes!!!!"
                                self$md        <- md
                                self$pr        <- pr
                                self$opt.estim <- opt.estim

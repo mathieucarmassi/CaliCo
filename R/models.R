@@ -207,14 +207,14 @@ model3.class <- R6::R6Class(classname = "model3.class",
                             y   <- self$funTemp(theta,sig2)$y
                             z   <- self$Yexp - y
                             Cov <- kernelFun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
-                            # p <- eigen(Cov)$vectors
-                            # e <- eigen(Cov)$values
-                            # if (all(e>0)){} else
-                            # {
-                            #   e[which(e<0)] <- 1e-4
-                            # }
-                            # d <- diag(e)
-                            # Cov <- t(p)%*%d%*%p
+                            p <- eigen(Cov)$vectors
+                            e <- eigen(Cov)$values
+                            if (all(e>0)){} else
+                            {
+                              e[which(e<0)] <- 1e-4
+                            }
+                            d <- diag(e)
+                            Cov <- t(p)%*%d%*%p
                             if (is.null(dim(X))){long <- length(X)}else{long <- dim(X)[1]}
                             biais <- mvrnorm(n=self$n,rep(0,long),Cov)
                             biais <- apply(biais,1,mean)
@@ -230,7 +230,6 @@ model3.class <- R6::R6Class(classname = "model3.class",
                           },
                           pred = function(theta,thetaD,sig2,x.new)
                           {
-                            browser()
                             self$disc <- self$discrepancy(theta,thetaD,sig2,x.new)
                             foo <- self$predTemp(theta,sig2,x.new)
                             y <- foo$y
