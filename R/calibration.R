@@ -187,18 +187,41 @@ calibrate.class$set("private","MAPestimator",
 
 
 calibrate.class$set("public","plot",
-                    function(graph=c("acf"))
+                    function(graph=c("acf","chains","densities"))
                     {
                       n <- length(self$pr)
+                      gg <- list()
                       a <- list()
+                      m <- list()
+                      p <- list()
                       if ("acf" %in% graph)
                       {
                         for (i in 1:n)
                         {
                           a[[i]] <- self$acf(i)
                         }
-                        return(do.call(grid.arrange,a))
+                        do.call(grid.arrange,a)
+                        gg$acf <- a
                       }
+                      if ("chains" %in% graph)
+                      {
+                        for (i in 1:n)
+                        {
+                          m[[i]] <- self$mcmcChains(i)
+                        }
+                        do.call(grid.arrange,m)
+                        gg$mcmc <- m
+                      }
+                      if ("densities" %in% graph)
+                      {
+                        for (i in 1:n)
+                        {
+                          p[[i]] <- self$densities(i)
+                        }
+                        do.call(grid.arrange,p)
+                        gg$dens <- p
+                      }
+                      return(gg)
                     })
 
 
@@ -213,3 +236,38 @@ calibrate.class$set("public","acf",
                         xlab("")+ylab("")+theme_light()
                       return(p)
                       })
+
+calibrate.class$set("public","mcmcChains",
+                    function(i)
+                    {
+                      n <- length(self$output$out$THETA[-c(1:self$opt.estim$burnIn),i])
+                      resgg <- data.frame(inc=c(1:n),data=self$output$out$THETA[-c(1:self$opt.estim$burnIn),i])
+                      p   <- ggplot(data=resgg, aes(x=inc,y=data))+geom_line()+ylab("")+
+                        xlab("")+theme_light()
+                      return(p)
+                    }
+                    )
+
+
+calibrate.class$set("public","dens",
+                    function(i)
+                    {
+                      binf          <- private$boundaries()$binf
+                      bsup          <- private$boundaries()$bsup
+                      dplot  <- data.frame(data=self$output$out$THETA[-c(1:self$opt.estim$burnIn),i],type="posterior")
+                      p <- ggplot(dplot,aes(data,fill=type,color=type)) +
+                        geom_density(kernel = "gaussian",adjust=3,alpha=0.1)+
+                        theme_light()+xlab("")+ylab("")+ xlim(binf[i],bsup[i])+
+                        scale_fill_manual( values = "blue")+
+                        scale_color_manual(values = "blue")+
+                        theme(legend.position=c(0.86,0.86),
+                              legend.text=element_text(face="bold",size = '20'),
+                              legend.title=element_blank(),
+                              legend.key=element_rect(colour=NA),
+                              axis.text=element_text(size=20))+
+                        geom_hline(aes(yintercept = 0))
+                      return(p)
+                    }
+)
+
+
