@@ -17,7 +17,6 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                              initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL)
                              {
                                library(parallel)
-                               "You want to make a calibration? Yes!!!!"
                                self$md        <- md
                                self$pr        <- pr
                                self$opt.estim <- opt.estim
@@ -186,3 +185,31 @@ calibrate.class$set("private","MAPestimator",
                         return(unlist(lapply(dens,map)))
                     })
 
+
+calibrate.class$set("public","plot",
+                    function(graph=c("acf"))
+                    {
+                      n <- length(self$pr)
+                      a <- list()
+                      if ("acf" %in% graph)
+                      {
+                        for (i in 1:n)
+                        {
+                          a[[i]] <- self$acf(i)
+                        }
+                        return(do.call(grid.arrange,a))
+                      }
+                    })
+
+
+calibrate.class$set("public","acf",
+                    function(i)
+                    {
+                      bacf   <- acf(self$output$out$THETA[-c(1:self$opt.estim$burnIn),i], plot = FALSE)
+                      bacfdf <- with(bacf, data.frame(lag, acf))
+                      p      <- ggplot(data = bacfdf, mapping = aes(x = lag, y = acf))+
+                        geom_hline(aes(yintercept = 0))+
+                        geom_segment(mapping = aes(xend = lag, yend = 0))+
+                        xlab("")+ylab("")+theme_light()
+                      return(p)
+                      })

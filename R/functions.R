@@ -470,17 +470,17 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL)
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 #'
 #' ### Calibration with estimation options
-#' opt.estim1=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
-#' opt.estim2=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1)
+#' opt.estim1=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1,burnIn=300)
+#' opt.estim2=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=300)
 #'
 #' modelfit <- calibrate2(md1,pr1,opt.estim1)
+#' modelfit$plot()
 #' opt.valid <- list(type.valid='loo',nCV=10)
 #' modelfitCV <- calibrate2(md1,pr1,opt.estim1,opt.valid)
 #'
 #' modelfit2 <- calibrate2(md2,pr1,opt.estim1)
 #' opt.valid <- list(type.valid='loo',nCV=4)
 #' modelfitCV <- calibrate2(md2,pr1,opt.estim1,opt.valid)
-#'
 #'
 #' modelfit3 <- calibrate2(md3,pr2,opt.estim2)
 #' opt.valid <- list(type.valid='loo',nCV=4)
@@ -714,3 +714,20 @@ unscale <- function(M,binf,bsup,diag=FALSE,sym=FALSE){
   return(temp)
 }
 
+
+#' Function that deals with negative eigen values in a matrix not positive definite
+#'
+#' @param M the matrix or the vector
+#' @return the new matrix M
+#' @export
+DefPos <- function(X)
+{
+  p <- eigen(X)$vectors
+  e <- eigen(X)$values
+  if (all(e>0)){} else
+  {
+    e[which(e<0)] <- 1e-4
+  }
+  d <- diag(e)
+  return(t(p)%*%d%*%p)
+}

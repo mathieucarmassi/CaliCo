@@ -23,14 +23,12 @@ List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_i
   PHI.row(0)= log((THETA.row(0).t()-binf)/(bsup-binf)).t();
   double AcceptationRatio=0;
   arma::vec AcceptationRatioWg=zeros(Dim,1);
-  Function unscale("unscale"), rnorm("rnorm"), mvrnorm("mvrnorm"), runif("runif");
+  Function unscale("unscale"), rnorm("rnorm"), mvrnorm("mvrnorm"), runif("runif"), DefPos("DefPos");
   THETAwg.row(0)=theta_init.t();
   PHIwg.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
   arma::vec theta=theta_init.rows(0,Dim-2);
   double Verr=THETAwg(0,(Dim-1));
-  cout << "balise" << endl;
   Rcpp::List res = as<Rcpp::List>(model(theta,Verr));
-  cout << "balise2" << endl;
   arma::vec Yg=res["y"];
   // arma::vec Yg=as<arma::vec>(model(theta,Verr));
   double alpha = as<double>(LogTest(theta,Verr));
@@ -95,7 +93,8 @@ List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_i
       cout<< "Theta " << THETAwg.row(i) <<endl;
     }*/
   }
-  mat S = cov(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
+  mat Stemp = cov(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
+  mat S = as<arma::mat>(DefPos(Stemp));
   mat NewPhi=mean(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
   if (stream==1)
   {
@@ -196,7 +195,7 @@ List MetropolisHastingsCppD(Function model,int Ngibbs, int Nmh, arma::vec theta_
   PHI.row(0)= log((THETA.row(0).t()-binf)/(bsup-binf)).t();
   double AcceptationRatio=0;
   arma::vec AcceptationRatioWg=zeros(Dim,1);
-  Function unscale("unscale"), rnorm("rnorm"), mvrnorm("mvrnorm"), runif("runif");
+  Function unscale("unscale"), rnorm("rnorm"), mvrnorm("mvrnorm"), runif("runif"), DefPos("DefPos");
   THETAwg.row(0)=theta_init.t();
   PHIwg.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
   arma::vec theta=theta_init.rows(0,Dim-4);
@@ -268,7 +267,8 @@ List MetropolisHastingsCppD(Function model,int Ngibbs, int Nmh, arma::vec theta_
     cout<< "Theta " << THETAwg.row(i) <<endl;
     }*/
   }
-  mat S = cov(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
+  mat Stemp = cov(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
+  mat S = as<arma::mat>(DefPos(Stemp));
   mat NewPhi=mean(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
   if (stream==1)
   {
