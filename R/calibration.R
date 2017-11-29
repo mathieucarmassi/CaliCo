@@ -187,13 +187,13 @@ calibrate.class$set("private","MAPestimator",
 
 
 calibrate.class$set("public","plot",
-                    function(graph=c("acf","chains","densities"))
+                    function(graph=c("acf","chains","densities","output"),select.X=NULL)
                     {
-                      n <- length(self$pr)
-                      gg <- list()
-                      a <- list()
-                      m <- list()
-                      p <- list()
+                      n   <- length(self$pr)
+                      gg  <- list()
+                      a   <- list()
+                      m   <- list()
+                      p   <- list()
                       if ("acf" %in% graph)
                       {
                         for (i in 1:n)
@@ -216,10 +216,18 @@ calibrate.class$set("public","plot",
                       {
                         for (i in 1:n)
                         {
-                          p[[i]] <- self$densities(i)
+                          dplot2  <- data.frame(data=self$output$out$THETA[-c(1:self$opt.estim$burnIn),i],
+                                                type="posterior")
+                          p[[i]] <- self$pr[[i]]$plot()+geom_density(data=dplot2,kernel="gaussian",adjust=3,alpha=0.1)
                         }
                         do.call(grid.arrange,p)
                         gg$dens <- p
+                      }
+                      if ("output" %in% graph)
+                      {
+                      o <- self$outputPlot(select.X)
+                      print(o)
+                      gg$output <- o
                       }
                       return(gg)
                     })
@@ -249,25 +257,48 @@ calibrate.class$set("public","mcmcChains",
                     )
 
 
-calibrate.class$set("public","dens",
-                    function(i)
+calibrate.class$set("public","outputPlot",
+                    function(select.X=NULL)
                     {
-                      binf          <- private$boundaries()$binf
-                      bsup          <- private$boundaries()$bsup
-                      dplot  <- data.frame(data=self$output$out$THETA[-c(1:self$opt.estim$burnIn),i],type="posterior")
-                      p <- ggplot(dplot,aes(data,fill=type,color=type)) +
-                        geom_density(kernel = "gaussian",adjust=3,alpha=0.1)+
-                        theme_light()+xlab("")+ylab("")+ xlim(binf[i],bsup[i])+
-                        scale_fill_manual( values = "blue")+
-                        scale_color_manual(values = "blue")+
-                        theme(legend.position=c(0.86,0.86),
-                              legend.text=element_text(face="bold",size = '20'),
+                      if (is.null(select.X)==TRUE){X <- self$md$X} else {X <- select.X}
+                      chain <- self$output$out$THETA[(self$opt.estim$burnIn+1):nrow(self$output$out$THETA),]
+                      res <- res2 <- matrix(0,nr=nrow(chain),nc=length(self$md$Yexp))
+                      dim   <- ncol(chain)
+                      if (self$md$model == "model1" || self$md$model == "model2")
+                      {
+                        for (i in 1:nrow(chain))
+                        {
+                          res[i,] <- self$md$fun(chain[i,1:(dim-1)],chain[i,dim])$y
+                        }
+                      } else
+                      {
+                        for (i in 1:nrow(chain))
+                        {
+                          res[i,] <- self$md$fun(chain[i,1:(dim-3)],chain[i,(dim-2):(dim-1)],chain[i,dim])$y
+                          res2[i,] <- self$md$fun(self$output$MAP[1:(dim-3)],chain[i,(dim-2):(dim-1)],
+                                                  self$output$MAP[dim])$y
+                        }
+                        qqd <- apply(res2,1,quantile,probs=c(0.05,0.5,0.95))
+                        gdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qqd[3,],lower=qqd[1,],type="experiments",
+                                            fill="90% credibility interval for the discrepancy")
+                      }
+                      qq <- apply(res,1,quantile,probs=c(0.05,0.5,0.95))
+                      ggdata <- data.frame(y=qq[2,],x=X,upper=qq[3,],lower=qq[1,],type="calibrated",
+                                           fill="90% credibility interval a posteriori")
+                      if (self$md$model == "model1" || self$md$model == "model2")
+                      {
+                        ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qq[3,],lower=qq[1,],type="experiments",
+                                              fill="90% credibility interval a posteriori")
+                      }
+                      ggdata <- rbind(ggdata,ggdata2)
+                      p <- ggplot(ggdata) + geom_line(aes(x=x,y=y,color=type))+
+                        geom_ribbon(aes(ymin=lower, ymax=upper, x=x,fill=fill), alpha = 0.3) +
+                        scale_fill_manual("",values=c("blue4","grey62")) +
+                        theme_light() + xlab("") + ylab("") +
+                        theme(legend.position=c(0.65,0.86),
+                              legend.text=element_text(size = '15'),
                               legend.title=element_blank(),
                               legend.key=element_rect(colour=NA),
-                              axis.text=element_text(size=20))+
-                        geom_hline(aes(yintercept = 0))
-                      return(p)
-                    }
-)
-
-
+                              axis.text=element_text(size=20))
+                     return(p)
+                    })

@@ -474,7 +474,7 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL)
 #' opt.estim2=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=300)
 #'
 #' modelfit <- calibrate2(md1,pr1,opt.estim1)
-#' modelfit$plot()
+#' t <- modelfit$plot(select.X=X[,1])
 #' opt.valid <- list(type.valid='loo',nCV=10)
 #' modelfitCV <- calibrate2(md1,pr1,opt.estim1,opt.valid)
 #'
