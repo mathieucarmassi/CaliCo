@@ -42,8 +42,18 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                {
                                  cat(paste("\nThe cross validation is currently running on your ",
                                              n.cores," cores available....\n",sep=""))
-                                 self$errorCV <- mean(unlist(mclapply(c(1:opt.valid$nCV),
-                                                                       self$CV,mc.cores = n.cores)))
+                                 if (self$md$model=="model3")
+                                 {
+                                   l <- self$opt.valid$nCV
+                                   for (i in 1:l)
+                                   {
+                                     print(self$CV(i))
+                                   }
+                                 } else
+                                 {
+                                   self$errorCV <- as.numeric(unlist(mclapply(c(1:opt.valid$nCV),
+                                                                              self$CV,mc.cores = n.cores)))
+                                 }
                                }
                              },
                              calibration = function(i=NA)
@@ -59,7 +69,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                              },
                              CV = function(i=NA)
                              {
-                               if (opt.valid$type.valid=="loo")
+                               if (self$opt.valid$type.valid=="loo")
                                {
                                  inc <- sample(c(1:self$md$n),1)
                                  if (is.matrix(self$md$X))
@@ -73,6 +83,8 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                  }
                                  Ycal        <- self$md$Yexp[-inc]
                                  Yval        <- self$md$Yexp[inc]
+                                 print(Ycal)
+                                 print(Yval)
                                  mdTemp      <- model(code=self$md$code,dataCal,Ycal,self$md$model,self$md$opt.emul)
                                  mdTempfit   <- self$calibrationCV(mdTemp,Ycal)
                                  Dim         <- length(self$pr)
@@ -81,7 +93,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                     Ytemp <- mdTemp$pred(mdTempfit$MAP[1:(Dim-1)],mdTempfit$MAP[Dim],dataVal)$y
                                  } else
                                  {
-                                   Ytemp <- mdTemp$pred(mdTempfit$MAP[1:(Dim-3)],mdTempfit$MAP[(Dim-3):(Dim-1)]
+                                   Ytemp <- mdTemp$pred(mdTempfit$MAP[1:(Dim-3)],mdTempfit$MAP[(Dim-2):(Dim-1)]
                                                         ,mdTempfit$MAP[Dim],dataVal)$y
                                  }
                                  return(sqrt((Ytemp-Yval)^2))
@@ -261,28 +273,28 @@ calibrate.class$set("public","outputPlot",
                     function(select.X=NULL)
                     {
                       if (is.null(select.X)==TRUE){X <- self$md$X} else {X <- select.X}
-                      chain <- self$output$out$THETA[(self$opt.estim$burnIn+1):nrow(self$output$out$THETA),]
-                      res <- res2 <- matrix(0,nr=nrow(chain),nc=length(self$md$Yexp))
-                      dim   <- ncol(chain)
+                      m <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
+                      Dist <- Dist2 <- matrix(nr=nrow(m),nc=length(self$md$Yexp))
+                      dim   <- length(self$pr)
                       if (self$md$model == "model1" || self$md$model == "model2")
                       {
                         for (i in 1:nrow(chain))
                         {
-                          res[i,] <- self$md$fun(chain[i,1:(dim-1)],chain[i,dim])$y
+                          Dist[i,] <- self$md$fun(m[i,1:(dim-1)],m[i,dim])$y
                         }
                       } else
                       {
                         for (i in 1:nrow(chain))
                         {
-                          res[i,] <- self$md$fun(chain[i,1:(dim-3)],chain[i,(dim-2):(dim-1)],chain[i,dim])$y
-                          res2[i,] <- self$md$fun(self$output$MAP[1:(dim-3)],chain[i,(dim-2):(dim-1)],
+                          Dist[i,]  <- self$md$fun(m[i,1:(dim-3)],m[i,(dim-2):(dim-1)],m[i,dim])$y
+                          Dist2[i,] <- self$md$fun(self$output$MAP[1:(dim-3)],m[i,(dim-2):(dim-1)],
                                                   self$output$MAP[dim])$y
                         }
-                        qqd <- apply(res2,1,quantile,probs=c(0.05,0.5,0.95))
+                        qqd <- apply(res2,2,quantile,probs=c(0.05,0.5,0.95))
                         gdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qqd[3,],lower=qqd[1,],type="experiments",
                                             fill="90% credibility interval for the discrepancy")
                       }
-                      qq <- apply(res,1,quantile,probs=c(0.05,0.5,0.95))
+                      qq <- apply(Dist,2,quantile,probs=c(0.05,0.5,0.95))
                       ggdata <- data.frame(y=qq[2,],x=X,upper=qq[3,],lower=qq[1,],type="calibrated",
                                            fill="90% credibility interval a posteriori")
                       if (self$md$model == "model1" || self$md$model == "model2")
