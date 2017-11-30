@@ -446,12 +446,12 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL)
 #' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}}
 #' @examples
 #' ### The code to calibrate
-#' X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
+#' X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
 #' code <- function(X,theta)
 #' {
 #'   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 #' }
-#' Yexp <- code(X,c(1,1,11))+rnorm(10,0,0.1)
+#' Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
 #'
 #' # Definition of the different models
 #' md1 <- model(code,X,Yexp,"model1")
