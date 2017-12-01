@@ -83,17 +83,16 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                  }
                                  Ycal        <- self$md$Yexp[-inc]
                                  Yval        <- self$md$Yexp[inc]
-                                 print(Ycal)
-                                 print(Yval)
-                                 mdTemp      <- model(code=self$md$code,dataCal,Ycal,self$md$model,self$md$opt.emul)
-                                 mdTempfit   <- self$calibrationCV(mdTemp,Ycal)
+                                 mdTempCal   <- model(code=self$md$code,dataCal,Ycal,self$md$model,self$md$opt.emul)
+                                 mdTempfit   <- self$calibrationCV(mdTempCal,Ycal)
+                                 mdTempVal   <- model(code=self$md$code,dataVal,Yval,self$md$model,self$md$opt.emul)
                                  Dim         <- length(self$pr)
-                                 if (mdTemp$model=="model1" | mdTemp$model=="model2")
+                                 if (mdTempVal$model=="model1" | mdTempVal$model=="model2")
                                  {
-                                    Ytemp <- mdTemp$pred(mdTempfit$MAP[1:(Dim-1)],mdTempfit$MAP[Dim],dataVal)$y
+                                    Ytemp <- mdTempVal$fun(mdTempfit$MAP[1:(Dim-1)],mdTempfit$MAP[Dim],dataVal)$y
                                  } else
                                  {
-                                   Ytemp <- mdTemp$pred(mdTempfit$MAP[1:(Dim-3)],mdTempfit$MAP[(Dim-2):(Dim-1)]
+                                   Ytemp <- mdTempVal$fun(mdTempfit$MAP[1:(Dim-3)],mdTempfit$MAP[(Dim-2):(Dim-1)]
                                                         ,mdTempfit$MAP[Dim],dataVal)$y
                                  }
                                  return(sqrt((Ytemp-Yval)^2))
@@ -278,13 +277,13 @@ calibrate.class$set("public","outputPlot",
                       dim   <- length(self$pr)
                       if (self$md$model == "model1" || self$md$model == "model2")
                       {
-                        for (i in 1:nrow(chain))
+                        for (i in 1:nrow(m))
                         {
                           Dist[i,] <- self$md$fun(m[i,1:(dim-1)],m[i,dim])$y
                         }
                       } else
                       {
-                        for (i in 1:nrow(chain))
+                        for (i in 1:nrow(m))
                         {
                           Dist[i,]  <- self$md$fun(m[i,1:(dim-3)],m[i,(dim-2):(dim-1)],m[i,dim])$y
                           Dist2[i,] <- self$md$fun(self$output$MAP[1:(dim-3)],m[i,(dim-2):(dim-1)],
