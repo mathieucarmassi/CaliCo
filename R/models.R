@@ -601,7 +601,7 @@ model4.class$set("public","plot",
                    {stop('You have given the wrong number of parameter')}
                    if(self$d>1 & is.null(select.X))
                    {stop('Graphic representation is not available in dimension >1')}
-                   res <- self$fun(theta,thetaD,sig)
+                   res <- self$fun(theta,thetaD,sig,select.X)
                    Xplot <- self$X
                    if(is.null(select.X)==FALSE){Xplot <- select.X}
                    binf <- min(Xplot)
