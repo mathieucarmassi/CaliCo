@@ -42,18 +42,8 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                {
                                  cat(paste("\nThe cross validation is currently running on your ",
                                              n.cores," cores available....\n",sep=""))
-                                 if (self$md$model=="model3")
-                                 {
-                                   l <- self$opt.valid$nCV
-                                   for (i in 1:l)
-                                   {
-                                     print(self$CV(i))
-                                   }
-                                 } else
-                                 {
-                                   self$errorCV <- as.numeric(unlist(mclapply(c(1:opt.valid$nCV),
-                                                                              self$CV,mc.cores = n.cores)))
-                                 }
+                                 self$errorCV <- as.numeric(unlist(mclapply(c(1:opt.valid$nCV),
+                                                                   self$CV,mc.cores = n.cores)))
                                }
                              },
                              calibration = function(i=NA)
@@ -61,6 +51,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                binf          <- private$boundaries()$binf
                                bsup          <- private$boundaries()$bsup
                                MetropolisCpp <- private$MCMC(self$md$model)
+                               theta <- self$opt.estim$thetaInit
                                out           <- MetropolisCpp(self$md$fun,self$opt.estim$Ngibbs,self$opt.estim$Nmh,
                                                               self$opt.estim$thetaInit,self$opt.estim$k,
                                                               self$opt.estim$sig,self$md$Yexp,binf,bsup,self$logPost,1)
@@ -271,7 +262,11 @@ calibrate.class$set("public","mcmcChains",
 calibrate.class$set("public","outputPlot",
                     function(select.X=NULL)
                     {
-                      if (is.null(select.X)==TRUE){X <- self$md$X} else {X <- select.X}
+                      if (is.null(select.X)==TRUE)
+                        {
+                          X <- self$md$X
+                          stop('The dimension of X is higher than 1, the plot cannot be provided for a dimension >1')
+                        } else {X <- select.X}
                       m <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
                       Dist <- Dist2 <- matrix(nr=nrow(m),nc=length(self$md$Yexp))
                       dim   <- length(self$pr)
@@ -289,8 +284,8 @@ calibrate.class$set("public","outputPlot",
                           Dist2[i,] <- self$md$fun(self$output$MAP[1:(dim-3)],m[i,(dim-2):(dim-1)],
                                                   self$output$MAP[dim])$y
                         }
-                        qqd <- apply(res2,2,quantile,probs=c(0.05,0.5,0.95))
-                        gdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qqd[3,],lower=qqd[1,],type="experiments",
+                        qqd <- apply(Dist2,2,quantile,probs=c(0.05,0.5,0.95))
+                        ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qqd[3,],lower=qqd[1,],type="experiments",
                                             fill="90% credibility interval for the discrepancy")
                       }
                       qq <- apply(Dist,2,quantile,probs=c(0.05,0.5,0.95))

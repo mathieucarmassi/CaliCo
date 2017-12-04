@@ -89,7 +89,7 @@
 #' ### Desactivation of the input DOE
 #' opt.emul=list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 #' model4 <- model(code,X,Yexp,"model4",opt.emul)
-#' model4$plot(c(1,1,11),c(2,0.5),0.1,points=FALSE,select.X=X[,1])
+#' model4$plot(c(1,1,11),c(2,0.5),0.1,select.X=X[,1])
 #'
 #' ### Use your own design of experiments
 #' DOE <- DiceDesign::lhsDesign(100,5)$design
@@ -379,7 +379,7 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 #'
 #' ### Calibration with estimation options
-#' opt.estim1=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1,burnIn=300)
+#' opt.estim1=list(Ngibbs=4000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1,burnIn=3000)
 #' opt.estim2=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=300)
 #'
 #' ### Calibration model1
@@ -398,31 +398,13 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' ### Calibration model3
 #' modelfit3 <- calibrate(md3,pr2,opt.estim2)
 #' opt.valid <- list(type.valid='loo',nCV=4)
-#'
-#' modelfit3 <- calibrate(md3,pr2,opt.estim2,opt.valid)
+#' modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid)
+#' p <- modelfit3CV$plot(select.X=X[,1])
 #'
 #' ### Calibration model4
 #' modelfit4 <- calibrate(md4,pr2,opt.estim2)
 #' modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid)
-#'
-#' #### A partir d'ici ne fonctionne pas.....
-#' ### La fonction pred est manquante sur les deux derniers modèles
-#' #### Attention au nombre de paramètres qui varie notamment dans predition et dans calibration
-#'
-#'
-#'
-#' modelfit$plot(graph=c("chains","densities","output"))
-#'
-#'
-#'
-#' modelfit2 <- calibrate(md2,pr1,opt.estim1)
-#' modelfit2$plot(graph="output")
-#'
-#' modelfit3 <- calibrate(md3,pr2,opt.estim2)
-#' modelfit3$plot(graph="output")
-#'
-#' modelfit4 <- calibrate(md4,pr2,opt.estim2)
-#' modelfit4$plot(graph="output")
+#' p <- modelfit4CV$plot(select.X=X[,1])
 #'
 #' @export
 calibrate <-function(md,pr,opt.estim,opt.valid=NULL)
