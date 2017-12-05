@@ -349,12 +349,12 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}}
 #' @examples
 #' ### The code to calibrate
-#' X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
+#' X <- cbind(seq(0,1,length.out=50),seq(0,1,length.out=50))
 #' code <- function(X,theta)
 #' {
 #'   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 #' }
-#' Yexp <- code(X,c(1,1,11))+rnorm(10,0,0.1)
+#' Yexp <- code(X,c(1,1,11))+rnorm(50,0,0.1)
 #'
 #' ### For the first model
 #' md1 <- model(code,X,Yexp,"model1")
@@ -393,7 +393,7 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' modelfit2 <- calibrate(md2,pr1,opt.estim1)
 #' p <- modelfit2$plot(select.X=X[,1])
 #' opt.valid <- list(type.valid='loo',nCV=4)
-#' modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid)
+#' modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid,activate=FALSE)
 #' p <- modelfit2$plot(select.X=X[,1])
 #'
 #' ### Calibration model3
