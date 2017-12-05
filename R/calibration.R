@@ -13,37 +13,42 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                              logPost   = NULL,
                              mcmc      = NULL,
                              output    = NULL,
+                             activate  = NULL,
                              errorCV   = NULL,
-                             initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL)
+                             initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL,activate)
                              {
                                library(parallel)
+                               self$activate  <- activate
                                self$md        <- md
                                self$pr        <- pr
                                self$opt.estim <- opt.estim
                                self$opt.valid <- opt.valid
                                self$logPost   <- private$logLikelihood(self$md$model)
                                n.cores        <- detectCores()
-                               if (opt.estim$Nchains==1)
+                               if (self$activate==TRUE)
                                {
-                                 self$output  <- self$calibration()
-                                 self$mcmc    <- as.mcmc(self$output$out$THETA)
-                               } else
-                               {
-                                 n            <- c(1:opt.estim$Nchains)
-                                 self$output  <- mclapply(n,self$calibration,mc.cores = n.cores)
-                                 self$mcmc    <- list()
-                                 for (i in 1:opt.estim$Nchains)
+                                 if (opt.estim$Nchains==1)
                                  {
-                                   self$mcmc[[i]] <- as.mcmc(self$output[[i]]$out$THETA)
+                                   self$output  <- self$calibration()
+                                   self$mcmc    <- as.mcmc(self$output$out$THETA)
+                                 } else
+                                 {
+                                   n            <- c(1:opt.estim$Nchains)
+                                   self$output  <- mclapply(n,self$calibration,mc.cores = n.cores)
+                                   self$mcmc    <- list()
+                                   for (i in 1:opt.estim$Nchains)
+                                   {
+                                     self$mcmc[[i]] <- as.mcmc(self$output[[i]]$out$THETA)
+                                   }
                                  }
+                                 cat("\nEnd of the regular calibration\n\n")
                                }
-                               cat("\nEnd of the regular calibration\n\n")
                                if (is.null(self$opt.valid)==FALSE)
                                {
                                  cat(paste("\nThe cross validation is currently running on your ",
                                              n.cores," cores available....\n",sep=""))
                                  self$errorCV <- as.numeric(unlist(mclapply(c(1:opt.valid$nCV),
-                                                                   self$CV,mc.cores = n.cores)))
+                                                                      self$CV,mc.cores = n.cores)))
                                }
                              },
                              calibration = function(i=NA)
@@ -80,7 +85,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                  Dim         <- length(self$pr)
                                  if (mdTempVal$model=="model1" | mdTempVal$model=="model2")
                                  {
-                                    Ytemp <- mdTempVal$fun(mdTempfit$MAP[1:(Dim-1)],mdTempfit$MAP[Dim],dataVal)$y
+                                    Ytemp <- mdTempVal$pred(mdTempfit$MAP[1:(Dim-1)],mdTempfit$MAP[Dim],dataVal)$y
                                  } else
                                  {
                                    Ytemp <- mdTempVal$fun(mdTempfit$MAP[1:(Dim-3)],mdTempfit$MAP[(Dim-2):(Dim-1)]
@@ -191,6 +196,17 @@ calibrate.class$set("private","MAPestimator",
 calibrate.class$set("public","plot",
                     function(graph=c("acf","chains","densities","output"),select.X=NULL)
                     {
+                      if (self$activate==FALSE)
+                      {
+                        stop("You only had requested the cross validation, the plot method is desabled")
+                      }
+                      if (self$opt.estim$Nchains>1)
+                      {
+                        warning("You have selected several chains. The plot is from coda package and the coda object
+                                mcmc")
+                        plot(self$mcmc)
+                        stop("")
+                      }
                       n   <- length(self$pr)
                       gg  <- list()
                       a   <- list()
