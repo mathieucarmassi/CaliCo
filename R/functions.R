@@ -386,7 +386,7 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' modelfit <- calibrate(md1,pr1,opt.estim1)
 #' t <- modelfit$plot(select.X=X[,1])
 #' opt.valid <- list(type.valid='loo',nCV=4)
-#' modelfitCV <- calibrate(md1,pr1,opt.estim1,opt.valid,activate=FALSE)
+#' modelfitCV <- calibrate(md1,pr1,opt.estim1,opt.valid,activate=TRUE)
 #' tp <- modelfitCV$plot(select.X=X[,1])
 #'
 #' ### Calibration model2
@@ -394,6 +394,7 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' p <- modelfit2$plot(select.X=X[,1])
 #' opt.valid <- list(type.valid='loo',nCV=4)
 #' modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid)
+#' p <- modelfit2$plot(select.X=X[,1])
 #'
 #' ### Calibration model3
 #' modelfit3 <- calibrate(md3,pr2,opt.estim2)
