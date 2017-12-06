@@ -26,6 +26,10 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                self$opt.valid <- opt.valid
                                self$logPost   <- private$logLikelihood(self$md$model)
                                self$n.cores   <- detectCores()
+                               if (self$opt.estim$burnIn > self$opt.estim$Nmh)
+                               {
+                                 stop("The burnIn must be inferior to Nmh")
+                               }
                                if (self$activate==TRUE)
                                {
                                  if (opt.estim$Nchains==1)
@@ -290,10 +294,14 @@ calibrate.class$set("public","outputPlot",
                       {
                         parFun <- function(i)
                         {
-                          Dist  <- self$md$fun(m[i,1:(dim-1)],m[i,dim])$y
-                          return(Dist)
+                          D  <- self$md$fun(m[i,1:(dim-1)],m[i,dim])$y
+                          return(D)
                         }
-                        Dist <- unlist(mclapply(1:nrow(m),parFun,mc.cores = self$n.cores))
+                        res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        for (i in 1:nrow(m))
+                        {
+                          Dist[i,] <- res[[i]]
+                        }
                       } else
                       {
                         print('The computational time might be long to get the output plot')
