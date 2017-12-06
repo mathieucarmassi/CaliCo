@@ -460,7 +460,10 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,activate=TRUE)
 #' ### For the second model
 #' binf <- c(0.9,0.9,10.5)
 #' bsup <- c(1.1,1.1,11.5)
-#' opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+#' DOE <- DiceDesign::lhsDesign(100,5)$design
+#' DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
+#' DOE[,1:2] <- unscale(DOE[,1:2],c(0,0),c(1.5,1.5))
+#' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=DOE)
 #' md2 <- model(code,X,Yexp,"model2",opt.emul)
 #'
 #' modelfit2 <- calibrate(md2,pr1,opt.estim1)
