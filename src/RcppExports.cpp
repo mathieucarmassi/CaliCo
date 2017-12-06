@@ -7,12 +7,11 @@
 using namespace Rcpp;
 
 // MetropolisHastingsCpp
-List MetropolisHastingsCpp(Function model, int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
-RcppExport SEXP _calibrationCode_MetropolisHastingsCpp(SEXP modelSEXP, SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
+List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
+RcppExport SEXP _calibrationCode_MetropolisHastingsCpp(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Function >::type model(modelSEXP);
     Rcpp::traits::input_parameter< int >::type Ngibbs(NgibbsSEXP);
     Rcpp::traits::input_parameter< int >::type Nmh(NmhSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type theta_init(theta_initSEXP);
@@ -23,7 +22,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type bsup(bsupSEXP);
     Rcpp::traits::input_parameter< Function >::type LogTest(LogTestSEXP);
     Rcpp::traits::input_parameter< int >::type stream(streamSEXP);
-    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCpp(model, Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream));
+    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -48,12 +47,11 @@ BEGIN_RCPP
 END_RCPP
 }
 // MetropolisHastingsCppD
-List MetropolisHastingsCppD(Function model, int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
-RcppExport SEXP _calibrationCode_MetropolisHastingsCppD(SEXP modelSEXP, SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
+List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
+RcppExport SEXP _calibrationCode_MetropolisHastingsCppD(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Function >::type model(modelSEXP);
     Rcpp::traits::input_parameter< int >::type Ngibbs(NgibbsSEXP);
     Rcpp::traits::input_parameter< int >::type Nmh(NmhSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type theta_init(theta_initSEXP);
@@ -64,16 +62,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type bsup(bsupSEXP);
     Rcpp::traits::input_parameter< Function >::type LogTest(LogTestSEXP);
     Rcpp::traits::input_parameter< int >::type stream(streamSEXP);
-    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCppD(model, Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream));
+    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCppD(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_calibrationCode_MetropolisHastingsCpp", (DL_FUNC) &_calibrationCode_MetropolisHastingsCpp, 11},
+    {"_calibrationCode_MetropolisHastingsCpp", (DL_FUNC) &_calibrationCode_MetropolisHastingsCpp, 10},
     {"_calibrationCode_invMat", (DL_FUNC) &_calibrationCode_invMat, 1},
     {"_calibrationCode_FlushCPP", (DL_FUNC) &_calibrationCode_FlushCPP, 0},
-    {"_calibrationCode_MetropolisHastingsCppD", (DL_FUNC) &_calibrationCode_MetropolisHastingsCppD, 11},
+    {"_calibrationCode_MetropolisHastingsCppD", (DL_FUNC) &_calibrationCode_MetropolisHastingsCppD, 10},
     {NULL, NULL, 0}
 };
 

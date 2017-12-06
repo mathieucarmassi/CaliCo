@@ -533,10 +533,10 @@ model4.class <- R6::R6Class(classname = "model4.class",
                           },
                           discrepancy = function(theta,thetaD,sig2,X=self$X)
                           {
-                            y   <- self$funTemp(theta,sig2)$y
+                            y   <- self$funC(theta,sig2)$y
                             z   <- self$Yexp - y
                             Cov <- kernelFun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
-                            if (nrow(X)==1 | is.null(dim(X)))
+                            if (nrow(X)==1 || is.null(dim(X)))
                             {} else
                             {
                               p <- eigen(Cov)$vectors
@@ -548,7 +548,7 @@ model4.class <- R6::R6Class(classname = "model4.class",
                               d <- diag(e)
                               Cov <- t(p)%*%d%*%p
                             }
-                            if (is.null(dim(X))){long <- length(X)}else{long <- dim(X)[1]}
+                            if (is.null(dim(X))){long <- 1}else{long <- dim(X)[1]}
                             if (long==1)
                             {
                               biais <- rnorm(n=self$n,0,sqrt(Cov))

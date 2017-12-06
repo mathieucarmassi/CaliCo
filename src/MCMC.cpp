@@ -11,7 +11,7 @@ using namespace arma;
 
 
 // [[Rcpp::export]]
-List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,
+List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,
                            arma::vec binf, arma::vec bsup, Function LogTest, int stream)
 {
   double Dim = theta_init.size();
@@ -28,8 +28,8 @@ List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_i
   PHIwg.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
   arma::vec theta=theta_init.rows(0,Dim-2);
   double Verr=THETAwg(0,(Dim-1));
-  Rcpp::List res = as<Rcpp::List>(model(theta,Verr));
-  arma::vec Yg=res["y"];
+  //Rcpp::List res = as<Rcpp::List>(model(theta,Verr));
+  //arma::vec Yg=res["y"];
   // arma::vec Yg=as<arma::vec>(model(theta,Verr));
   double alpha = as<double>(LogTest(theta,Verr));
   double alpha2 = alpha;
@@ -67,8 +67,8 @@ List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_i
       }
       phi_star(j) = as<double>(rnorm(1,PHIwg(i,j),k(j)*SIGMA(j,j)));
       theta_star(j) = as<double>(unscale(exp(phi_star(j)),binf(j),bsup(j)));
-      Rcpp::List res = as<Rcpp::List>(model(theta_star.rows(0,(Dim-2)).t(),theta_star(Dim-1)));
-      arma::vec Yg=res["y"];
+      //Rcpp::List res = as<Rcpp::List>(model(theta_star.rows(0,(Dim-2)).t(),theta_star(Dim-1)));
+      //arma::vec Yg=res["y"];
       // Yg = as<vec>(model(theta_star.rows(0,(Dim-2)).t(),theta_star(Dim-1)));
       Verr = theta_star((Dim-1));
       theta = theta_init.rows(0,Dim-2);
@@ -132,8 +132,8 @@ List MetropolisHastingsCpp(Function model,int Ngibbs, int Nmh, arma::vec theta_i
     vec theta_star = as<vec>(unscale(exp(phi_star.t()),binf,bsup));
     theta = theta_init.rows(0,Dim-2);
     Verr = theta_star((Dim-1));
-    Rcpp::List res = as<Rcpp::List>(model(theta,Verr));
-    arma::vec Yg=res["y"];
+    //Rcpp::List res = as<Rcpp::List>(model(theta,Verr));
+    //arma::vec Yg=res["y"];
     // Yg = as<vec>(model(theta,Verr));
     double beta2 = as<double>(LogTest(theta,Verr));
     double logR2 = beta2 - alpha2;
@@ -183,7 +183,7 @@ void FlushCPP()
 }
 
 // [[Rcpp::export]]
-List MetropolisHastingsCppD(Function model,int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,
+List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,
                            arma::vec binf, arma::vec bsup, Function LogTest, int stream)
 {
   double Dim = theta_init.size();
@@ -201,8 +201,8 @@ List MetropolisHastingsCppD(Function model,int Ngibbs, int Nmh, arma::vec theta_
   arma::vec theta=theta_init.rows(0,Dim-4);
   arma::vec thetaD=theta_init.rows(Dim-3,Dim-2);
   double Verr=THETAwg(0,(Dim-1));
-  Rcpp::List res = as<Rcpp::List>(model(theta,thetaD,Verr));
-  arma::vec Yg=res["y"];
+  //Rcpp::List res = as<Rcpp::List>(model(theta,thetaD,Verr));
+  //arma::vec Yg=res["y"];
   // arma::vec Yg=as<arma::vec>(model(theta,Verr));
   double alpha = as<double>(LogTest(theta,thetaD,Verr));
   double alpha2 = alpha;
@@ -243,8 +243,8 @@ List MetropolisHastingsCppD(Function model,int Ngibbs, int Nmh, arma::vec theta_
       Verr = theta_star((Dim-1));
       thetaD= theta_star.rows((Dim-3),(Dim-2));
       theta = theta_init.rows(0,Dim-4);
-      Rcpp::List res = as<Rcpp::List>(model(theta,thetaD,Verr));
-      arma::vec Yg=res["y"];
+      //Rcpp::List res = as<Rcpp::List>(model(theta,thetaD,Verr));
+      //arma::vec Yg=res["y"];
       // Yg = as<vec>(model(theta_star.rows(0,(Dim-2)).t(),theta_star(Dim-1)));
       double beta = as<double>(LogTest(theta,thetaD,Verr));
       double logR = beta-alpha;
@@ -307,8 +307,8 @@ List MetropolisHastingsCppD(Function model,int Ngibbs, int Nmh, arma::vec theta_
       theta = theta_init.rows(0,Dim-4);
       thetaD = theta_init.rows((Dim-3),(Dim-2));
       Verr = theta_star((Dim-1));
-      Rcpp::List res = as<Rcpp::List>(model(theta,thetaD,Verr));
-      arma::vec Yg=res["y"];
+      //Rcpp::List res = as<Rcpp::List>(model(theta,thetaD,Verr));
+      //arma::vec Yg=res["y"];
       // Yg = as<vec>(model(theta,Verr));
       double beta2 = as<double>(LogTest(theta,thetaD,Verr));
       double logR2 = beta2 - alpha2;

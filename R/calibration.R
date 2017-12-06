@@ -15,6 +15,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                              output    = NULL,
                              activate  = NULL,
                              errorCV   = NULL,
+                             n.cores   = NULL,
                              initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL,activate)
                              {
                                library(parallel)
@@ -24,7 +25,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                self$opt.estim <- opt.estim
                                self$opt.valid <- opt.valid
                                self$logPost   <- private$logLikelihood(self$md$model)
-                               n.cores        <- detectCores()
+                               self$n.cores   <- detectCores()
                                if (self$activate==TRUE)
                                {
                                  if (opt.estim$Nchains==1)
@@ -34,7 +35,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                  } else
                                  {
                                    n            <- c(1:opt.estim$Nchains)
-                                   self$output  <- mclapply(n,self$calibration,mc.cores = n.cores)
+                                   self$output  <- mclapply(n,self$calibration,mc.cores = self$n.cores)
                                    self$mcmc    <- list()
                                    for (i in 1:opt.estim$Nchains)
                                    {
@@ -46,9 +47,9 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                if (is.null(self$opt.valid)==FALSE)
                                {
                                  cat(paste("\nThe cross validation is currently running on your ",
-                                             n.cores," cores available....\n",sep=""))
+                                             self$n.cores," cores available....\n",sep=""))
                                  self$errorCV <- as.numeric(unlist(mclapply(c(1:opt.valid$nCV),
-                                                                      self$CV,mc.cores = n.cores)))
+                                                                      self$CV,mc.cores = self$n.cores)))
                                }
                              },
                              calibration = function(i=NA)
@@ -56,8 +57,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                binf          <- private$boundaries()$binf
                                bsup          <- private$boundaries()$bsup
                                MetropolisCpp <- private$MCMC(self$md$model)
-                               theta <- self$opt.estim$thetaInit
-                               out           <- MetropolisCpp(self$md$fun,self$opt.estim$Ngibbs,self$opt.estim$Nmh,
+                               out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
                                                               self$opt.estim$thetaInit,self$opt.estim$k,
                                                               self$opt.estim$sig,self$md$Yexp,binf,bsup,self$logPost,1)
                                MAP           <- private$MAPestimator(out$THETA)
@@ -99,7 +99,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                binf          <- private$boundaries()$binf
                                bsup          <- private$boundaries()$bsup
                                MetropolisCpp <- private$MCMC(mdTemp$model)
-                               out           <- MetropolisCpp(mdTemp$fun,self$opt.estim$Ngibbs,
+                               out           <- MetropolisCpp(self$opt.estim$Ngibbs,
                                                               self$opt.estim$Nmh,
                                                               self$opt.estim$thetaInit,self$opt.estim$k,
                                                               self$opt.estim$sig,y,binf,bsup,self$logPost,0)
@@ -288,17 +288,27 @@ calibrate.class$set("public","outputPlot",
                       dim   <- length(self$pr)
                       if (self$md$model == "model1" || self$md$model == "model2")
                       {
-                        for (i in 1:nrow(m))
+                        parFun <- function(i)
                         {
-                          Dist[i,] <- self$md$fun(m[i,1:(dim-1)],m[i,dim])$y
+                          Dist  <- self$md$fun(m[i,1:(dim-1)],m[i,dim])$y
+                          return(Dist)
                         }
+                        Dist <- unlist(mclapply(1:nrow(m),parFun,mc.cores = self$n.cores))
                       } else
                       {
+                        print('The computational time might be long to get the output plot')
+                        parFun <- function(i)
+                        {
+                          D  <- self$md$fun(m[i,1:(dim-3)],m[i,(dim-2):(dim-1)],m[i,dim])$y
+                          D2 <- self$md$fun(self$output$MAP[1:(dim-3)],m[i,(dim-2):(dim-1)],
+                                                   self$output$MAP[dim])$y
+                          return(list(D=D,D2=D2))
+                        }
+                        res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
                         for (i in 1:nrow(m))
                         {
-                          Dist[i,]  <- self$md$fun(m[i,1:(dim-3)],m[i,(dim-2):(dim-1)],m[i,dim])$y
-                          Dist2[i,] <- self$md$fun(self$output$MAP[1:(dim-3)],m[i,(dim-2):(dim-1)],
-                                                  self$output$MAP[dim])$y
+                          Dist[i,]  <- res[[i]]$D
+                          Dist2[i,] <- res[[i]]$D2
                         }
                         qqd <- apply(Dist2,2,quantile,probs=c(0.05,0.5,0.95))
                         ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qqd[3,],lower=qqd[1,],type="experiments",
@@ -315,7 +325,7 @@ calibrate.class$set("public","outputPlot",
                       ggdata <- rbind(ggdata,ggdata2)
                       p <- ggplot(ggdata) + geom_line(aes(x=x,y=y,color=type))+
                         geom_ribbon(aes(ymin=lower, ymax=upper, x=x,fill=fill), alpha = 0.3) +
-                        scale_fill_manual("",values=c("blue4","grey62")) +
+                        scale_fill_manual("",values=c("blue4","black")) +
                         theme_light() + xlab("") + ylab("") +
                         theme(legend.position=c(0.65,0.86),
                               legend.text=element_text(size = '15'),

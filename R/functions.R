@@ -349,12 +349,12 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}}
 #' @examples
 #' ### The code to calibrate
-#' X <- cbind(seq(0,1,length.out=50),seq(0,1,length.out=50))
+#' X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
 #' code <- function(X,theta)
 #' {
 #'   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 #' }
-#' Yexp <- code(X,c(1,1,11))+rnorm(50,0,0.1)
+#' Yexp <- code(X,c(1,1,11))+rnorm(10,0,0.1)
 #'
 #' ### For the first model
 #' md1 <- model(code,X,Yexp,"model1")
@@ -379,15 +379,15 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 #'
 #' ### Calibration with estimation options
-#' opt.estim1=list(Ngibbs=4000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1,burnIn=3000)
+#' opt.estim1=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1,burnIn=3000)
 #' opt.estim2=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=300)
 #'
 #' ### Calibration model1
 #' modelfit <- calibrate(md1,pr1,opt.estim1)
-#' t <- modelfit$plot(select.X=X[,1])
+#' p <- modelfit$plot(select.X=X[,1])
 #' opt.valid <- list(type.valid='loo',nCV=4)
-#' modelfitCV <- calibrate(md1,pr1,opt.estim1,opt.valid,activate=TRUE)
-#' tp <- modelfitCV$plot(select.X=X[,1])
+#' modelfitCV <- calibrate(md1,pr1,opt.estim1,opt.valid)
+#' p <- modelfitCV$plot(select.X=X[,1])
 #'
 #' ### Calibration model2
 #' modelfit2 <- calibrate(md2,pr1,opt.estim1)
@@ -399,12 +399,12 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' ### Calibration model3
 #' modelfit3 <- calibrate(md3,pr2,opt.estim2)
 #' opt.valid <- list(type.valid='loo',nCV=4)
-#' modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid)
-#' p <- modelfit3CV$plot(select.X=X[,1])
+#' modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid,activate=FALSE)
+#' p <- modelfit3$plot(select.X=X[,1])
 #'
 #' ### Calibration model4
 #' modelfit4 <- calibrate(md4,pr2,opt.estim2)
-#' modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid)
+#' modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid,activate=FALSE)
 #' p <- modelfit4CV$plot(select.X=X[,1])
 #'
 #' @export
@@ -482,9 +482,10 @@ prediction <-function(modelfit,x.new)
 #' Cov <- kernelFun(X,var,theta,kernel.type="matern5_2")
 #'
 #' @export
-kernelFun <- function(X,var,theta,kernel.type)
+kernelFun <- function(X,var,theta,kernel.type="gauss")
 {
   library(R6)
+  if (is.null(kernel.type)){kernel.type <- "gauss"}
   switch(kernel.type,
          gauss={
            obj = gauss.class$new(X,var,theta,kernel.type)
