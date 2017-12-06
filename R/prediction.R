@@ -21,21 +21,21 @@ prediction.class <- R6::R6Class(classname = "predict.class",
                              },
                              predictCal = function()
                              {
-                               Dim <- length(self$modelfit$type.prior)
-                               if (is.matrix(self$modelfit$X)==TRUE)
+                               Dim <- length(self$modelfit$pr)
+                               if (is.matrix(self$modelfit$md$X)==TRUE)
                                  {
                                   l <- nrow(self$x.new)
                                  } else
                                  {
                                   l <- length(self$x.new)
                                  }
-                               MAP <- self$modelfit$MAP
-                               COV <- cov(self$modelfit$out$THETA[-c(1:self$modelfit$burnIn),])
-                               s   <- mvrnorm(100,MAP,COV)
-                               res <- matrix(nr=l,nc=100)
+                               MAP  <- self$modelfit$output$MAP
+                               COV  <- cov(self$modelfit$output$out$THETA[-c(1:self$modelfit$opt.estim$burnIn),])
+                               samp <- mvrnorm(100,MAP,COV)
+                               res  <- matrix(nr=100,nc=100)
                                for (i in 1:100)
                                {
-                                 res[,i] <- self$modelfit$md$pred(s[i,1:(Dim-1)],s[i,Dim],x.new)$y
+                                 res[i,] <- self$modelfit$md$pred(samp[i,1:(Dim-1)],samp[i,Dim],x.new)$y
                                }
                                self$lowerPred <- apply(res,1,quantile,probs=0.05)
                                self$upperPred <- apply(res,1,quantile,probs=0.95)
@@ -45,16 +45,13 @@ prediction.class <- R6::R6Class(classname = "predict.class",
                              print = function()
                                {
                                  cat("Call:\n")
-                                 print(self$modelfit$model)
+                                 print(self$modelfit$md$model)
                                  cat("\n")
                                  cat("With the function:\n")
-                                 print(self$modelfit$code)
+                                 print(self$modelfit$md$code)
                                  cat("\n")
                                  cat("MAP estimator:\n")
-                                 print(round(self$modelfit$MAP,5))
-                                 cat("\n")
-                                 cat("Mean:\n")
-                                 print(round(self$modelfit$Mean,5))
+                                 print(round(self$modelfit$output$MAP,5))
                                },
                              plot = function(select.X=NULL,rdata=NULL)
                              {
@@ -119,13 +116,13 @@ prediction.class <- R6::R6Class(classname = "predict.class",
                              {
                                if (is.matrix(x.new)==TRUE)
                                {
-                                 if (ncol(x.new)!=ncol(self$modelfit$X))
+                                 if (ncol(x.new)!=ncol(self$modelfit$md$X))
                                  {
                                    stop("Enter the same dimension for X")
                                  }
                                } else
                                {
-                                 if (length(x.new)!= length(self$modelfit$X))
+                                 if (length(x.new)!= length(self$modelfit$md$X))
                                  {
                                    stop("Enter the same dimension for X")
                                  }
