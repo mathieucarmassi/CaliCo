@@ -32,14 +32,23 @@ prediction.class <- R6::R6Class(classname = "predict.class",
                                MAP  <- self$modelfit$output$MAP
                                COV  <- cov(self$modelfit$output$out$THETA[-c(1:self$modelfit$opt.estim$burnIn),])
                                samp <- mvrnorm(100,MAP,COV)
-                               res  <- matrix(nr=100,nc=100)
-                               for (i in 1:100)
+                               res  <- matrix(nr=100,nc=l)
+                               if (self$modelfit$md$model=="model1" || self$modelfit$md$model=="model2")
                                {
-                                 res[i,] <- self$modelfit$md$pred(samp[i,1:(Dim-1)],samp[i,Dim],x.new)$y
+                                 for (i in 1:100)
+                                 {
+                                   res[i,] <- self$modelfit$md$pred(samp[i,1:(Dim-1)],samp[i,Dim],x.new)$y
+                                 }
+                               }else
+                               {
+                                 for (i in 1:100)
+                                 {
+                                   res[i,] <- self$modelfit$md$fun(samp[i,1:(Dim-3)],samp[i,(Dim-2):(Dim-1)],samp[i,Dim],x.new)$y
+                                 }
                                }
-                               self$lowerPred <- apply(res,1,quantile,probs=0.05)
-                               self$upperPred <- apply(res,1,quantile,probs=0.95)
-                               self$meanPred  <- apply(res,1,quantile,probs=0.5)
+                               self$lowerPred <- apply(res,2,quantile,probs=0.05)
+                               self$upperPred <- apply(res,2,quantile,probs=0.95)
+                               self$meanPred  <- apply(res,2,quantile,probs=0.5)
                                self$print()
                              },
                              print = function()
