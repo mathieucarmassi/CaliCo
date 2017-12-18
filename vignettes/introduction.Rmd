@@ -1,0 +1,79 @@
+---
+title: "Introduction"
+author: "Mathieu Carmassi"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+The package `calibrationCode` is a package that run a Bayesian calibration of a numerical code. This code can be a "black box" as much as an anlytical function. To use properly the package, the function has to be defined with a certain form. We go into the details in section Prerequisite. Then, a statistical model has to be selected before runing the calibration
+
+## Prerequisites
+
+The "black box" or the function have to be defined in some way. Initially, if the code inputs contain some controlled variables and parameters, the way to create the function is:
+\(Y=f(\boldsymbol{X},\boldsymbol{\theta)} \)
+where $Y$ is the output of the function, $\boldsymbol{X}$ stands for the controlled variables matrix and $\boldsymbol{\theta}$ for the parameter vector. All along this vignette an example of a toy function illustrates how to set up properly a study using the `calibrationCode` package.
+
+
+```{r, echo=TRUE}
+x <- seq(0,1,length.out = 100)
+code <- function(x,theta)
+{
+  return(sin(x*sqrt(theta))-cos(x*sqrt((theta))))
+}
+```
+
+```{r, fig.show=hold, echo=FALSE}
+ggdata <- data.frame(x=x,y=code(x,200),type="harmonic spring for k=200")
+p <- ggplot(ggdata,aes(x=x,y=y,color=type))+geom_line()+theme_light()
+p
+```
+
+
+
+## Define a statistical model
+
+## Define the prior distributions
+
+## Run the Bayesian calibration
+
+## Conclusion
+
+The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
+
+    output: 
+      rmarkdown::html_vignette:
+        css: mystyles.css
+
+## Figures
+
+The figure sizes have been customised so that you can easily put two images side-by-side. 
+
+```{r, fig.show='hold'}
+plot(1:10)
+plot(10:1)
+```
+
+You can enable figure captions by `fig_caption: yes` in YAML:
+
+    output:
+      rmarkdown::html_vignette:
+        fig_caption: yes
+
+Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+
+## More Examples
+
+You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+
+```{r, echo=FALSE, results='asis'}
+knitr::kable(head(mtcars, 10))
+```
+
+Also a quote using `>`:
+
+> "He who gives up [code] safety for [code] speed deserves neither."
+([via](https://twitter.com/hadleywickham/status/504368538874703872))

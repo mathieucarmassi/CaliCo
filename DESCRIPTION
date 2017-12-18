@@ -9,7 +9,7 @@ Description: This package allows the user to calibrate every computational code.
 License: GPL (>= 2)
 Encoding: UTF-8
 LazyData: true
-Imports: 
+Imports:
     R6,
     ggplot2,
     FactoMineR,
@@ -21,7 +21,7 @@ Imports:
     coda,
     parallel
 RoxygenNote: 6.0.1
-Collate: 
+Collate:
     'functions.R'
     'models.R'
     'prediction.R'
@@ -31,6 +31,9 @@ Collate:
     'calibrationCode-package.R'
     'Kernel.R'
     'calibration.R'
-LinkingTo: 
+LinkingTo:
     Rcpp,
     RcppArmadillo
+Suggests: knitr,
+    rmarkdown
+VignetteBuilder: knitr
