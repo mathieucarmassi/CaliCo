@@ -316,6 +316,7 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           n.emul   = NULL,
                           opt.emul = NULL,
                           GP       = NULL,
+                          X        = NULL,
                           DOE      = NULL,
                           design   = NULL,
                           p        = NULL,
@@ -326,6 +327,7 @@ model2.class <- R6::R6Class(classname = "model2.class",
                         {
                           super$initialize(code, X, Yexp, model,opt.emul)
                           self$opt.emul <- opt.emul
+                          self$X        <- X
                           self$binf     <- opt.emul$binf
                           self$bsup     <- opt.emul$bsup
                           self$n.emul   <- opt.emul$n.emul
@@ -339,7 +341,7 @@ model2.class <- R6::R6Class(classname = "model2.class",
                         },
                         surrogate = function()
                         {
-                          Xcr <- scale(X)
+                          Xcr <- scale(self$X)
                           V   <- attr(Xcr,"scaled:scale")
                           M   <- attr(Xcr,"scaled:center")
                           Dim <- self$p+self$d
