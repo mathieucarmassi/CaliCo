@@ -8,7 +8,6 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
-opts_chunk$set(cache=TRUE)
 
 
 The package `calibrationCode` is a package that run a Bayesian calibration of a numerical code. This code can be a "black box" as much as an anlytical function. To use properly the package, the function has to be defined with a certain form. We go into the details in section Prerequisite. Then, a statistical model has to be selected before runing the calibration.
@@ -23,7 +22,7 @@ Let us consider the harmonic response of a spring which has a mass $m$ and a spr
 $$ x(t,\{m,k\})=sin\Bigg(t,\sqrt{\frac{k}{m}}\Bigg)-cos\Bigg(t,\sqrt{\frac{k}{m}}\Bigg) $$
 where $t$ corresponds to the time in seconds.
 
-```{r, echo=TRUE}
+```{r,cache=TRUE,echo=TRUE}
 x <- seq(0,1,length.out = 200)
 code <- function(x,theta)
 {
@@ -81,9 +80,11 @@ $$\mathcal{M}_4:\forall i \in [1,\dots,n] \ Y_{exp_i}=F(\boldsymbol{x_i},\boldsy
 Define a model in `calibrationCode` is done through a function called `model` (the user is refered to `?models` for more details). It encompases, four main elements: the code, the $\boldsymbol{X}$, the experiments and the model selected. When the second or the fourth model is selected, an additional option `opt.emul` is needed. This option pilots the estimation of the Gaussian process used for the emulator.
 
 *Note that `calibrationCode` uses the package `DiceKrigging` to run the estimation of the Gaussian process.*
-
-```{r, echo=TRUE}
+```{r, echo=FALSE}
 library(calibrationCode)
+```                
+
+```{r,cache=TRUE,echo=TRUE}
 x <- seq(0,1,length.out = 200)
 code <- function(x,theta)
 {
@@ -97,7 +98,7 @@ md <- model(code,x,Yexp,model="model1")
 ### Withe the harmonic spring example
 
 #### For the model 1
-```{r, echo=TRUE}
+```{r,cache=TRUE, echo=TRUE}
 x <- seq(0,1,length.out = 200)
 code <- function(x,theta)
 {
@@ -105,92 +106,90 @@ code <- function(x,theta)
 }
 Yexp <- code(x,c(1.7,9e-3))+rnorm(200,0,0.04)
 
-md <- model(code,x,Yexp,model="model1")
+md1 <- model(code,x,Yexp,model="model1")
 ```
 
-`md` is a `model.class` object, also a `R6Class` object, which contains some methods as `$plot` for example. The `$plot` takes two arguments which are $\boldsymbol{\theta}$ and $\sigma_{err}^2$. It allows the user to display the output of the code for such values at the same time as the experiments.
+`md` is a `model.class` object, also a `R6Class` object, which contains some methods as `$plot` for example. The `$plot` takes two arguments which are $\boldsymbol{\theta}$ and $\sigma_{err}^2$. It allows the user to display the output of the code for such values at the same time as the experiments. The `$plot()` method return a `ggplot` object easy to manipulate.
 
 ```{r, echo=TRUE,fig.width=7,fig.align='center'}
-md$plot(c(2,1e-2),0.05)
+p <- md1$plot(c(2,1e-2),0.05)
+p + theme(legend.position=c(0.65,0.86),
+                           legend.text=element_text(size = '10'),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=10))
 ```
 
 #### For the model 2
-```{r, echo=TRUE}
+The estimation of the Gaussian process which emulates the function is done by `km` a `DiceKriging` function.
+
+```{r,cache=TRUE, echo=TRUE}
 opt.emul <- list(p=2,n.emul=200,type="matern3_2",binf=c(1.5,5e-3),bsup=c(2.5,2.5e-2),DOE=NULL)
-md <- model(code,x,Yexp,model="model2",opt.emul = opt.emul)
+md2 <- model(code,x,Yexp,model="model2",opt.emul = opt.emul)
 ```
 
 ```{r, echo=TRUE,fig.width=7,fig.align='center'}
-md$plot(c(2,1e-2),0.05)
+p <- md2$plot(c(2,1e-2),0.05)
+p + theme(legend.position=c(0.50,0.8),
+                           legend.text=element_text(size = '10'),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=10))
 ```
 
 #### For the model 3
-```{r, echo=TRUE}
-md <- model(code,x,Yexp,model="model3",opt.disc=list(kernel.type="gauss"))
+
+```{r,cache=TRUE, echo=TRUE}
+md3 <- model(code,x,Yexp,model="model3",opt.disc=list(kernel.type="gauss"))
 ```
 
-<!-- ```{r, echo=TRUE,fig.width=7,fig.align='center'} -->
-<!-- md$plot(c(2,1e-2),c(1,0.5),0.05) -->
-<!-- ``` -->
+```{r, echo=TRUE,fig.width=7,fig.align='center'}
+p <- md3$plot(c(2,1e-2),c(1,0.5),0.05)
+p + theme(legend.position=c(0.65,0.86),
+                           legend.text=element_text(size = '10'),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=10))
+```
 
 #### For the model 4
+
 ```{r, echo=TRUE}
-md <- model(code,x,Yexp,model="model4",opt.emul=opt.emul)
+md4 <- model(code,x,Yexp,model="model4",opt.emul=opt.emul)
 ```
 
-<!-- ```{r, echo=TRUE,fig.width=7,fig.align='center'} -->
-<!-- md$plot(c(2,1e-2),c(1,0.5),0.05) -->
-<!-- ``` -->
+```{r, echo=FALSE,fig.width=7,fig.height=5,fig.align='center'}
+p <- md4$plot(c(2,1e-2),c(1,0.5),0.05)
+p + theme(legend.position=c(0.65,0.86),
+                           legend.text=element_text(size = '10'),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=10))
+```
 
 ## Define the prior distributions
 
 In Bayesian calibration a prior distribution is updated in a posterior distribution thanks to the likelihood. Define the prior distribution in `calibrationCode` is done as the following chunk.
 
-```{r, echo=TRUE}
+```{r,fig.width=7,fig.align='center'}
 gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
-gaussian$plot()
+p <- gaussian$plot()
+p
 ```
 
-Where the prior function generates a `prior.class` which contains methods as `$plot()`. The arguments are `type.prior` and `opt.prior`.
+Where the prior function generates a `prior.class` which contains methods as `$plot()`. The arguments are `type.prior` and `opt.prior`. Identically as before the `$plot()` method returns a ggplot which can be stored into a variable and then modified by the user. To define sevaral prior densities, the rigth way is illustrated as the following
 
+```{r,fig.width=7,fig.height=5,fig.align='center'}
+priors <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
+grid.arrange(priors$Prior1$plot(),priors$Prior2$plot(),nrow=2)
+```
+
+The `grid.arrange` function allows to visualize both prior densities at the same time. The variable `priors` stores a list of the prior's number whished defined as a `prior.class` objects.
+
+```{r,echo=TRUE}
+priors$Prior1
+priors$Prior2
+```
 
 ## Run the Bayesian calibration
+To run a Bayesian calibration
+
+
 
 ## Conclusion
-<div class="align-justify">
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-</div>
-
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
-```
-
-You can enable figure captions by `fig_caption: yes` in YAML:
-
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
-
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
-```
-
-Also a quote using `>`:
-
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))

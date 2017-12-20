@@ -207,7 +207,7 @@ model3.class <- R6::R6Class(classname = "model3.class",
                             y   <- self$funTemp(theta,sig2)$y
                             z   <- self$Yexp - y
                             Cov <- kernelFun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
-                            if (nrow(X)==1 | is.null(dim(X)))
+                            if (is.null(dim(X)) && length(X)==1)
                             {} else
                             {
                               p <- eigen(Cov)$vectors
@@ -219,7 +219,8 @@ model3.class <- R6::R6Class(classname = "model3.class",
                               d <- diag(e)
                               Cov <- t(p)%*%d%*%p
                             }
-                            if (is.null(dim(X))){long <- length(X)}else{long <- dim(X)[1]}
+                            if (is.null(dim(X))){long <- length(X)}else{
+                              long <- dim(X)[1]}
                             if (long==1)
                             {
                               biais <- rnorm(n=self$n,0,sqrt(Cov))
@@ -603,7 +604,12 @@ model4.class$set("public","plot",
                    {stop('You have given the wrong number of parameter')}
                    if(self$d>1 & is.null(select.X))
                    {stop('Graphic representation is not available in dimension >1')}
-                   res <- self$fun(theta,thetaD,sig,select.X)
+                   if(is.null(select.X))
+                   {
+                     res <- self$fun(theta,thetaD,sig,self$X)
+                   } else{
+                     res <- self$fun(theta,thetaD,sig,select.X)
+                     }
                    Xplot <- self$X
                    if(is.null(select.X)==FALSE){Xplot <- select.X}
                    binf <- min(Xplot)
