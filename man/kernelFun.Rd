@@ -4,7 +4,7 @@
 \alias{kernelFun}
 \title{Generates \code{\link{Kernel.class}} covariances matrices}
 \usage{
-kernelFun(X, var, theta, kernel.type)
+kernelFun(X, var, theta, kernel.type = "gauss")
 }
 \arguments{
 \item{X}{data}

@@ -1,4 +1,4 @@
-Package: calibrationCode
+Package: CaliCo
 Type: Package
 Title: Code calibration in a Bayesian framework
 Version: 0.1.0
@@ -28,7 +28,7 @@ Collate:
     'estimation.R'
     'prior.R'
     'RcppExports.R'
-    'calibrationCode-package.R'
+    'CaliCo-package.R'
     'Kernel.R'
     'calibration.R'
 LinkingTo:

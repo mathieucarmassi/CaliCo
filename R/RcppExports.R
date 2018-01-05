@@ -2,18 +2,18 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 MetropolisHastingsCpp <- function(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream) {
-    .Call('_calibrationCode_MetropolisHastingsCpp', PACKAGE = 'calibrationCode', Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream)
+    .Call('_CaliCo_MetropolisHastingsCpp', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream)
 }
 
 invMat <- function(V) {
-    .Call('_calibrationCode_invMat', PACKAGE = 'calibrationCode', V)
+    .Call('_CaliCo_invMat', PACKAGE = 'CaliCo', V)
 }
 
 FlushCPP <- function() {
-    invisible(.Call('_calibrationCode_FlushCPP', PACKAGE = 'calibrationCode'))
+    invisible(.Call('_CaliCo_FlushCPP', PACKAGE = 'CaliCo'))
 }
 
 MetropolisHastingsCppD <- function(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream) {
-    .Call('_calibrationCode_MetropolisHastingsCppD', PACKAGE = 'calibrationCode', Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream)
+    .Call('_CaliCo_MetropolisHastingsCppD', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream)
 }
 

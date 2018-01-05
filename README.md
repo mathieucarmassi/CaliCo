@@ -1,4 +1,4 @@
-# calibrationCode: package for Bayesian calibration
+# CaliCo (CALIbration COde): package for Bayesian calibration
 
 ## Description
 

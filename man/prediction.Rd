@@ -23,29 +23,65 @@ The realized estimation is realized similarly as it is defined in [1]
 }
 \examples{
 ### The code to calibrate
-X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
+X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
 code <- function(X,theta)
 {
   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 }
-Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
+Yexp <- code(X,c(1,1,11))+rnorm(10,0,0.1)
 
 
 # Definition of the different models
-md <- model(code,X,Yexp,"model1")
+md1 <- model(code,X,Yexp,"model1")
+
+### For the second model
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
-opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
-pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
-list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
-opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
-modelfit <- calibrate(md,pr,opt.estim)
+DOE <- DiceDesign::lhsDesign(10,5)$design
+DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
+DOE[,1:2] <- unscale(DOE[,1:2],c(0,0),c(1.5,1.5))
+opt.emul <- list(p=3,n.emul=10,type="matern5_2",binf=binf,bsup=bsup,DOE=DOE)
+md2 <- model(code,X,Yexp,"model2",opt.emul)
 
+### For the third model
+md3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
+
+### For the fourth model
+md4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc=list(kernel.type="matern5_2"))
+
+### Definition of the priors
+pr1 <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
+list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
+
+pr2 <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
+list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
+
+### Calibration with estimation options
+opt.estim1=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1,burnIn=300)
+opt.estim2=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=300)
+
+### Calibration model1
+modelfit <- calibrate(md1,pr1,opt.estim1)
+
+###
 x.new <- cbind(seq(1,1.5,length.out=10),seq(1,1.5,length.out=10))
 emul <- prediction(modelfit,x.new)
 emul$plot(select.X=x.new[,1])
-realData <- code(x.new,c(1,1,11))
-emul$plot(select.X=x.new[,1],rdata=realData)
+
+
+modelfit2 <- calibrate(md2,pr1,opt.estim1)
+###Prediction
+x.new <- cbind(seq(1,1.5,length.out=10),seq(1,1.5,length.out=10))
+emul <- prediction(modelfit2,x.new)
+emul$plot(select.X=x.new[,1])
+
+### For the third model
+modelfit3 <- calibrate(md3,pr2,opt.estim2)
+### Prediction
+x.new <- cbind(seq(1,1.5,length.out=10),seq(1,1.5,length.out=10))
+emul <- prediction(modelfit3,x.new)
+emul$plot(select.X=x.new[,1])
+
 
 }
 \seealso{

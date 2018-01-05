@@ -8,7 +8,7 @@ using namespace Rcpp;
 
 // MetropolisHastingsCpp
 List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
-RcppExport SEXP _calibrationCode_MetropolisHastingsCpp(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
+RcppExport SEXP _CaliCo_MetropolisHastingsCpp(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -28,7 +28,7 @@ END_RCPP
 }
 // invMat
 arma::mat invMat(arma::mat V);
-RcppExport SEXP _calibrationCode_invMat(SEXP VSEXP) {
+RcppExport SEXP _CaliCo_invMat(SEXP VSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -39,7 +39,7 @@ END_RCPP
 }
 // FlushCPP
 void FlushCPP();
-RcppExport SEXP _calibrationCode_FlushCPP() {
+RcppExport SEXP _CaliCo_FlushCPP() {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     FlushCPP();
@@ -48,7 +48,7 @@ END_RCPP
 }
 // MetropolisHastingsCppD
 List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
-RcppExport SEXP _calibrationCode_MetropolisHastingsCppD(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
+RcppExport SEXP _CaliCo_MetropolisHastingsCppD(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -68,14 +68,14 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_calibrationCode_MetropolisHastingsCpp", (DL_FUNC) &_calibrationCode_MetropolisHastingsCpp, 10},
-    {"_calibrationCode_invMat", (DL_FUNC) &_calibrationCode_invMat, 1},
-    {"_calibrationCode_FlushCPP", (DL_FUNC) &_calibrationCode_FlushCPP, 0},
-    {"_calibrationCode_MetropolisHastingsCppD", (DL_FUNC) &_calibrationCode_MetropolisHastingsCppD, 10},
+    {"_CaliCo_MetropolisHastingsCpp", (DL_FUNC) &_CaliCo_MetropolisHastingsCpp, 10},
+    {"_CaliCo_invMat", (DL_FUNC) &_CaliCo_invMat, 1},
+    {"_CaliCo_FlushCPP", (DL_FUNC) &_CaliCo_FlushCPP, 0},
+    {"_CaliCo_MetropolisHastingsCppD", (DL_FUNC) &_CaliCo_MetropolisHastingsCppD, 10},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_calibrationCode(DllInfo *dll) {
+RcppExport void R_init_CaliCo(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

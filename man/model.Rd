@@ -102,7 +102,7 @@ model3$summury()
 ### Desactivation of the input DOE
 opt.emul=list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 model4 <- model(code,X,Yexp,"model4",opt.emul)
-model4$plot(c(1,1,11),c(2,0.5),0.1,points=FALSE,select.X=X[,1])
+model4$plot(c(1,1,11),c(2,0.5),0.1,select.X=X[,1])
 
 ### Use your own design of experiments
 DOE <- DiceDesign::lhsDesign(100,5)$design

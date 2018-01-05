@@ -4,7 +4,7 @@
 \alias{calibrate}
 \title{Generates \code{\link{estim.class}} objects}
 \usage{
-calibrate(md, pr, opt.estim, opt.valid = NULL)
+calibrate(md, pr, opt.estim, opt.valid = NULL, activate = TRUE)
 }
 \arguments{
 \item{md}{a \code{\link{model.class}} object}
@@ -72,45 +72,28 @@ opt.estim2=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),s
 
 ### Calibration model1
 modelfit <- calibrate(md1,pr1,opt.estim1)
-t <- modelfit$plot(select.X=X[,1])
+p <- modelfit$plot(select.X=X[,1])
 opt.valid <- list(type.valid='loo',nCV=4)
 modelfitCV <- calibrate(md1,pr1,opt.estim1,opt.valid)
-tp <- modelfitCV$plot(select.X=X[,1])
+p <- modelfitCV$plot(select.X=X[,1])
 
 ### Calibration model2
 modelfit2 <- calibrate(md2,pr1,opt.estim1)
-t2 <- modelfit2$plot(select.X=X[,1])
+p <- modelfit2$plot(select.X=X[,1])
 opt.valid <- list(type.valid='loo',nCV=4)
-modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid)
+modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid,activate=FALSE)
+p <- modelfit2$plot(select.X=X[,1])
 
 ### Calibration model3
 modelfit3 <- calibrate(md3,pr2,opt.estim2)
 opt.valid <- list(type.valid='loo',nCV=4)
-
-modelfit3 <- calibrate(md3,pr2,opt.estim2,opt.valid)
+modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid,activate=FALSE)
+p <- modelfit3$plot(select.X=X[,1])
 
 ### Calibration model4
 modelfit4 <- calibrate(md4,pr2,opt.estim2)
-modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid)
-
-#### A partir d'ici ne fonctionne pas.....
-### La fonction pred est manquante sur les deux derniers modèles
-#### Attention au nombre de paramètres qui varie notamment dans predition et dans calibration
-
-
-
-modelfit$plot(graph=c("chains","densities","output"))
-
-
-
-modelfit2 <- calibrate(md2,pr1,opt.estim1)
-modelfit2$plot(graph="output")
-
-modelfit3 <- calibrate(md3,pr2,opt.estim2)
-modelfit3$plot(graph="output")
-
-modelfit4 <- calibrate(md4,pr2,opt.estim2)
-modelfit4$plot(graph="output")
+modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid,activate=FALSE)
+p <- modelfit4$plot(select.X=X[,1])
 
 }
 \seealso{
