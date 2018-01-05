@@ -236,7 +236,7 @@ prior <- function(type.prior,opt.prior,log=FALSE)
 #' \code{estim} is a function that allows us to generate a class in which the estimation is
 #' done without \code{\link{model.class}} previously defined.
 #'
-#' @useDynLib calibrationCode
+#' @useDynLib CaliCo
 #' @importFrom Rcpp evalCpp
 #'
 #' @param code the computational code (function of X and theta)
@@ -323,7 +323,7 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' \code{calibration} is a function that allows us to generate a class in which the estimation is
 #' done from a \code{\link{model.class}} and a \code{\link{prior.class}} objects.
 #'
-#' @useDynLib calibrationCode
+#' @useDynLib CaliCo
 #' @importFrom Rcpp evalCpp
 #'
 #' @param md a \code{\link{model.class}} object
@@ -422,7 +422,7 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,activate=TRUE)
 #'
 #' The realized estimation is realized similarly as it is defined in [1]
 #'
-#' @useDynLib calibrationCode
+#' @useDynLib CaliCo
 #'
 #' @param modelfit a \code{\link{estim.class}} object
 #' @param newdata newdata for the prediction

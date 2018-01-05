@@ -4,7 +4,7 @@
 #' \code{\link{model}}, \code{\link{estim}} and \code{\link{prediction}}.
 #'
 #' @details
-#' Package: calibrationCode
+#' Package: CaliCo
 #'
 #' Type:    Package
 #'
@@ -41,10 +41,10 @@
 #' science, pages 409–423.
 #' @references Santner, T., Williams, B., and Notz, W. (2003). The Design and Analysis of Computer Experiments. Springer-Verlab.
 #' @examples
-#' # Introduction to calibrationCode
-#' vignette("calibrationCode-introduction")
+#' # Introduction to CaliCo
+#' vignette("CaliCo-introduction")
 #'
 #' # information on how to use the package
-#' vignette("calibrationCode-package")
-#' @name calibrationCode
+#' vignette("CaliCo-package")
+#' @name CaliCo
 NULL
