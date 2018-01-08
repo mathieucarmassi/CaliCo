@@ -59,7 +59,7 @@ The code has been run with theoretical value of $\boldsymbol{\theta}$ which are 
 
 The first model available is:
 $$\mathcal{M}_1:\forall i \in [1,\dots,n] \ Y_{exp_i}=f(\boldsymbol{x_i},\boldsymbol{\theta})+\epsilon_i$$
-where $Y_{exp_i}$ stands for the $i^{th}$ from $n$ observations, $\boldsymbol{x_i}$ for the vector of controlled variables corresponding, and $\epsilon_i$ for the measurement error. In `CaliCp`, $\epsilon$ will always be defined as a white Gaussian noise with $\epsilon \overset{iid}{\sim}\mathcal{N}(0,\sigma_{err}^2)$. $\sigma_{err}^2$ stands for the variance of the measurement error and has to be found as much as $\boldsymbol{\theta}$.
+where $Y_{exp_i}$ stands for the $i^{th}$ from $n$ observations, $\boldsymbol{x_i}$ for the vector of controlled variables corresponding, and $\epsilon_i$ for the measurement error. In `CaliCo`, $\epsilon$ will always be defined as a white Gaussian noise with $\epsilon \overset{iid}{\sim}\mathcal{N}(0,\sigma_{err}^2)$. $\sigma_{err}^2$ stands for the variance of the measurement error and has to be found as much as $\boldsymbol{\theta}$.
 
 
 The second model intervienes when the code is too long to run. In that case:
@@ -79,9 +79,9 @@ $$\mathcal{M}_4:\forall i \in [1,\dots,n] \ Y_{exp_i}=F(\boldsymbol{x_i},\boldsy
 
 Define a model in `CaliCo` is done through a function called `model` (the user is refered to `?models` for more details). It encompases, four main elements: the code, the $\boldsymbol{X}$, the experiments and the model selected. When the second or the fourth model is selected, an additional option `opt.emul` is needed. This option pilots the estimation of the Gaussian process used for the emulator.
 
-*Note that `CaliCp` uses the package `DiceKrigging` to run the estimation of the Gaussian process.*
+*Note that `CaliCo` uses the package `DiceKrigging` to run the estimation of the Gaussian process.*
 ```{r, echo=FALSE}
-library(CaliCp)
+library(CaliCo)
 ```                
 
 ```{r,cache=TRUE,echo=TRUE}
@@ -165,7 +165,7 @@ p + theme(legend.position=c(0.65,0.86),
 
 ## Define the prior distributions
 
-In Bayesian calibration a prior distribution is updated in a posterior distribution thanks to the likelihood. Define the prior distribution in `CaliCp` is done as the following chunk.
+In Bayesian calibration a prior distribution is updated in a posterior distribution thanks to the likelihood. Define the prior distribution in `CaliCo` is done as the following chunk.
 
 ```{r,fig.width=7,fig.align='center'}
 gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
