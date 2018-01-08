@@ -247,9 +247,9 @@ calibrate.class$set("public","plot",
                       }
                       if ("output" %in% graph)
                       {
-                      o <- self$outputPlot(select.X)
-                      print(o)
-                      gg$output <- o
+                        o <- self$outputPlot(select.X)
+                        print(o)
+                        gg$output <- o
                       }
                       return(gg)
                     })
@@ -284,8 +284,13 @@ calibrate.class$set("public","outputPlot",
                     {
                       if (is.null(select.X)==TRUE)
                         {
-                          X <- self$md$X
-                          stop('The dimension of X is higher than 1, the plot cannot be provided for a dimension >1')
+                          if (is.null(dim(self$md$X))==TRUE)
+                          {
+                            X <- self$md$X
+                          }else
+                          {
+                            stop('The dimension of X is higher than 1, the plot cannot be provided for a dimension >1')
+                          }
                         } else {X <- select.X}
                       m <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
                       Dist <- Dist2 <- matrix(nr=nrow(m),nc=length(self$md$Yexp))

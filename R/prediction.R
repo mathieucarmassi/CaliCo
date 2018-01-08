@@ -131,10 +131,10 @@ prediction.class <- R6::R6Class(classname = "predict.class",
                                  }
                                } else
                                {
-                                 if (length(x.new)!= length(self$modelfit$md$X))
-                                 {
-                                   stop("Enter the same dimension for X")
-                                 }
+                                 # if (length(x.new)!= length(self$modelfit$md$X))
+                                 # {
+                                 #   stop("Enter the same dimension for X")
+                                 # }
                                }
                              }
                             ))
