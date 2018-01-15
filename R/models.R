@@ -125,14 +125,23 @@ model1.class <- R6::R6Class(classname = "model1.class",
                           {stop('Wrong number of parameter in the function')}
                           return(list(y=y, yc=yc))
                         },
+                        # likelihood = function(theta,sig2)
+                        # {
+                        #   browser()
+                        #   self$m.exp = self$code(self$X,theta)
+                        #   if (is.na(mean(self$m.exp)))
+                        #   {stop('Wrong number of parameter in the function')}
+                        #   self$V.exp = sig2*diag(self$n)
+                        #   return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                        #                                   invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                        # }
                         likelihood = function(theta,sig2)
                         {
                           self$m.exp = self$code(self$X,theta)
                           if (is.na(mean(self$m.exp)))
                           {stop('Wrong number of parameter in the function')}
                           self$V.exp = sig2*diag(self$n)
-                          return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                                                          invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                          return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                         }
                         )
                         )
@@ -168,7 +177,7 @@ model1.class$set("public","plot",
                    return(p)
                  })
 
-model1.class$set("public","summury",
+model1.class$set("public","print",
                  function()
                  {
                    cat("Call:\n")
@@ -279,7 +288,7 @@ model3.class$set("public","plot",
                    return(p)
                  })
 
-model3.class$set("public","summury",
+model3.class$set("public","print",
                  function()
                  {
                    cat("Call:\n")
@@ -484,7 +493,7 @@ model2.class$set("public","plot",
                                             upper=res$upper,type="experiment",
                                             fill="90% credibility interval for the Gaussian process")
                    gg.data <- rbind(gg.data,gg.data.exp)
-                   gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE,theta))
+                   gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE[,1],theta))
                    p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
                      geom_line(aes(y=y,x=x,col=type))+
                      theme_light()+
@@ -505,7 +514,7 @@ model2.class$set("public","plot",
                  })
 
 
-model2.class$set("public","summury",
+model2.class$set("public","print",
                  function()
                  {
                    cat("Call:\n")
@@ -644,7 +653,7 @@ model4.class$set("public","plot",
                    }
                  })
 
-model4.class$set("public","summury",
+model4.class$set("public","print",
                  function()
                  {
                    cat("Call:\n")

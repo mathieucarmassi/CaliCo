@@ -65,11 +65,16 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
       if (j>0){
         phi_star.rows(0,j) = PHIwg.row(i+1).cols(0,j).t();
       }
-      phi_star(j) = as<double>(rnorm(1,PHIwg(i,j),k(j)*SIGMA(j,j)));
+      phi_star(j) = as<double>(rnorm(1,PHIwg(i,j),sqrt(k(j)*SIGMA(j,j))));
       theta_star(j) = as<double>(unscale(exp(phi_star(j)),binf(j),bsup(j)));
-      //Rcpp::List res = as<Rcpp::List>(model(theta_star.rows(0,(Dim-2)).t(),theta_star(Dim-1)));
-      //arma::vec Yg=res["y"];
-      // Yg = as<vec>(model(theta_star.rows(0,(Dim-2)).t(),theta_star(Dim-1)));
+      if (j == Dim-1)
+      {
+        while (theta_star(j) < 0)
+        {
+          phi_star(j) = as<double>(rnorm(1,PHIwg(i,j),sqrt(k(j)*SIGMA(j,j))));
+          theta_star(j) = as<double>(unscale(exp(phi_star(j)),binf(j),bsup(j)));
+        }
+      }
       Verr = theta_star((Dim-1));
       theta = theta_init.rows(0,Dim-2);
       double beta = as<double>(LogTest(theta,Verr));
@@ -87,12 +92,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
         THETAwg(i+1,j)=THETAwg(i,j);
       }
     }
-    /*if (i%100==0)
-    {
-      cout<< "Iteration number :" << i << "/" << Ngibbs <<endl;
-      cout<< "Theta " << THETAwg.row(i) <<endl;
-    }*/
-  }
+}
   mat Stemp = cov(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
   mat S = as<arma::mat>(DefPos(Stemp));
   mat NewPhi=mean(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
@@ -103,11 +103,11 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
     cout << "Estimation of the covariance matrix...." <<endl;
     cout << "End of the within gibbs algorithm"<< endl;
     cout << endl;
-    /*cout << "The acceptance rate is: " << AcceptationRatioWg/Ngibbs << endl;*/
     cout << "Begin of the metropolis hastings algorithm using the covariance computed" << endl;
     cout << "Number of iterations "<< Nmh <<endl;
   }
   q = 0;
+  //double t=1;
   if (Nmh!=0)
   {
   for (int i=0; i<(Nmh-1); i++)
@@ -149,6 +149,19 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
       PHI.row(i+1)=PHI.row(i);
       THETA.row(i+1)=THETA.row(i);
     }
+    // if (i%100==0)
+    // {
+    //   if (AcceptationRatio/i<0.2)
+    //   {
+    //     t = t*0.9;
+    //   }else
+    //   {
+    //     if (AcceptationRatio/i>0.5)
+    //     {
+    //       t = t*1.1;
+    //     }
+    //   }
+    // }
   }
   if (stream==1)
   {

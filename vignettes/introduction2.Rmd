@@ -1,0 +1,270 @@
+---
+title: "Introduction2"
+author: "Mathieu Carmassi"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+The package `CaliCo` is a package that run a Bayesian calibration of a numerical code. This code can be a "black box" as much as an anlytical function. To use properly the package, the function has to be defined with a certain form. We go into the details in section Prerequisite. Then, a statistical model has to be selected before runing the calibration.
+
+## Prerequisites
+
+The "black box" or the function have to be defined in some way. Initially, if the code inputs contain some controlled variables and parameters, the way to create the function is:
+$$Y=f(\boldsymbol{X},\boldsymbol{\theta)} $$
+where $Y$ is the output of the function, $\boldsymbol{X}$ stands for the controlled variables matrix and $\boldsymbol{\theta}$ for the parameter vector. All along this vignette an example of a toy function illustrates how to set up properly a study using the `CaliCo` package.
+
+Let us consider the harmonic response of a spring which has a mass $m$ and a spring constant $k$. Let us say that we have observed, during 2 seconds, the harmonic displacement of a spring and we want to find to calibrate $m$ and $k$ according to the recorded values. The corresponding equation is:
+$$ x(t,\{m,k\})=sin\Bigg(t\sqrt{\frac{k}{m}}\Bigg)-cos\Bigg(t\sqrt{\frac{k}{m}}\Bigg) $$
+where $t$ corresponds to the time in seconds.
+```{r, echo=FALSE}
+library(CaliCo)
+library(ggplot2)
+```    
+
+```{r, echo=TRUE}
+n <- 200
+x <- seq(0,0.5,length.out = n)
+code <- function(x,theta)
+{
+  return(sin(x*sqrt(theta[1]/theta[2]))-cos(x*sqrt((theta[1]/theta[2]))))
+}
+```
+
+
+```{r, echo=FALSE,fig.width=6,fig.align='center'}
+ggdata <- data.frame(x=x,y=code(x,c(1.7,9e-3))+rnorm(n,0,0.01))
+p <- ggplot(ggdata,aes(x=x,y=y))+geom_line()+theme_light()+ggtitle('Observation of the displacement')
+p
+```
+
+The code gives an output slightly differement from experimental data
+
+```{r, echo=FALSE,fig.width=6,fig.align='center'}
+ggdata <- data.frame(x=x,y=code(x,c(1.9,9e-3))+rnorm(n,0,0.01),type='experiments')
+ggdata2 <- data.frame(x=x,y=code(x,c(2,1e-2)),type='code output')
+ggdata <- rbind(ggdata,ggdata2)
+p <- ggplot(ggdata,aes(x=x,y=y,color=type))+geom_line()+theme_light()+theme(legend.position=c(0.80,0.80),
+                              legend.title=element_blank())
+p
+```
+
+The code has been run with theoretical value of $\boldsymbol{\theta}$ which are $m=10gr$ and $k=2$. The aim of `CaliCo` is to retrieve the "good values" of $\boldsymbol{\theta}$ which corresponds to the experiments from prior distributions on $\boldsymbol{\theta}$ and from collected data.
+
+## Define a statistical model
+
+### Definition of the models
+
+`CaliCo` allows the user to elect several statistical models. For more details on the implemented models, the user is referred to [1].
+
+The first model available is:
+$$\mathcal{M}_1:\forall i \in [1,\dots,n] \ Y_{exp_i}=f(\boldsymbol{x_i},\boldsymbol{\theta})+\epsilon_i$$
+where $Y_{exp_i}$ stands for the $i^{th}$ from $n$ observations, $\boldsymbol{x_i}$ for the vector of controlled variables corresponding, and $\epsilon_i$ for the measurement error. In `CaliCo`, $\epsilon$ will always be defined as a white Gaussian noise with $\epsilon \overset{iid}{\sim}\mathcal{N}(0,\sigma_{err}^2)$. $\sigma_{err}^2$ stands for the variance of the measurement error and has to be found as much as $\boldsymbol{\theta}$.
+
+
+The second model intervienes when the code is too long to run. In that case:
+$$\mathcal{M}_2:\forall i \in [1,\dots,n] \ Y_{exp_i}=\boldsymbol{F}(\boldsymbol{x_i},\boldsymbol{\theta})+\epsilon_i$$
+where $\boldsymbol{F}(\{\bullet,\bullet\})\sim\mathcal{PG}(m(\{\bullet,\bullet\}),c(\{\bullet,\bullet\},\{\bullet,\bullet\}))$ is a Gaussian process defined for an expectancy $m$ and covariance $c$ functions.
+
+The third model lie on $\mathcal{M}_1$ in the way that we consider another error term called discrepancy.
+$$\mathcal{M}_3:\forall i \in [1,\dots,n] \ Y_{exp_i}=f(\boldsymbol{x_i},\boldsymbol{\theta})+\delta(\boldsymbol{x_i})+\epsilon_i$$
+where $\delta(\boldsymbol{x_i})\sim\mathcal{PG}(m(\bullet),c(\bullet,\bullet))$ is a Gaussian process qunatifying the code error.
+
+*In `CaliCo` $m(\bullet)$ in discrepancy is set to zero for now*.
+
+Similarly, the fourth model is defined from $\mathcal{M}_2$ by adding the discrepancy:
+$$\mathcal{M}_4:\forall i \in [1,\dots,n] \ Y_{exp_i}=F(\boldsymbol{x_i},\boldsymbol{\theta})+\delta(\boldsymbol{x_i})+\epsilon_i$$
+
+### Function model in `CaliCo'
+
+Define a model in `CaliCo` is done through a function called `model` (the user is refered to `?models` for more details). It encompases, four main elements: the code, the $\boldsymbol{X}$, the experiments and the model selected. When the second or the fourth model is selected, an additional option `opt.emul` is needed. This option pilots the estimation of the Gaussian process used for the emulator. `opt.emul` is a list which contains: list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+
+  * `p` the number of parameters of the code to emulate
+  * `n.emul` the number of points in the design of experiments
+  * `type` covariance type
+  * `binf` parameter's lower bound
+  * `bsup` parameter's upper bound
+  * `DOE` design of experiments if the user wants to encompases its own (default = `NULL`)
+  
+
+*Note that `CaliCo` uses the package `DiceKrigging` to run the estimation of the Gaussian process.*
+            
+
+```{r,echo=TRUE}
+md <- model(code,x,Yexp,model="model1")
+```
+
+### Withe the harmonic spring example
+
+#### For the model 1
+```{r, echo=TRUE}
+md1 <- model(code,x,Yexp,model="model1")
+```
+
+`md` is a `model.class` object, also a `R6Class` object, which contains some methods as `$plot` for example. The `$plot` takes two arguments which are $\boldsymbol{\theta}$ and $\sigma_{err}^2$. It allows the user to display the output of the code for such values at the same time as the experiments. The `$plot()` method return a `ggplot` object easy to manipulate.
+
+```{r, echo=TRUE,fig.width=7,fig.align='center'}
+p <- md1$plot(c(2,1e-2),1e-4)
+p + theme(legend.position=c(0.65,0.86),
+                           legend.text=element_text(size = '10'),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=10))
+```
+
+#### For the model 2
+The estimation of the Gaussian process which emulates the function is done by `km` a `DiceKriging` function.
+
+```{r,echo=TRUE}
+opt.emul <- list(p=2,n.emul=100,type="matern3_2",binf=c(1.7,8e-3),bsup=c(2.3,3e-2),DOE=NULL)
+md2 <- model(code,x,Yexp,model="model2",opt.emul = opt.emul)
+```
+
+```{r, echo=TRUE,fig.width=7,fig.align='center'}
+p <- md2$plot(c(2,1e-2),1e-4)
+p + theme(legend.position=c(0.50,0.8),
+                           legend.text=element_text(size = '10'),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=10))
+```
+
+#### For the model 3
+
+```{r,echo=TRUE}
+md3 <- model(code,x,Yexp,model="model3",opt.disc=list(kernel.type="gauss"))
+```
+
+```{r, echo=TRUE,fig.width=7,fig.align='center'}
+p <- md3$plot(c(2,1e-2),c(0.5,0.5),1e-4)
+p + theme(legend.position=c(0.65,0.86),
+                           legend.text=element_text(size = '10'),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=10))
+```
+
+#### For the model 4
+
+```{r,  echo=TRUE}
+md4 <- model(code,x,Yexp,model="model4",opt.emul=opt.emul)
+```
+
+```{r, echo=FALSE,fig.width=7,fig.height=5,fig.align='center'}
+p <- md4$plot(c(2,1e-2),c(1e-3,0.5),1e-4)
+p + theme(legend.position=c(0.65,0.86),
+                           legend.text=element_text(size = '10'),
+                           legend.key=element_rect(colour=NA),
+                           axis.text=element_text(size=10))
+```
+
+## Define the prior distributions
+
+In Bayesian calibration a prior distribution is updated in a posterior distribution thanks to the likelihood. Define the prior distribution in `CaliCo` is done as the following chunk.
+
+```{r, fig.width=4,fig.align='center'}
+gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
+p <- gaussian$plot()
+p
+```
+
+Where the prior function generates a `prior.class` which contains methods as `$plot()`. The arguments are `type.prior` and `opt.prior`. Identically as before the `$plot()` method returns a ggplot which can be stored into a variable and then modified by the user. To define sevaral prior densities, the rigth way is illustrated as the following
+
+```{r, fig.width=4,fig.height=5,fig.align='center'}
+priors <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
+grid.arrange(priors$Prior1$plot(),priors$Prior2$plot(),nrow=2)
+```
+
+The `grid.arrange` function allows to visualize both prior densities at the same time. The variable `priors` stores a list of the prior's number whished defined as a `prior.class` objects.
+
+```{r, echo=TRUE}
+priors$Prior1
+priors$Prior2
+```
+
+## Run the Bayesian calibration
+To run a Bayesian calibration, the usefull function in `CaliCo` is `calibrate`. Before using this function, a `model.class` and a `prior class` objects has to be generated as shown before. Then estimation options has to be defined.
+
+`opt.estim` is a list of 7 elements:
+
+  * `Ngibbs` the number of Gibbs in the Metropolis within Gibbs algorithm
+  * `Nmh` the number of Metropolis Hastings in the Metropolis within Gibbs algorithm
+  * `thetaInit` the starting point
+  * `k` the scale vector of the covariance matrix to tune for the Gibbs
+  * `sig` the covariance matrix in the symetric proposition distribution
+  * `Nchains` the number of MCMC chains
+  * `burnIn` the burn-in to take of the final sample set
+
+Once all these options filed, the calibration can be run.
+
+```{r, echo=TRUE}
+pr1 <- prior(type.prior=c("gaussian","gaussian","gamma"),opt.prior=list(c(2,1e-2),c(1e-2,1e-6),c(1,1e-4)))
+
+opt.estim1=list(Ngibbs=1000,Nmh=5000,thetaInit=c(2,1e-2,1e-4),k=c(0.1,1e-4,1e-3),sig=diag(3),Nchains=1,burnIn=1000)
+
+mdfit1 <- calibrate(md=md1,pr=pr1,opt.estim = opt.estim1)
+```
+
+To rule a calibration with the second model the same priors and estimation option can be selected. However for the third and fourth models, more parameters need to be calibrated. It concerns the nuisance parameters relative to the discrepancy.
+
+*Be carefull, the nuisance parameter for the Gaussian process relative to the discrepancy have to be placed between the parameter of the code to calibrate and the variance of the measurement error. For example, in the case of the harmonic spring, k and m and the two parameters to calibrate. The order for the list of priors is k,m,$\sigma_{\delta}^2$,$\psi_{\delta}$,$\sigma_{err}^2$*
+
+<!-- ```{r, echo=TRUE} -->
+<!-- pr2 <- prior(type.prior=c("gaussian","gaussian","gamma","unif","gamma"),opt.prior=list(c(2,0.1),c(1e-2,1e-5),c(1,0.5),c(0,1),c(1,0.05))) -->
+
+<!-- opt.estim2 <- list(Ngibbs=500,Nmh=1000,thetaInit=c(2,1e-2,0.5,0.5,0.05),k=c(0.1,1e-4,1e-2,1e-2,1e-3),sig=diag(45),Nchains=1,burnIn=500) -->
+
+<!-- mdfit3 <- calibrate(md=md3,pr=pr2,opt.estim=opt.estim2) -->
+<!-- ``` -->
+
+In the second statistical model, the covariance matrix in the likelihood had changed from the first model. The inversion of this matrix is time consuming and if the initial data $Y_{exp}$ or the simulated data $Y_c$ for the Gaussian process are bigger so is the time to run the calibration. 
+
+*It is exactly what happens with the third and the fourth model. In this vignette we will only focuss on the first and the third model. The second and the fourth are let to the user as an example.*
+
+The output of `calibrate` is an `estim.class` object. Several methods can be applied to this object which are
+
+  * `$plot()`
+  * `$print()`
+
+For the `$plot()` method, several options are available:
+
+ * `graph` the vector of the graphs to be displayed (by default all the graphs are displayed)
+  + "acf" displays the correlation graph of the Metropolis Hastings algorithms for each parameters without the burn-in
+  + "chains" displays the Metropolis Hastings chains without the burn-in
+  + "densities" displays prior and posterior densities
+  + "output" displays the output of the statistical model choosen with calibrated values
+ * `separated` all the acf, chains and densities are clustered (`separated = FALSE`). If `separated = TRUE` each acf for each parameter will be displayed separately
+ * `CI` allows to plot or not the $90\%$ credibility interval on the ouput plot (by default `CI=TRUE`)
+ * `select.X` is the option that allows to display the output graph by selecting an axis. For example if one works with several forced variables, one can choose to plot the results function of a particular forced variable, otherwise an error will be displayed.
+
+```{r, echo=TRUE, fig.width=7, fig.height=5}
+t <- mdfit1$plot()
+```
+
+The variable `t` contains a list of `ggplots`. `t[[1]]` is a list of the three acf `ggplots`. Identically, `t[[2]]` contains the MCMC chains and `t[[3]]` the densities a priori and a posteriori. If one wants to get one specific plot and changes it, it is possible with using `ggplot`. For example, let us consider that we want to add a title to the densitity plot of the first parameter (the spring constant), the code could be
+
+```{r, echo=TRUE, fig.width=7}
+t[[3]][[1]]+ggtitle('prior and posterior densities of the spring constant')+xlab('k')+ylab('density')
+```
+
+It is possible to get every plot generated by `mdfit$plot()` and make every changes wanted with `ggplot` functions. 
+
+## Run the prediction
+
+`CaliCo` package also provides a `prediction` function. This function allows the user to predict the behavior of the code on non-calibrated data. It takes two inputs:
+
+* `modelfit` the `estim.class` object generated with the function `calibrate`
+* `x.new` the new data set
+
+
+```{r, echo=TRUE,fig.width=7}
+x.new <- seq(0.5,1,length.out = 100)
+pr <- prediction(mdfit1,x.new)
+pr$plot()
+```
+
+
+
+## Conclusion
+
+The main functions necessary to use the package are `prior`, `model`, `calibrate` and `prediction`. It allows to chose the prior densities 
+

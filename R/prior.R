@@ -54,7 +54,7 @@ gaussian.class <- R6::R6Class(classname = "gaussian.class",
                                 var   = NULL,
                                 binf  = NULL,
                                 bsup  = NULL,
-                                initialize = function(type.prior=NA,opt.prior=NA,log=NA)
+                                initialize = function(type.prior=NA,opt.prior=NA,log=TRUE)
                                 {
                                   super$initialize(type.prior,opt.prior,log)
                                   self$mean  <- unlist(self$opt.prior)[1]
@@ -99,7 +99,7 @@ unif.class <- R6::R6Class(classname = "unif.class",
                                 binf    = NULL,
                                 bsup    = NULL,
                                 y       = NULL,
-                                initialize = function(type.prior=NA,opt.prior=NA,log=NA)
+                                initialize = function(type.prior=NA,opt.prior=NA,log=TRUE)
                                 {
                                   super$initialize(type.prior,opt.prior,log)
                                   self$binf <- unlist(self$opt.prior)[1]
@@ -152,7 +152,7 @@ gamma.class <- R6::R6Class(classname = "gamma.class",
                             y        = NULL,
                             binf     = NULL,
                             bsup     = NULL,
-                            initialize = function(type.prior=NA,opt.prior=NA,log=NA)
+                            initialize = function(type.prior=NA,opt.prior=NA,log=TRUE)
                             {
                               super$initialize(type.prior,opt.prior,log)
                               self$shape <- unlist(self$opt.prior)[1]
@@ -199,7 +199,7 @@ invGamma.class <- R6::R6Class(classname = "invGamma.class",
                              y        = NULL,
                              binf     = NULL,
                              bsup     = NULL,
-                             initialize = function(type.prior=NA,opt.prior=NA,log=NA)
+                             initialize = function(type.prior=NA,opt.prior=NA,log=TRUE)
                              {
                                super$initialize(type.prior,opt.prior,log)
                                self$shape <- unlist(opt.prior)[1]
