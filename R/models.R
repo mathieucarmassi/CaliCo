@@ -125,16 +125,6 @@ model1.class <- R6::R6Class(classname = "model1.class",
                           {stop('Wrong number of parameter in the function')}
                           return(list(y=y, yc=yc))
                         },
-                        # likelihood = function(theta,sig2)
-                        # {
-                        #   browser()
-                        #   self$m.exp = self$code(self$X,theta)
-                        #   if (is.na(mean(self$m.exp)))
-                        #   {stop('Wrong number of parameter in the function')}
-                        #   self$V.exp = sig2*diag(self$n)
-                        #   return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                        #                                   invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
-                        # }
                         likelihood = function(theta,sig2)
                         {
                           self$m.exp = self$code(self$X,theta)
@@ -314,8 +304,9 @@ model3.class$set("public","likelihood",
                    self$m.exp <- self$code(self$X,theta)
                    temp <- self$fun(theta,thetaD,sig2)
                    self$V.exp <- sig2*diag(self$n) + temp$cov
-                   return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                                                                invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                   # return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                   #                                              invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                   return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                  })
 
 
@@ -462,8 +453,9 @@ model2.class$set("public","likelihood",
                    if (length(theta)!=self$p)
                    {stop('You have given the wrong number of parameter')}
                    self$V.exp <- sig2*diag(self$n) + temp$Cov.GP
-                   return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                                                                  invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                   # return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                   #                                                invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                   return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                  })
 
 
@@ -600,8 +592,9 @@ model4.class$set("public","likelihood",
                    temp <- self$fun(theta,thetaD,sig2)
                    self$m.exp <- temp$yc
                    self$V.exp <- sig2*diag(self$n) + temp$Cov.GP +temp$Cov.D
-                   return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                                                                  invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                   # return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
+                   #                                                invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                   return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                  })
 
 

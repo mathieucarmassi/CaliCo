@@ -5,14 +5,6 @@ MetropolisHastingsCpp <- function(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, b
     .Call('_CaliCo_MetropolisHastingsCpp', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream)
 }
 
-invMat <- function(V) {
-    .Call('_CaliCo_invMat', PACKAGE = 'CaliCo', V)
-}
-
-FlushCPP <- function() {
-    invisible(.Call('_CaliCo_FlushCPP', PACKAGE = 'CaliCo'))
-}
-
 MetropolisHastingsCppD <- function(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream) {
     .Call('_CaliCo_MetropolisHastingsCppD', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup, LogTest, stream)
 }

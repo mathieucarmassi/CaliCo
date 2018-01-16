@@ -65,7 +65,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                MetropolisCpp <- private$MCMC(self$md$model)
                                out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
                                                               self$opt.estim$thetaInit,self$opt.estim$k,
-                                                              self$opt.estim$sig,self$md$Yexp,binf,bsup,self$logPost,1)
+                                                              self$opt.estim$sig,self$md$Yexp,self$binf,self$bsup,self$logPost,1)
                                MAP           <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))
                              },
@@ -243,7 +243,7 @@ calibrate.class$set("public","plot",
                         {
                           a[[i]] <- self$acf(i)
                         }
-                        do.call(grid.arrange,a)
+                        # do.call(grid.arrange,a)
                         gg$acf <- a
                       }
                       if ("chains" %in% graph)
@@ -252,7 +252,7 @@ calibrate.class$set("public","plot",
                         {
                           m[[i]] <- self$mcmcChains(i)
                         }
-                        do.call(grid.arrange,m)
+                        # do.call(grid.arrange,m)
                         gg$mcmc <- m
                       }
                       if ("densities" %in% graph)
@@ -263,13 +263,13 @@ calibrate.class$set("public","plot",
                                                 type="posterior")
                           p[[i]] <- self$pr[[i]]$plot()+geom_density(data=dplot2,kernel="gaussian",adjust=3,alpha=0.1)
                         }
-                        do.call(grid.arrange,p)
+                        # do.call(grid.arrange,p)
                         gg$dens <- p
                       }
                       if ("output" %in% graph)
                       {
                         o <- self$outputPlot(select.X)
-                        print(o)
+                        # print(o)
                         gg$output <- o
                       }
                       return(gg)
