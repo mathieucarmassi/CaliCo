@@ -110,25 +110,25 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
       }
     }
 }
-  for (int j=0; j<Dim; j++)
-  {
-    if (AcceptationRatioWg(j)/Ngibbs < 0.2 || AcceptationRatioWg(j)/Ngibbs >0.5)
-    {
-      cout << "The algorithm has stopped because your k is not good" << endl;
-      if (AcceptationRatioWg(j)/Ngibbs < 0.2)
-      {
-        cout << "The "<<j+1<<"th coordinate of k is too big"<< endl;
-        return 0;
-      } else
-      {
-        if (AcceptationRatioWg(j)/Ngibbs >0.5)
-        {
-          cout << "The "<<j+1<<"th coordinate of k is too small"<< endl;
-          return 0;
-        }
-      }
-    }
-  }
+  //for (int j=0; j<Dim; j++)
+  //{
+  //  if (AcceptationRatioWg(j)/Ngibbs < 0.2 || AcceptationRatioWg(j)/Ngibbs >0.5)
+  //  {
+  //    cout << "The algorithm has stopped because your k is not good" << endl;
+  //    if (AcceptationRatioWg(j)/Ngibbs < 0.2)
+  //    {
+  //      cout << "The "<<j+1<<"th coordinate of k is too big"<< endl;
+  //      return 0;
+  //    } else
+  //    {
+  //      if (AcceptationRatioWg(j)/Ngibbs >0.5)
+  //      {
+  //        cout << "The "<<j+1<<"th coordinate of k is too small"<< endl;
+  //        return 0;
+  //      }
+  //    }
+  //  }
+  //}
   mat Stemp = cov(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
   mat S = as<arma::mat>(DefPos(Stemp));
   mat NewPhi=mean(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
