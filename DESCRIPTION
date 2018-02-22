@@ -25,7 +25,6 @@ Collate:
     'functions.R'
     'models.R'
     'prediction.R'
-    'estimation.R'
     'prior.R'
     'RcppExports.R'
     'CaliCo-package.R'
@@ -33,7 +32,8 @@ Collate:
     'calibration.R'
 LinkingTo:
     Rcpp,
-    RcppArmadillo
+    RcppArmadillo,
+    Matrix
 Suggests: knitr,
     rmarkdown
 VignetteBuilder: knitr

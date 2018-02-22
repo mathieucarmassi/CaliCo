@@ -184,16 +184,16 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
       PHI.row(i+1)=PHI.row(i);
       THETA.row(i+1)=THETA.row(i);
     }
-    if (i%100==0)
+     if (i%100==0)
     {
       if (AcceptationRatio/i<0.2)
       {
-        t = t*0.9;
+        t = t*0.8;
       } else
       {
         if (AcceptationRatio/i>0.5)
         {
-          t = t*1.1;
+          t = t*1.2;
         }
       }
     }
@@ -291,12 +291,12 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
       {
         if (AcceptationRatioWg(j)/i<0.2)
         {
-          k(j) = k(j)*0.9;
+          k(j) = k(j)*0.8;
         } else
         {
           if (AcceptationRatioWg(j)/i>0.5)
           {
-            k(j) = k(j)*1.1;
+            k(j) = k(j)*1.2;
           }
         }
       }

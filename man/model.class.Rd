@@ -28,6 +28,12 @@ during the estimation process.
 
 \item{\code{n}}{the number of experiments}
 
+\item{\code{d}}{the number of forced variables}
+
+\item{\code{binf}}{the lower bound of the parameters for the DOE}
+
+\item{\code{bsup}}{the upper bound of the parameters for the DOE}
+
 \item{\code{opt.emul}}{a list of parameter for the surrogate \itemize{
 \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
 \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
@@ -37,6 +43,9 @@ during the estimation process.
 \item{\strong{DOE}}{ design of experiments for the surrogate (default value NULL)}}}
 
 \item{\code{model}}{the model choice (see \code{\link{model}} for more specification).}
+
+\item{\code{opt.disc}}{a list of parameter for the discrepancy \itemize{
+\item{\strong{kernel.type}}{ the kernel choosen for the Gaussian process}}}
 }}
 
 \keyword{datasets}

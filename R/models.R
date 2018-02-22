@@ -11,6 +11,9 @@
 #' @field X the matrix of the forced variables
 #' @field Yexp the experimental output
 #' @field n the number of experiments
+#' @field d the number of forced variables
+#' @field binf the lower bound of the parameters for the DOE
+#' @field bsup the upper bound of the parameters for the DOE
 #' @field opt.emul a list of parameter for the surrogate \itemize{
 #' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
 #' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
@@ -19,6 +22,8 @@
 #' \item{\strong{bsup}}{ the upper bound of the parameter vector (default value 1)}
 #' \item{\strong{DOE}}{ design of experiments for the surrogate (default value NULL)}}
 #' @field model the model choice (see \code{\link{model}} for more specification).
+#' @field opt.disc a list of parameter for the discrepancy \itemize{
+#' \item{\strong{kernel.type}}{ the kernel choosen for the Gaussian process}}
 #' @export
 model.class <- R6::R6Class(classname = "model.class",
                  public = list(
@@ -29,11 +34,11 @@ model.class <- R6::R6Class(classname = "model.class",
                    d         = NULL,
                    binf      = NULL,
                    bsup      = NULL,
-                   emul.list = NULL,
+                   opt.emul = NULL,
                    model     = NULL,
                    opt.disc  = NULL,
                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA,
-                                         emul.list=list(p=NA,n.emul=NA,type=NA,binf=NA,bsup=NA,DOE=NA))
+                                         opt.emul=list(p=NA,n.emul=NA,type=NA,binf=NA,bsup=NA,DOE=NA))
                    {
                      self$code  <- code
                      self$X     <- X
@@ -46,7 +51,7 @@ model.class <- R6::R6Class(classname = "model.class",
                      {
                        self$d   <- dim(X)[2]
                      }
-                     self$emul.list <- emul.list
+                     self$opt.emul <- opt.emul
                      self$model     <- model
                      private$checkModels()
                      private$checkEmul()
@@ -81,10 +86,10 @@ model.class$set("private","checkEmul",
                 function()
                   {
                   N <- c("p","n.emul","type","binf","bsup","DOE")
-                  N2 <- names(self$emul.list)
+                  N2 <- names(self$opt.emul)
                   for (i in 1:length(N))
                   {
-                    if(names(self$emul.list)[i] != N[i])
+                    if(names(self$opt.emul)[i] != N[i])
                     {
                       stop(paste(N[i],"value is missing, please enter a correct value",sep=" "))
                     }
@@ -205,7 +210,7 @@ model3.class <- R6::R6Class(classname = "model3.class",
                           {
                             y   <- self$funTemp(theta,sig2)$y
                             z   <- self$Yexp - y
-                            Cov <- kernelFun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
+                            Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
                             if (is.null(dim(X)) && length(X)==1)
                             {} else
                             {
@@ -485,7 +490,7 @@ model2.class$set("public","plot",
                                             upper=res$upper,type="experiment",
                                             fill="90% credibility interval for the Gaussian process")
                    gg.data <- rbind(gg.data,gg.data.exp)
-                   gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE[,1],theta))
+                   gg.points <- data.frame(x=self$DOE,y=self$code(self$DOE,theta))
                    p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
                      geom_line(aes(y=y,x=x,col=type))+
                      theme_light()+
@@ -539,7 +544,7 @@ model4.class <- R6::R6Class(classname = "model4.class",
                           {
                             y   <- self$funC(theta,sig2)$y
                             z   <- self$Yexp - y
-                            Cov <- kernelFun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
+                            Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
                             if (nrow(X)==1 || is.null(dim(X)))
                             {} else
                             {

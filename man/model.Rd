@@ -18,7 +18,7 @@ model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
 \item{model}{string of the model chosen ("model1","model2","model3","model4")
 by default "model1" is choosen. See details for precisions.}
 
-\item{opt.emul}{is a list containing characteristics ahout emulation option. \itemize{
+\item{opt.emul}{is an option list containing characteristics about emulation option. \itemize{
 \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
 \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
 \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
@@ -27,6 +27,10 @@ by default "model1" is choosen. See details for precisions.}
 \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
 generated as a maximin LHS}}
 }}
+
+\item{opt.disc}{is an option list containing characteristics on the discrepancy \itemize{
+\item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
+}}
 }
 \value{
 \code{model} returns a \code{model.class} object. This class contains two main methods:
@@ -34,7 +38,7 @@ generated as a maximin LHS}}
 \item{$plot(\eqn{\Theta},\eqn{\sigma^2}, points=FALSE)}{ this metod generates the plot for a new
 \eqn{\Theta}, \eqn{\sigma^2} and a new set of data. The option points allows to vizualize the points from
 the Design Of Experiments (DOE) used for establishing the surrogate.}
-\item{$summury()}{ this method presents the main information about the model.}
+\item{$print()}{ this method presents the main information about the model.}
 }
 }
 \description{
@@ -69,7 +73,7 @@ model1 <- model(code,X,Yexp,"model1")
 ### Plot the results with the first column of X
 model1$plot(c(1,1,11),0.1,select.X=X[,1])
 ### Summury of the foo class generated
-model1$summury()
+model1$print()
 ### Acces of the fun in the model
 model1$fun(c(1,1,11),0.1)
 ### Get acces to the likelihood
@@ -90,13 +94,13 @@ DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
 opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=DOE)
 model2 <- model(code,X,Yexp,"model2",opt.emul)
 model2$plot(c(1,1,11),0.1,points=FALSE,select.X=X[,1])
-model2$summury()
+model2$print()
 
 ###### For the third model
 model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
 model3$plot(c(1,1,11),c(2,0.5),0.1,select.X=X[,1])
 model3$likelihood(c(1,1,11),c(2,0.5),0.1)
-model3$summury()
+model3$print()
 
 ###### For the fourth model
 ### Desactivation of the input DOE
@@ -110,15 +114,12 @@ DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
 opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=DOE)
 model4 <- model(code,X,Yexp,"model4",opt.emul=list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=DOE))
 model4$plot(c(1,1,11),c(2,0.5),0.1,points=FALSE,select.X=X[,1])
-model4$summury()
+model4$print()
 model4$likelihood(c(1,1,11),c(2,0.5),0.1)
 
 }
-\references{
-[1] Carmassi et all, Bayesian calibration
-}
 \seealso{
-\code{\link{model.class}},
+\code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 }
 \author{
 M. Carmassi

@@ -22,7 +22,7 @@
 #' @param Yexp the vector of the experiments
 #' @param model string of the model chosen ("model1","model2","model3","model4")
 #' by default "model1" is choosen. See details for precisions.
-#' @param opt.emul is a list containing characteristics ahout emulation option. \itemize{
+#' @param opt.emul is an option list containing characteristics about emulation option. \itemize{
 #' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
 #' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
 #' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
@@ -31,16 +31,18 @@
 #' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
 #' generated as a maximin LHS}}
 #' }
+#' @param opt.disc is an option list containing characteristics on the discrepancy \itemize{
+#' \item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
+#' }
 #' @return \code{model} returns a \code{model.class} object. This class contains two main methods:
 #' \itemize{
 #' \item{$plot(\eqn{\Theta},\eqn{\sigma^2}, points=FALSE)}{ this metod generates the plot for a new
 #' \eqn{\Theta}, \eqn{\sigma^2} and a new set of data. The option points allows to vizualize the points from
 #' the Design Of Experiments (DOE) used for establishing the surrogate.}
-#' \item{$summury()}{ this method presents the main information about the model.}
+#' \item{$print()}{ this method presents the main information about the model.}
 #' }
 #' @author M. Carmassi
-#' @references [1] Carmassi et all, Bayesian calibration
-#' @seealso \code{\link{model.class}},
+#' @seealso \code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 #' @examples
 #' ###### The code to calibrate
 #' X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
@@ -56,7 +58,7 @@
 #' ### Plot the results with the first column of X
 #' model1$plot(c(1,1,11),0.1,select.X=X[,1])
 #' ### Summury of the foo class generated
-#' model1$summury()
+#' model1$print()
 #' ### Acces of the fun in the model
 #' model1$fun(c(1,1,11),0.1)
 #' ### Get acces to the likelihood
@@ -77,13 +79,13 @@
 #' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=DOE)
 #' model2 <- model(code,X,Yexp,"model2",opt.emul)
 #' model2$plot(c(1,1,11),0.1,points=FALSE,select.X=X[,1])
-#' model2$summury()
+#' model2$print()
 #'
 #' ###### For the third model
 #' model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
 #' model3$plot(c(1,1,11),c(2,0.5),0.1,select.X=X[,1])
 #' model3$likelihood(c(1,1,11),c(2,0.5),0.1)
-#' model3$summury()
+#' model3$print()
 #'
 #' ###### For the fourth model
 #' ### Desactivation of the input DOE
@@ -97,7 +99,7 @@
 #' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=DOE)
 #' model4 <- model(code,X,Yexp,"model4",opt.emul=list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=DOE))
 #' model4$plot(c(1,1,11),c(2,0.5),0.1,points=FALSE,select.X=X[,1])
-#' model4$summury()
+#' model4$print()
 #' model4$likelihood(c(1,1,11),c(2,0.5),0.1)
 #'
 #' @export
@@ -155,11 +157,12 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
 #' @param  type.prior the vector of the prior types selected. For example type.prior=c("gaussian","beta")
 #' @param opt.prior list of the hyperparameters relatives to the prior selected. If the first prior selected is
 #' Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.
+#' @param log (default=TRUE) if the log value is wanted or not.
 #' @return \code{prior} returns a \code{\link{prior.class}} object. Two main methods are available:
 #' \itemize{\item{$plot()}{ display the probability density of the prior}
 #' \item{$print()}{ return the main information concerning the prior distribution}}
 #' @author M. Carmassi
-#' @seealso \code{\link{model.class}}, \code{\link{estim.class}}
+#' @seealso \code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 #' @examples
 #' #### Only one prior is wanted
 #' ## For a Gaussian Prior
@@ -231,96 +234,10 @@ prior <- function(type.prior,opt.prior,log=TRUE)
   }
 }
 
-#' Generates \code{\link{estim.class}} objects
-#'
-#' \code{estim} is a function that allows us to generate a class in which the estimation is
-#' done without \code{\link{model.class}} previously defined.
-#'
-#' @useDynLib CaliCo
-#' @importFrom Rcpp evalCpp
-#'
-#' @param code the computational code (function of X and theta)
-#' @param X the matrix of the forced variables
-#' @param Yexp the vector of the experiments
-#' @param model string of the model chosen ("model1","model2","model3","model4")
-#' by default "model1" is choosen. See details for precisions.
-#' @param type.prior a string vector containing the prior type values for each parameter (the last one is reserved for
-#' the measurement error)
-#' @param opt.prior opt.prior is a list containing the characteristics of each priors (see \code{\link{prior}} for more
-#' details)
-#' @param opt.estim estimation optiions \itemize{\item{Ngibbs}{Number of iteration of the algorithm Metropolis within Gibbs}
-#' \item{Nmh}{ Number of iteration of the Metropolis Hastings algorithm}
-#' \item{thetaInit}{ Initial point}
-#' \item{k}{ Tuning parameter for the covariance matrix sig}
-#' \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}}
-#' @return \code{estim} returns a \code{\link{estim.class}} object. Two main methods are available:
-#' \itemize{\item{$plot()}{ display the probability density of the prior with different options:}
-#' \itemize{
-#' \item {graph}{ The vector of the graph wanted. By default all the graph are displayed and graph=c("acf","chains","densities","output").
-#' "acf" displays the correlation graph of the MCMC chains, "chains" plot the chains, "densities" shows the comparison of the
-#' densities a priori and a posteriori, and "output" displays the output of the code with the calibrated one and its credibility
-#' interval (if CI=TRUE).}
-#' \item {separated}{ Allows to separate each graphs by displying one by one all the graphs. By default separated=FALSE}
-#' \item {CI}{ Allows to add the posterior credibility interval to the output plot. By default CI=TRUE}
-#' \item {select.X}{ When the number of X is >1, this option has to be activated to display the output plot. select.X
-#' allows to choose one X for the x scale in the output plot}}
-#' \item{$sumarize()}{ return the main information concerning the estim.class object}}
-#' @author M. Carmassi
-#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}}
-#' @examples
-#' ### The code to calibrate
-#' X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
-#' code <- function(X,theta)
-#' {
-#'   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
-#' }
-#' Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
-#'
-#' ### Definition of the nature of the priors
-#' type.prior=c("gaussian","gaussian","gaussian","gamma")
-#' ### Definition of the prior hyperparameters
-#' opt.prior=list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1))
-#' ### Definition of the estimation option
-#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1)
-#' ### Definition of the emulation options (for Model2 and Model4 exclusively)
-#' binf <- c(0.9,0.9,10.5)
-#' bsup <- c(1.1,1.1,11.5)
-#' opt.emul <- list(p=3,n.emul=200,type="matern3_2",binf=binf,bsup=bsup,DOE=NULL)
-#'
-#' modelfit <- estim(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim)
-#' modelfit$plot(graph=c("chains","densities","output"))
-#'
-#' modelfit2 <- estim(code,X,Yexp,model="model2",type.prior,opt.prior,opt.estim,opt.emul)
-#' modelfit2$plot(graph="output")
-#'
-#' modelfit3 <- estim(code,X,Yexp,model="model3",type.prior,opt.prior,opt.estim)
-#' modelfit3$plot()
-#'
-#' modelfit4 <- estim(code,X,Yexp,model="model4",type.prior,opt.prior,opt.estim,opt.emul)
-#' modelfit4$plot()
-#'
-#' # With leave one out cross validation
-#' type.prior=c("gaussian","gamma")
-#' opt.prior=list(c(11,3),c(2,0.1))
-#' opt.estim=list(Ngibbs=400,Nmh=1000,thetaInit=c(11,0.1),k=c(5e-4,5e-4),sig=diag(2),Nchains=1)
-#' opt.valid =list(n.CV=10,k=NULL)
-#' test <- estim(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,type.valid="loo",opt.valid=opt.valid)
-#' test2 <- estim(code,X,Yr,Yexp,model="model2",type.prior,log=TRUE,opt.prior,opt.estim,opt.emul,type.valid="loo",opt.valid=opt.valid)
-#' test$plot()
-#'
-#' @export
-estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
-                 opt.emul=list(p=1,n.emul=100,type="matern5_2",binf=0,bsup=1,DOE=NULL),type.valid=NULL,opt.valid=NULL)
-{
-  res <- estim.class$new(code,X,Yexp,model,type.prior,opt.emul,opt.prior,opt.estim,type.valid,opt.valid)
-  return(res)
-}
 
-
-
-#' Generates \code{\link{estim.class}} objects
+#' Generates \code{\link{calibrate.class}} objects
 #'
-#' \code{calibration} is a function that allows us to generate a class in which the estimation is
+#' \code{calibration} is a function that allows us to generate a \code{\link{calibrate.class}} class in which the estimation is
 #' done from a \code{\link{model.class}} and a \code{\link{prior.class}} objects.
 #'
 #' @useDynLib CaliCo
@@ -328,12 +245,17 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #'
 #' @param md a \code{\link{model.class}} object
 #' @param pr a \code{\link{prior.class}} object
-#' @param opt.estim estimation optiions \itemize{\item{Ngibbs}{Number of iteration of the algorithm Metropolis within Gibbs}
+#' @param opt.estim estimation options \itemize{\item{Ngibbs}{Number of iteration of the algorithm Metropolis within Gibbs}
 #' \item{Nmh}{ Number of iteration of the Metropolis Hastings algorithm}
 #' \item{thetaInit}{ Initial point}
 #' \item{k}{ Tuning parameter for the covariance matrix sig}
 #' \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}}
-#' @return \code{estim} returns a \code{\link{estim.class}} object. Two main methods are available:
+#' @param activateCV if TRUE run the cross validation only (default activateCV=FALSE)
+#' @param opt.valid list of cross validation options (default opt.valid=FALSE)\itemize{
+#' \item{nCV}{ Number of iterations for the cross validation}
+#' \item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method emplemented so far.}
+#' }
+#' @return \code{calibrate} returns a \code{\link{calibrate.class}} object. Two main methods are available:
 #' \itemize{\item{$plot()}{ display the probability density of the prior with different options:}
 #' \itemize{
 #' \item {graph}{ The vector of the graph wanted. By default all the graph are displayed and graph=c("acf","chains","densities","output").
@@ -344,9 +266,9 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' \item {CI}{ Allows to add the posterior credibility interval to the output plot. By default CI=TRUE}
 #' \item {select.X}{ When the number of X is >1, this option has to be activated to display the output plot. select.X
 #' allows to choose one X for the x scale in the output plot}}
-#' \item{$sumarize()}{ return the main information concerning the estim.class object}}
+#' \item{$print()}{ return the main information concerning the estim.class object}}
 #' @author M. Carmassi
-#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}}
+#' @seealso \code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 #' @examples
 #' ### The code to calibrate
 #' X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
@@ -379,38 +301,44 @@ estim <-function(code,X,Yexp,model="model1",type.prior,opt.prior,opt.estim,
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 #'
 #' ### Calibration with estimation options
-#' opt.estim1=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1,burnIn=300)
-#' opt.estim2=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=300)
+#' opt.estim1=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),sig=diag(4),Nchains=1,burnIn=3000)
+#' opt.estim2=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
 #'
 #' ### Calibration model1
 #' modelfit <- calibrate(md1,pr1,opt.estim1)
 #' p <- modelfit$plot(select.X=X[,1])
+#' modelfit$print()
+#' # Calibration plus cross validation
 #' opt.valid <- list(type.valid='loo',nCV=4)
 #' modelfitCV <- calibrate(md1,pr1,opt.estim1,opt.valid)
 #' p <- modelfitCV$plot(select.X=X[,1])
+#' modelfitCV$print()
+#' # Cross validataion only
+#' modelfitCV2 <- calibrate(md1,pr1,opt.estim1,opt.valid,activateCV=TRUE)
+#' modelfitCV2$print()
 #'
 #' ### Calibration model2
 #' modelfit2 <- calibrate(md2,pr1,opt.estim1)
 #' p <- modelfit2$plot(select.X=X[,1])
 #' opt.valid <- list(type.valid='loo',nCV=4)
-#' modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid,activate=FALSE)
+#' modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid,activateCV=FALSE)
 #' p <- modelfit2$plot(select.X=X[,1])
 #'
 #' ### Calibration model3
 #' modelfit3 <- calibrate(md3,pr2,opt.estim2)
 #' opt.valid <- list(type.valid='loo',nCV=4)
-#' modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid,activate=FALSE)
+#' modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid,activateCV=FALSE)
 #' p <- modelfit3$plot(select.X=X[,1])
 #'
 #' ### Calibration model4
 #' modelfit4 <- calibrate(md4,pr2,opt.estim2)
-#' modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid,activate=FALSE)
+#' modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid,activateCV=FALSE)
 #' p <- modelfit4$plot(select.X=X[,1])
 #'
 #' @export
-calibrate <-function(md,pr,opt.estim,opt.valid=NULL,activate=TRUE)
+calibrate <-function(md,pr,opt.estim,opt.valid=NULL,activateCV=FALSE)
 {
-  res <- calibrate.class$new(md,pr,opt.estim,opt.valid,activate)
+  res <- calibrate.class$new(md,pr,opt.estim,opt.valid,activateCV)
   return(res)
 }
 
@@ -499,44 +427,47 @@ prediction <-function(modelfit,x.new)
 }
 
 
-#' Generates \code{\link{Kernel.class}} covariances matrices
+#' Generates covariances matrices thanks to \code{\link{Kernel.class}}
 #'
-#' \code{Kernel} is a function that allows us to generate covariances matrices from data
-#'
-#' The realized estimation is realized similarly as it is defined in [1]
-#'
+#' \code{Kernel.fun} is a function that allows us to generate covariances matrices from data
 #'
 #' @param X data
-#' @param newdata newdata for the prediction
-#' @return return a \code{\link{predict.class}} object with two main methods
+#' @param var the variance for the covariance function
+#' @param psi the parameter vector
+#' @param kernel.type the choice of the form of the kernel (with d chosen as an euclidian distance) \itemize{
+#' \item{gauss}{ \deqn{\sigma^2 exp{-1/2(d/\psi)^2}}}
+#' \item{exp}{ \deqn{\sigma^2 exp{-1/2 d/\psi}}}
+#' \item{matern3_2}{ \deqn{\sigma^2(1+\sqrt{3}d^2/\psi) exp{-\sqrt{3}d^2/\psi}}}
+#' \item{matern5_2}{ \deqn{\sigma^2(1+\sqrt{5}d^2/\psi+5d^2/(3\psi^2))exp{-\sqrt{5}d^2/\psi}}}}
+#' @return \code{Kernel.fun} returns a covariance matrix
 #' @author M. Carmassi
 #' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{esim.class}}
 #' @examples
 #' X <- cbind(seq(0,10,length.out=10),seq(8,20,length.out=10))
 #' var <- 2
-#' theta <- 0.1
-#' Cov <- kernelFun(X,var,theta,kernel.type="matern5_2")
+#' psi <- 0.1
+#' Cov <- kernel.fun(X,var,psi,kernel.type="matern5_2")
 #'
 #' @export
-kernelFun <- function(X,var,theta,kernel.type="gauss")
+kernel.fun <- function(X,var,psi,kernel.type="gauss")
 {
   library(R6)
   if (is.null(kernel.type)){kernel.type <- "gauss"}
   switch(kernel.type,
          gauss={
-           obj = gauss.class$new(X,var,theta,kernel.type)
+           obj = gauss.class$new(X,var,psi,kernel.type)
            return(obj$Cov)
          },
          exp={
-           obj = exp.class$new(X,var,theta,kernel.type)
+           obj = exp.class$new(X,var,psi,kernel.type)
            return(obj$Cov)
          },
          matern3_2={
-           obj = matern3_2.class$new(X,var,theta,kernel.type)
+           obj = matern3_2.class$new(X,var,psi,kernel.type)
            return(obj$Cov)
          },
          matern5_2={
-           obj = matern5_2.class$new(X,var,theta,kernel.type)
+           obj = matern5_2.class$new(X,var,psi,kernel.type)
            return(obj$Cov)
          }
   )
