@@ -94,18 +94,21 @@ modelfitCV2$print()
 modelfit2 <- calibrate(md2,pr1,opt.estim1)
 p <- modelfit2$plot(select.X=X[,1])
 opt.valid <- list(type.valid='loo',nCV=4)
-modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid,activateCV=FALSE)
+# Cross validataion only
+modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid,activateCV=TRUE)
 p <- modelfit2$plot(select.X=X[,1])
 
 ### Calibration model3
 modelfit3 <- calibrate(md3,pr2,opt.estim2)
 opt.valid <- list(type.valid='loo',nCV=4)
-modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid,activateCV=FALSE)
+# Cross validataion only
+modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid,activateCV=TRUE)
 p <- modelfit3$plot(select.X=X[,1])
 
 ### Calibration model4
 modelfit4 <- calibrate(md4,pr2,opt.estim2)
-modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid,activateCV=FALSE)
+# Cross validataion only
+modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid,activateCV=TRUE)
 p <- modelfit4$plot(select.X=X[,1])
 
 }

@@ -68,6 +68,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                }
                                if (is.null(self$opt.valid)==FALSE)
                                {
+                                 self$CV(1)
                                  cat(paste("\nThe cross validation is currently running on your ",
                                              self$n.cores," cores available....\n",sep=""))
                                  self$errorCV <- as.numeric(unlist(mclapply(c(1:opt.valid$nCV),
@@ -103,6 +104,8 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                  Yval        <- self$md$Yexp[inc]
                                  mdTempCal   <- model(code=self$md$code,dataCal,Ycal,self$md$model,self$md$opt.emul)
                                  mdTempfit   <- self$calibrationCV(mdTempCal,Ycal)
+                                 browser()
+                                 ### Le problème dans la cross validation vient d'ici, Le model mdTempVal n'est pas à créer
                                  mdTempVal   <- model(code=self$md$code,dataVal,Yval,self$md$model,self$md$opt.emul)
                                  Dim         <- length(self$pr)
                                  if (mdTempVal$model=="model1" | mdTempVal$model=="model2")
@@ -400,39 +403,31 @@ calibrate.class$set("public","outputPlot",
 calibrate.class$set("public","print",
                     function()
                     {
-                      cat("Call:\n")
-                      print(self$md$model)
-                      cat("\n")
-                      cat("With the function:\n")
+                      cat("Call:\n\nWith the function:\n")
                       print(self$md$code)
-                      cat("\n")
                       if (self$activateCV==TRUE)
                       {
-                        cat("Cross validation\n")
-                        paste("method: ",self$opt.valid$type.valid,sep = "")
                         cat("\n")
-                        paste("error: ",self$errorCV,sep = "")
+                        cat("Cross validation:\n Method:",self$opt.valid$type.valid,"\n Error: ")
+                        print(self$errorCV)
                       } else
                       {
-                        cat("Acceptation rate of the Metropolis within Gibbs algorithm:\n")
+                        cat("\nAcceptation rate of the Metropolis within Gibbs algorithm:\n")
                         print(paste(round(self$output$out$AcceptationRatioWg/self$opt.estim$Ngibbs*100,2),
                                     "%",sep = ""))
-                        cat("\n")
-                        cat("Acceptation rate of the Metropolis Hastings algorithm:\n")
+                        cat("\nAcceptation rate of the Metropolis Hastings algorithm:\n")
                         print(paste(self$output$out$AcceptationRatio/self$opt.estim$Nmh*100,"%",sep = ""))
-                        cat("\n")
-                        cat("Maximum a posteriori:\n")
+                        cat("\nMaximum a posteriori:\n")
                         print(apply(self$output$out$THETA[-c(1:self$opt.estim$burnIn),],2,max))
-                        cat("\n")
-                        cat("Mean a posteriori:\n")
+                        cat("\nMean a posteriori:\n")
                         print(apply(self$output$out$THETA[-c(1:self$opt.estim$burnIn),],2,mean))
+                        cat("\n")
                         if (is.null(self$opt.valid)==FALSE)
                         {
-                          cat("Cross validation:\n")
-                          paste("method: ",self$opt.valid$type.valid,sep = "")
-                          cat("\n")
-                          paste("error: ",self$errorCV,sep = "")
+                          cat("Cross validation:\n Method:",self$opt.valid$type.valid,"\n Error: ")
+                          print(self$errorCV)
                         }
                       }
                     }
 )
+
