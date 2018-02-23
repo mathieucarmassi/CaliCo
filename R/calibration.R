@@ -14,7 +14,7 @@
 #' @field logPost the log posterior
 #' @field mcmc a \code{coda} variable of the generated chains
 #' @field output list of several chains and acceptation ratios
-#' @field activateCV activates only the cross validation
+#' @field onlyCV activates only the cross validation
 #' @field errorCV output of the CV errors
 #' @field n.cores number cores available
 #' @field binf the lower bound of the parameters for the DOE
@@ -29,15 +29,16 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                              logPost    = NULL,
                              mcmc       = NULL,
                              output     = NULL,
-                             activateCV = NULL,
+                             onlyCV = NULL,
                              errorCV    = NULL,
+                             ResultsCV  = NULL,
                              n.cores    = NULL,
                              binf       = NULL,
                              bsup       = NULL,
-                             initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL,activateCV)
+                             initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL,onlyCV)
                              {
                                library(parallel)
-                               self$activateCV <- activateCV
+                               self$onlyCV <- onlyCV
                                self$md         <- md
                                self$pr         <- pr
                                self$opt.estim  <- opt.estim
@@ -48,7 +49,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                {
                                  stop("The burnIn must be inferior to Nmh")
                                }
-                               if (self$activateCV==FALSE)
+                               if (self$onlyCV==FALSE)
                                {
                                  if (opt.estim$Nchains==1)
                                  {
@@ -68,11 +69,22 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                }
                                if (is.null(self$opt.valid)==FALSE)
                                {
-                                 self$CV(1)
                                  cat(paste("\nThe cross validation is currently running on your ",
                                              self$n.cores," cores available....\n",sep=""))
-                                 self$errorCV <- as.numeric(unlist(mclapply(c(1:opt.valid$nCV),
+                                 Results <- as.numeric(unlist(mclapply(c(1:opt.valid$nCV),
                                                                       self$CV,mc.cores = self$n.cores)))
+                                 for (i in 1:self$opt.valid$nCV)
+                                 {
+                                   inc <- (i-1)*3+1
+                                   if (i==1){
+                                     self$ResultsCV <- data.frame(Predicted=Results[1],Real=Results[2],Error=Results[3])
+                                     } else{
+                                       self$ResultsCV <- rbind(self$ResultsCV,data.frame(Predicted=Results[inc],
+                                                                                         Real=Results[inc+1],
+                                                                                         Error=Results[inc+2]))
+                                   }
+                                 }
+                                 self$errorCV <- sqrt(mean(self$ResultsCV$Error))
                                }
                              },
                              calibration = function(i=NA)
@@ -104,19 +116,19 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                  Yval        <- self$md$Yexp[inc]
                                  mdTempCal   <- model(code=self$md$code,dataCal,Ycal,self$md$model,self$md$opt.emul)
                                  mdTempfit   <- self$calibrationCV(mdTempCal,Ycal)
-                                 browser()
-                                 ### Le problème dans la cross validation vient d'ici, Le model mdTempVal n'est pas à créer
-                                 mdTempVal   <- model(code=self$md$code,dataVal,Yval,self$md$model,self$md$opt.emul)
                                  Dim         <- length(self$pr)
-                                 if (mdTempVal$model=="model1" | mdTempVal$model=="model2")
+                                 thetaMAP    <- mdTempfit$MAP
+                                 if (mdTempCal$model=="model1" | mdTempCal$model=="model2")
                                  {
-                                    Ytemp <- mdTempVal$pred(mdTempfit$MAP[1:(Dim-1)],mdTempfit$MAP[Dim],dataVal)$y
+                                    Predict  <- mdTempCal$pred(thetaMAP[1:(Dim-1)],thetaMAP[Dim],dataVal)$y
                                  } else
                                  {
-                                   Ytemp <- mdTempVal$fun(mdTempfit$MAP[1:(Dim-3)],mdTempfit$MAP[(Dim-2):(Dim-1)]
-                                                        ,mdTempfit$MAP[Dim],dataVal)$y
+                                    Predict  <- mdTempCal$pred(thetaMAP[1:(Dim-3)],thetaMAP[(Dim-2):(Dim-1)],
+                                                               thetaMAP[Dim],dataVal)$y
                                  }
-                                 return(sqrt((Ytemp-Yval)^2))
+                                 err <- sqrt((Predict-Yval)^2)
+                                 res <- list(Predict=Predict,Yval=Yval,err=err)
+                                 return(res)
                                }
                              },
                              calibrationCV = function(mdTemp,y)
@@ -240,7 +252,7 @@ calibrate.class$set("private","MAPestimator",
 calibrate.class$set("public","plot",
                     function(graph=c("acf","chains","densities","output"),select.X=NULL)
                     {
-                      if (self$activateCV==TRUE)
+                      if (self$onlyCV==TRUE)
                       {
                         stop("You only had requested the cross validation, the plot method is desabled")
                       }
@@ -405,10 +417,11 @@ calibrate.class$set("public","print",
                     {
                       cat("Call:\n\nWith the function:\n")
                       print(self$md$code)
-                      if (self$activateCV==TRUE)
+                      if (self$onlyCV==TRUE)
                       {
-                        cat("\n")
-                        cat("Cross validation:\n Method:",self$opt.valid$type.valid,"\n Error: ")
+                        cat("\nCross validation:\n Method:",self$opt.valid$type.valid,"\n")
+                        print(head(self$ResultsCV))
+                        cat("\nRMSE: ")
                         print(self$errorCV)
                       } else
                       {
@@ -424,7 +437,9 @@ calibrate.class$set("public","print",
                         cat("\n")
                         if (is.null(self$opt.valid)==FALSE)
                         {
-                          cat("Cross validation:\n Method:",self$opt.valid$type.valid,"\n Error: ")
+                          cat("\nCross validation:\n Method:",self$opt.valid$type.valid,"\n")
+                          print(head(self$ResultsCV))
+                          cat("\nRMSE: ")
                           print(self$errorCV)
                         }
                       }

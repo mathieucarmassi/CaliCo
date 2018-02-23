@@ -78,8 +78,9 @@
 #' DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
 #' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=DOE)
 #' model2 <- model(code,X,Yexp,"model2",opt.emul)
-#' model2$plot(c(1,1,11),0.1,points=FALSE,select.X=X[,1])
-#' model2$print()
+#' plot(model2, theta=c(1,1,11),sig=0.1,points=FALSE,select.X=X[,1])
+#' print(model2)
+#'
 #'
 #' ###### For the third model
 #' model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
@@ -250,7 +251,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' \item{thetaInit}{ Initial point}
 #' \item{k}{ Tuning parameter for the covariance matrix sig}
 #' \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}}
-#' @param activateCV if TRUE run the cross validation only (default activateCV=FALSE)
+#' @param onlyCV if TRUE run the cross validation only (default onlyCV=FALSE)
 #' @param opt.valid list of cross validation options (default opt.valid=FALSE)\itemize{
 #' \item{nCV}{ Number of iterations for the cross validation}
 #' \item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method emplemented so far.}
@@ -270,7 +271,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' @author M. Carmassi
 #' @seealso \code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 #' @examples
-#' ### The code to calibrate
+#' ###################### The code to calibrate
 #' X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
 #' code <- function(X,theta)
 #' {
@@ -278,14 +279,49 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' }
 #' Yexp <- code(X,c(1,1,11))+rnorm(10,0,0.1)
 #'
-#' ### For the first model
-#' md1 <- model(code,X,Yexp,"model1")
+#' ############### For the first model
+#' ###### Definition of the model
+#' md <- model(code,X,Yexp,"model1")
+#' ###### Definition of the prior densities
+#' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
+#' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
+#' ###### Definition of the calibration options
+#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
+#' sig=diag(4),Nchains=1,burnIn=3000)
+#' ###### Run the calibration
+#' mdfit <- calibrate(md,pr,opt.estim)
+#' ####### The plot generated is a list of ggplot
+#' p <- plot(mdfit,select.X=X[,1])
+#' print(mdfit)
+#' ####### Run regular calibration plus cross validation (the plot function is available)
+#' opt.valid <- list(type.valid='loo',nCV=100)
+#' mdfitCV <- calibrate(md,pr,opt.estim,opt.valid)
+#' print(mdfitCV)
+#' ####### Run cross validataion only (the plot function is disabled)
+#' mdfitCV2 <- calibrate(md,pr,opt.estim,opt.valid,onlyCV=TRUE)
+#' print(mdfitCV2)
 #'
-#' ### For the second model
+#'
+#' ############### For the second model
+#' ###### Definition of the model
+#' ### The lower and upper bound vector for the parameter
 #' binf <- c(0.9,0.9,10.5)
 #' bsup <- c(1.1,1.1,11.5)
 #' opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 #' md2 <- model(code,X,Yexp,"model2",opt.emul)
+#' ###### Definition of the prior densities
+#' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
+#' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
+#' ###### Definition of the calibration options
+#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
+#' sig=diag(4),Nchains=1,burnIn=3000)
+#' ###### Run the calibration
+#' mdfit2 <- calibrate(md2,pr,opt.estim)
+#' ####### The plot generated is a list of ggplot
+#' p <- plot(mdfit,select.X=X[,1])
+#' print(mdfit)
+#'
+#'
 #'
 #' ### For the third model
 #' md3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
@@ -314,7 +350,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' p <- modelfitCV$plot(select.X=X[,1])
 #' modelfitCV$print()
 #' # Cross validataion only
-#' modelfitCV2 <- calibrate(md1,pr1,opt.estim1,opt.valid,activateCV=TRUE)
+#' modelfitCV2 <- calibrate(md1,pr1,opt.estim1,opt.valid,onlyCV=TRUE)
 #' modelfitCV2$print()
 #'
 #' ### Calibration model2
@@ -322,26 +358,26 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' p <- modelfit2$plot(select.X=X[,1])
 #' opt.valid <- list(type.valid='loo',nCV=4)
 #' # Cross validataion only
-#' modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid,activateCV=TRUE)
+#' modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid,onlyCV=TRUE)
 #' p <- modelfit2$plot(select.X=X[,1])
 #'
 #' ### Calibration model3
 #' modelfit3 <- calibrate(md3,pr2,opt.estim2)
 #' opt.valid <- list(type.valid='loo',nCV=4)
 #' # Cross validataion only
-#' modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid,activateCV=TRUE)
+#' modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid,onlyCV=TRUE)
 #' p <- modelfit3$plot(select.X=X[,1])
 #'
 #' ### Calibration model4
 #' modelfit4 <- calibrate(md4,pr2,opt.estim2)
 #' # Cross validataion only
-#' modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid,activateCV=TRUE)
+#' modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid,onlyCV=TRUE)
 #' p <- modelfit4$plot(select.X=X[,1])
 #'
 #' @export
-calibrate <-function(md,pr,opt.estim,opt.valid=NULL,activateCV=FALSE)
+calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 {
-  res <- calibrate.class$new(md,pr,opt.estim,opt.valid,activateCV)
+  res <- calibrate.class$new(md,pr,opt.estim,opt.valid,onlyCV)
   return(res)
 }
 
