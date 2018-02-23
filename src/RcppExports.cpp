@@ -26,26 +26,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// invMat
-arma::mat invMat(arma::mat V);
-RcppExport SEXP _CaliCo_invMat(SEXP VSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type V(VSEXP);
-    rcpp_result_gen = Rcpp::wrap(invMat(V));
-    return rcpp_result_gen;
-END_RCPP
-}
-// FlushCPP
-void FlushCPP();
-RcppExport SEXP _CaliCo_FlushCPP() {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    FlushCPP();
-    return R_NilValue;
-END_RCPP
-}
 // MetropolisHastingsCppD
 List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
 RcppExport SEXP _CaliCo_MetropolisHastingsCppD(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP kSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
@@ -69,8 +49,6 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_CaliCo_MetropolisHastingsCpp", (DL_FUNC) &_CaliCo_MetropolisHastingsCpp, 10},
-    {"_CaliCo_invMat", (DL_FUNC) &_CaliCo_invMat, 1},
-    {"_CaliCo_FlushCPP", (DL_FUNC) &_CaliCo_FlushCPP, 0},
     {"_CaliCo_MetropolisHastingsCppD", (DL_FUNC) &_CaliCo_MetropolisHastingsCppD, 10},
     {NULL, NULL, 0}
 };

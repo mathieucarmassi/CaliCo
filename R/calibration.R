@@ -16,6 +16,8 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                              activate  = NULL,
                              errorCV   = NULL,
                              n.cores   = NULL,
+                             binf      = NULL,
+                             bsup      = NULL,
                              initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL,activate)
                              {
                                library(parallel)
@@ -58,13 +60,13 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                              },
                              calibration = function(i=NA)
                              {
-                               binf          <- private$boundaries()$binf
-                               bsup          <- private$boundaries()$bsup
+                               self$binf     <- private$boundaries()$binf
+                               self$bsup     <- private$boundaries()$bsup
                                MetropolisCpp <- private$MCMC(self$md$model)
                                out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
                                                               self$opt.estim$thetaInit,self$opt.estim$k,
-                                                              self$opt.estim$sig,self$md$Yexp,binf,bsup,self$logPost,1)
-                               MAP           <- private$MAPestimator(out$THETA)
+                                                              self$opt.estim$sig,self$md$Yexp,self$binf,self$bsup,self$logPost,1)
+                               MAP           <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))
                              },
                              CV = function(i=NA)
@@ -165,7 +167,7 @@ calibrate.class$set("private","logTest",
                           s <- s + self$pr[[i]]$prior(theta[i])
                         }
                         s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
-                        return(log(self$md$likelihood(theta,sig2)) + s)
+                        return(self$md$likelihood(theta,sig2) + s)
                       }
                     })
 
@@ -182,13 +184,32 @@ calibrate.class$set("private","logTestD",
                     s <- s + self$pr[[length(theta)+j]]$prior(thetaD[j])
                   }
                   s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
-                  return(log(self$md$likelihood(theta,thetaD,sig2)) + s)
+                  return(self$md$likelihood(theta,thetaD,sig2) + s)
                 })
 
 calibrate.class$set("private","MAPestimator",
-                    function(chain)
+                    function(out)
                       {
+                        chain <- out$THETA[-c(1:self$opt.estim$burnIn),]
                         dens <- apply(chain,2,density)
+                        if (chain[nrow(chain),1]==chain[1,1] & chain[nrow(chain),2]==chain[1,2])
+                        {
+                          cat("\n")
+                          cat("Call:\n")
+                          print(self$md$model)
+                          cat("\n")
+                          cat("With the function:\n")
+                          print(self$md$code)
+                          cat("\n")
+                          cat("Acceptation rate of the Metropolis within Gibbs algorithm:\n")
+                          print(paste(round(out$AcceptationRatioWg/self$opt.estim$Ngibbs*100,2),
+                                      "%",sep = ""))
+                          cat("\n")
+                          cat("Acceptation rate of the Metropolis Hastings algorithm:\n")
+                          print(paste(out$AcceptationRatio/self$opt.estim$Nmh*100,"%",sep = ""))
+                          cat("\n")
+                          stop('the MCMC chain did not move, please try to launch again with different values of k')
+                        }
                         map <- function(dens)
                         {
                           dens$x[which(dens$y==max(dens$y))]
@@ -222,7 +243,7 @@ calibrate.class$set("public","plot",
                         {
                           a[[i]] <- self$acf(i)
                         }
-                        do.call(grid.arrange,a)
+                        # do.call(grid.arrange,a)
                         gg$acf <- a
                       }
                       if ("chains" %in% graph)
@@ -231,7 +252,7 @@ calibrate.class$set("public","plot",
                         {
                           m[[i]] <- self$mcmcChains(i)
                         }
-                        do.call(grid.arrange,m)
+                        # do.call(grid.arrange,m)
                         gg$mcmc <- m
                       }
                       if ("densities" %in% graph)
@@ -242,14 +263,14 @@ calibrate.class$set("public","plot",
                                                 type="posterior")
                           p[[i]] <- self$pr[[i]]$plot()+geom_density(data=dplot2,kernel="gaussian",adjust=3,alpha=0.1)
                         }
-                        do.call(grid.arrange,p)
+                        # do.call(grid.arrange,p)
                         gg$dens <- p
                       }
                       if ("output" %in% graph)
                       {
-                      o <- self$outputPlot(select.X)
-                      print(o)
-                      gg$output <- o
+                        o <- self$outputPlot(select.X)
+                        # print(o)
+                        gg$output <- o
                       }
                       return(gg)
                     })
@@ -284,8 +305,13 @@ calibrate.class$set("public","outputPlot",
                     {
                       if (is.null(select.X)==TRUE)
                         {
-                          X <- self$md$X
-                          stop('The dimension of X is higher than 1, the plot cannot be provided for a dimension >1')
+                          if (is.null(dim(self$md$X))==TRUE)
+                          {
+                            X <- self$md$X
+                          }else
+                          {
+                            stop('The dimension of X is higher than 1, the plot cannot be provided for a dimension >1')
+                          }
                         } else {X <- select.X}
                       m <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
                       Dist <- Dist2 <- matrix(nr=nrow(m),nc=length(self$md$Yexp))
@@ -318,16 +344,27 @@ calibrate.class$set("public","outputPlot",
                           Dist[i,]  <- res[[i]]$D
                           Dist2[i,] <- res[[i]]$D2
                         }
-                        qqd <- apply(Dist2,2,quantile,probs=c(0.05,0.5,0.95))
-                        ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qqd[3,],lower=qqd[1,],type="experiments",
+                        qqd <- apply(Dist2,2,quantile,probs=c(0.05,0.95))
+                        ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qqd[2,],lower=qqd[1,],type="experiments",
                                             fill="90% credibility interval for the discrepancy")
                       }
-                      qq <- apply(Dist,2,quantile,probs=c(0.05,0.5,0.95))
-                      ggdata <- data.frame(y=qq[2,],x=X,upper=qq[3,],lower=qq[1,],type="calibrated",
+                      qq <- apply(Dist,2,quantile,probs=c(0.05,0.95))
+                      if (self$md$model=="model1"||self$md$model=="model2")
+                      {
+                        MAP <- self$output$MAP
+                        p <- length(MAP)-1
+                        Ys <- self$md$fun(MAP[1:p],MAP[p+1])$y
+                      }else
+                      {
+                        MAP <- self$output$MAP
+                        p <- length(MAP)-3
+                        Ys <- self$md$fun(MAP[1:p],MAP[(p+1):(p+2)],MAP[p+3])$y
+                      }
+                      ggdata <- data.frame(y=Ys,x=X,upper=qq[2,],lower=qq[1,],type="calibrated",
                                            fill="90% credibility interval a posteriori")
                       if (self$md$model == "model1" || self$md$model == "model2")
                       {
-                        ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qq[3,],lower=qq[1,],type="experiments",
+                        ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qq[2,],lower=qq[1,],type="experiments",
                                               fill="90% credibility interval a posteriori")
                       }
                       ggdata <- rbind(ggdata,ggdata2)
@@ -342,3 +379,28 @@ calibrate.class$set("public","outputPlot",
                               axis.text=element_text(size=20))
                      return(p)
                     })
+
+
+calibrate.class$set("public","print",
+                    function()
+                    {
+                      cat("Call:\n")
+                      print(self$md$model)
+                      cat("\n")
+                      cat("With the function:\n")
+                      print(self$md$code)
+                      cat("\n")
+                      cat("Acceptation rate of the Metropolis within Gibbs algorithm:\n")
+                      print(paste(round(self$output$out$AcceptationRatioWg/self$opt.estim$Ngibbs*100,2),
+                                  "%",sep = ""))
+                      cat("\n")
+                      cat("Acceptation rate of the Metropolis Hastings algorithm:\n")
+                      print(paste(self$output$out$AcceptationRatio/self$opt.estim$Nmh*100,"%",sep = ""))
+                      cat("\n")
+                      cat("Maximum a posteriori:\n")
+                      print(apply(self$output$out$THETA[-c(1:self$opt.estim$burnIn),],2,max))
+                      cat("\n")
+                      cat("Mean a posteriori:\n")
+                      print(apply(self$output$out$THETA[-c(1:self$opt.estim$burnIn),],2,mean))
+                    }
+)

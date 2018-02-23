@@ -179,7 +179,7 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
 #' grid.arrange(priors$Prior1$plot(),priors$Prior2$plot(),nrow=2)
 #'
 #' @export
-prior <- function(type.prior,opt.prior,log=FALSE)
+prior <- function(type.prior,opt.prior,log=TRUE)
 {
   library(R6)
   n <- length(type.prior)
