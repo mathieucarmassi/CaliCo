@@ -11,4 +11,22 @@ Kernel.class
 \description{
 See the function \code{\link{model}} which produces an instance of this class
 }
+\section{Fields}{
+
+\describe{
+\item{\code{code}}{a function which takes in entry X and theta}
+
+\item{\code{X}}{the matrix of the forced variables}
+
+\item{\code{var}}{the variance for the covariance function}
+
+\item{\code{psi}}{the scale vector of correlation length}
+
+\item{\code{n}}{number of experiments}
+
+\item{\code{Kernel.type}}{the chosen form of covariance}
+
+\item{\code{Cov}}{the covariance}
+}}
+
 \keyword{datasets}

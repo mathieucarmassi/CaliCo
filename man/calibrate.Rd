@@ -2,23 +2,30 @@
 % Please edit documentation in R/functions.R
 \name{calibrate}
 \alias{calibrate}
-\title{Generates \code{\link{estim.class}} objects}
+\title{Generates \code{\link{calibrate.class}} objects}
 \usage{
-calibrate(md, pr, opt.estim, opt.valid = NULL, activate = TRUE)
+calibrate(md, pr, opt.estim, opt.valid = NULL, activateCV = FALSE)
 }
 \arguments{
 \item{md}{a \code{\link{model.class}} object}
 
 \item{pr}{a \code{\link{prior.class}} object}
 
-\item{opt.estim}{estimation optiions \itemize{\item{Ngibbs}{Number of iteration of the algorithm Metropolis within Gibbs}
+\item{opt.estim}{estimation options \itemize{\item{Ngibbs}{Number of iteration of the algorithm Metropolis within Gibbs}
 \item{Nmh}{ Number of iteration of the Metropolis Hastings algorithm}
 \item{thetaInit}{ Initial point}
 \item{k}{ Tuning parameter for the covariance matrix sig}
 \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}}}
+
+\item{opt.valid}{list of cross validation options (default opt.valid=FALSE)\itemize{
+\item{nCV}{ Number of iterations for the cross validation}
+\item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method emplemented so far.}
+}}
+
+\item{activateCV}{if TRUE run the cross validation only (default activateCV=FALSE)}
 }
 \value{
-\code{estim} returns a \code{\link{estim.class}} object. Two main methods are available:
+\code{calibrate} returns a \code{\link{calibrate.class}} object. Two main methods are available:
 \itemize{\item{$plot()}{ display the probability density of the prior with different options:}
 \itemize{
 \item {graph}{ The vector of the graph wanted. By default all the graph are displayed and graph=c("acf","chains","densities","output").
@@ -29,10 +36,10 @@ interval (if CI=TRUE).}
 \item {CI}{ Allows to add the posterior credibility interval to the output plot. By default CI=TRUE}
 \item {select.X}{ When the number of X is >1, this option has to be activated to display the output plot. select.X
 allows to choose one X for the x scale in the output plot}}
-\item{$sumarize()}{ return the main information concerning the estim.class object}}
+\item{$print()}{ return the main information concerning the estim.class object}}
 }
 \description{
-\code{calibration} is a function that allows us to generate a class in which the estimation is
+\code{calibration} is a function that allows us to generate a \code{\link{calibrate.class}} class in which the estimation is
 done from a \code{\link{model.class}} and a \code{\link{prior.class}} objects.
 }
 \examples{
@@ -67,37 +74,43 @@ pr2 <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","g
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 
 ### Calibration with estimation options
-opt.estim1=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1,burnIn=300)
-opt.estim2=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=300)
+opt.estim1=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),sig=diag(4),Nchains=1,burnIn=3000)
+opt.estim2=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
 
 ### Calibration model1
 modelfit <- calibrate(md1,pr1,opt.estim1)
 p <- modelfit$plot(select.X=X[,1])
+modelfit$print()
+# Calibration plus cross validation
 opt.valid <- list(type.valid='loo',nCV=4)
 modelfitCV <- calibrate(md1,pr1,opt.estim1,opt.valid)
 p <- modelfitCV$plot(select.X=X[,1])
+modelfitCV$print()
+# Cross validataion only
+modelfitCV2 <- calibrate(md1,pr1,opt.estim1,opt.valid,activateCV=TRUE)
+modelfitCV2$print()
 
 ### Calibration model2
 modelfit2 <- calibrate(md2,pr1,opt.estim1)
 p <- modelfit2$plot(select.X=X[,1])
 opt.valid <- list(type.valid='loo',nCV=4)
-modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid,activate=FALSE)
+modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid,activateCV=FALSE)
 p <- modelfit2$plot(select.X=X[,1])
 
 ### Calibration model3
 modelfit3 <- calibrate(md3,pr2,opt.estim2)
 opt.valid <- list(type.valid='loo',nCV=4)
-modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid,activate=FALSE)
+modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid,activateCV=FALSE)
 p <- modelfit3$plot(select.X=X[,1])
 
 ### Calibration model4
 modelfit4 <- calibrate(md4,pr2,opt.estim2)
-modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid,activate=FALSE)
+modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid,activateCV=FALSE)
 p <- modelfit4$plot(select.X=X[,1])
 
 }
 \seealso{
-\code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{estim.class}}
+\code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 }
 \author{
 M. Carmassi

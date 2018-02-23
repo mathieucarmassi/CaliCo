@@ -3,15 +3,15 @@
 \docType{data}
 \name{prior.class}
 \alias{prior.class}
-\title{A Reference Class to generates differents prior objects}
+\title{A Reference Class to generates differents \code{\link{prior.class}} objects}
 \format{An object of class \code{R6ClassGenerator} of length 24.}
 \usage{
 prior.class
 }
 \description{
-See the function blabla which produces an instance of this class
+See the function \code{\link{prior}} which produces an instance of this class
 This class comes with a set of methods, some of them being useful for the user:
-See the documentation for blabla... Other methods
+See the documentation \code{\link{prior}}. Other methods
  should not be called as they are designed to be used during the optimization process.
 
 Fields should not be changed or manipulated by the user as they are updated internally

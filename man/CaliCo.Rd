@@ -6,8 +6,8 @@
 \alias{CaliCo-package}
 \title{Bayesian calibration for computational codes}
 \description{
-The foo package provides three categories of important functions:
-\code{\link{model}}, \code{\link{estim}} and \code{\link{prediction}}.
+The CaliCo package provides three categories of important functions:
+\code{\link{model}}, \code{\link{prior}}, \code{\link{calibrate}} and \code{\link{prediction}}.
 }
 \details{
 Package: CaliCo

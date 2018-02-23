@@ -1,8 +1,8 @@
-#' A Reference Class to generates differents prior objects
+#' A Reference Class to generates differents \code{\link{prior.class}} objects
 #'
-#' @description See the function blabla which produces an instance of this class
+#' @description See the function \code{\link{prior}} which produces an instance of this class
 #' This class comes with a set of methods, some of them being useful for the user:
-#' See the documentation for blabla... Other methods
+#' See the documentation \code{\link{prior}}. Other methods
 #'  should not be called as they are designed to be used during the optimization process.
 #'
 #' Fields should not be changed or manipulated by the user as they are updated internally
@@ -10,6 +10,7 @@
 #' @field type.prior of the selected prior
 #' @field opt.prior the charasteristics of the selected prior
 #' @field log if we want the log result or not
+#' @export
 prior.class <- R6::R6Class(classname = "prior.class",
                            public = list(
                              type.prior  = NULL,

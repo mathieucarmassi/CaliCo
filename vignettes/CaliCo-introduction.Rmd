@@ -47,7 +47,7 @@ The function $f_t$ is chosen with only one forced variable and one parameter $\t
 
 ```{r, fig.width=4,echo=FALSE,fig.align='center'}
 library(ggplot2)
-n=50
+n=20
 X <- seq(0,1,length.out=n)
 code <- function(X,theta)
 {
@@ -120,7 +120,7 @@ To implement $\mathcal{M}_1$ in `CaliCo`, it is only necessary to:
 ```{r, echo=TRUE}
 library(CaliCo)
 # Number of experiments
-n=50
+n=20
 # Time interval
 t <- seq(0,1,length.out=n)
 # Code definition
@@ -168,11 +168,11 @@ When the code has a special (and known) behavior, one can set up its own DOE and
 
 ```{r,echo=TRUE}
 # Set the lower and upper bound (taken large intentionally)
-binf <- 9
+binf <- 8
 bsup <- 13
 
 # Set the emulation option
-opt.emul <- list(p=1,n.emul=200,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+opt.emul <- list(p=1,n.emul=30,type="matern3_2",binf=binf,bsup=bsup,DOE=NULL)
 # Generate the second model
 model2 <- model(code,X,Yexp,"model2",opt.emul)
 ```
@@ -199,8 +199,9 @@ Both $\mathcal{M}_3$ and $\mathcal{M}_4$ add a discrepancy to respectively $\mat
 The user is free to select the form of the covariance structure in the discrepancy. Howerver, the expectancy is set automatically to zero.
 
 ```{r, echo=TRUE}
+opt.disc <- list(kernel.type="matern5_2")
 # Generate the third model
-model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
+model3 <- model(code,X,Yexp,"model3",opt.disc=opt.disc)
 
 # Generate the fourth model where the emulation option are needed
 ### Here opt.emul is the same as the one for the second model
@@ -273,14 +274,15 @@ The function `calibrate` is the function that run the Bayesian calibration. It t
 ```{r, echo=TRUE}
 model1 <- model(code=code,X=t,Yexp=Yexp,model="model1")
 # Definition of the estimation options for the model 1 and model 2
-opt.estim1=list(Ngibbs=3000,Nmh=10000,thetaInit=c(11,0.01),k=c(1e-4,1e-4),sig=diag(2),Nchains=1,burnIn=2500)
+opt.estim1=list(Ngibbs=1000,Nmh=3000,thetaInit=c(11,0.01),k=c(1e-4,1e-4),sig=diag(2),Nchains=1,burnIn=1000)
+opt.estim2=list(Ngibbs=2000,Nmh=4000,thetaInit=c(11,0.01),k=c(1e-5,1e-5),sig=diag(2),Nchains=1,burnIn=1000)
 
 # Generate the prior densities
 pr1 <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(11,0.5),c(2,0.01)))
 
 # Run the Bayesian Calibration for the first and the second model
 mdfit1 <- calibrate(model1,pr1,opt.estim1)
-mdfit2 <- calibrate(model2,pr1,opt.estim1)
+mdfit2 <- calibrate(model2,pr1,opt.estim2)
 ```
 
 `mdfit1` and `mdfit2` are two `R6` objects from `calibrate.class` which contain also two main methods (`$plot()` and `$print()`). The `$print()` method displays the model that we called, the acceptation rate for the Metropolis within Gibbs algortihm, the acceptation rate of the Metropolis Hastings algorithm, the maximum a posteriori and the mean a posteriori.
@@ -340,7 +342,7 @@ For $\mathcal{M}_3$ and $\mathcal{M}_4$, the calibration is done in a similar wa
  
 ```{r, echo=TRUE}
 # Definition of the estimation options for the model 1 and model 2
-opt.estim2=list(Ngibbs=3000,Nmh=10000,thetaInit=c(11,1,0.5,0.01),k=c(1e-5,1e-10,1e-10,1e-7),sig=diag(4),Nchains=1,burnIn=2500)
+opt.estim2=list(Ngibbs=1000,Nmh=3000,thetaInit=c(11,1,0.5,0.01),k=c(1e-5,1e-10,1e-10,1e-7),sig=diag(4),Nchains=1,burnIn=1000)
 
 # Generate the prior densities
 pr2 <- prior(type.prior=c("gaussian","gamma","unif","gamma"),opt.prior=list(c(11,0.5),c(1,0.5),c(0,1),c(2,0.01)))

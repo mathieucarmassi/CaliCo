@@ -4,13 +4,15 @@
 \alias{prior}
 \title{Generates \code{\link{prior.class}} objects.}
 \usage{
-prior(type.prior, opt.prior, log = FALSE)
+prior(type.prior, opt.prior, log = TRUE)
 }
 \arguments{
 \item{type.prior}{the vector of the prior types selected. For example type.prior=c("gaussian","beta")}
 
 \item{opt.prior}{list of the hyperparameters relatives to the prior selected. If the first prior selected is
 Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.}
+
+\item{log}{(default=TRUE) if the log value is wanted or not.}
 }
 \value{
 \code{prior} returns a \code{\link{prior.class}} object. Two main methods are available:
@@ -58,7 +60,7 @@ grid.arrange(priors$Prior1$plot(),priors$Prior2$plot(),nrow=2)
 
 }
 \seealso{
-\code{\link{model.class}}, \code{\link{estim.class}}
+\code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 }
 \author{
 M. Carmassi
