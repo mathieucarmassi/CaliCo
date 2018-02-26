@@ -294,7 +294,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' p <- plot(mdfit,select.X=X[,1])
 #' print(mdfit)
 #' ####### Run regular calibration plus cross validation (the plot function is available)
-#' opt.valid <- list(type.valid='loo',nCV=100)
+#' opt.valid <- list(type.valid='loo',nCV=10)
 #' mdfitCV <- calibrate(md,pr,opt.estim,opt.valid)
 #' print(mdfitCV)
 #' ####### Run cross validataion only (the plot function is disabled)
@@ -318,9 +318,12 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' ###### Run the calibration
 #' mdfit2 <- calibrate(md2,pr,opt.estim)
 #' ####### The plot generated is a list of ggplot
-#' p <- plot(mdfit,select.X=X[,1])
-#' print(mdfit)
-#'
+#' p <- plot(mdfit2,select.X=X[,1])
+#' print(mdfit2)
+#' ####### Run cross validataion only (the plot function is disabled)
+#' opt.valid <- list(type.valid='loo',nCV=10)
+#' mdfitCV2 <- calibrate(md2,pr,opt.estim,opt.valid,onlyCV=TRUE)
+#' print(mdfitCV2)
 #'
 #'
 #' ### For the third model
