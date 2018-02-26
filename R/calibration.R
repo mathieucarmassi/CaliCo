@@ -69,6 +69,7 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                                }
                                if (is.null(self$opt.valid)==FALSE)
                                {
+                                 self$CV(1)
                                  cat(paste("\nThe cross validation is currently running on your ",
                                              self$n.cores," cores available....\n",sep=""))
                                  Results <- as.numeric(unlist(mclapply(c(1:opt.valid$nCV),

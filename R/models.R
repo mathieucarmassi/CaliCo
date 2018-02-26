@@ -113,29 +113,29 @@ model1.class <- R6::R6Class(classname = "model1.class",
                         {
                           super$initialize(code, X, Yexp, model)
                         },
-                        fun = function(theta,sig2)
+                        fun = function(theta,var)
                         {
-                          y  <- self$code(self$X,theta)+rnorm(self$n,0,sqrt(sig2))
+                          y  <- self$code(self$X,theta)+rnorm(self$n,0,sqrt(var))
                           yc <- self$code(self$X,theta)
                           if (is.na(mean(yc)))
                           {stop('Wrong number of parameter in the function')}
                           return(list(y=y, yc=yc))
                         },
-                        pred = function(theta,sig2,x.new)
+                        pred = function(theta,var,x.new)
                         {
                           if (is.matrix(x.new)){l <- nrow(x.new)} else{l <- length(x.new)}
-                          y  <- self$code(x.new,theta)+rnorm(l,0,sqrt(sig2))
+                          y  <- self$code(x.new,theta)+rnorm(l,0,sqrt(var))
                           yc <- self$code(x.new,theta)
                           if (is.na(mean(yc)))
                           {stop('Wrong number of parameter in the function')}
                           return(list(y=y, yc=yc))
                         },
-                        likelihood = function(theta,sig2)
+                        likelihood = function(theta,var)
                         {
                           self$m.exp = self$code(self$X,theta)
                           if (is.na(mean(self$m.exp)))
                           {stop('Wrong number of parameter in the function')}
-                          self$V.exp = sig2*diag(self$n)
+                          self$V.exp = var*diag(self$n)
                           return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                         }
                         )
@@ -143,11 +143,11 @@ model1.class <- R6::R6Class(classname = "model1.class",
 
 
 model1.class$set("public","plot",
-                 function(theta,sig,select.X=NULL)
+                 function(theta,var,select.X=NULL)
                  {
                    if(is.null(dim(self$X))==FALSE & is.null(select.X))
                    {stop('Graphic representation is not available in dimension >1')}
-                   res <- self$fun(theta,sig)
+                   res <- self$fun(theta,var)
                    Xplot <- self$X
                    if(is.null(select.X)==FALSE){Xplot <- select.X}
                    binf = min(Xplot)
@@ -206,9 +206,9 @@ model3.class <- R6::R6Class(classname = "model3.class",
                             self$funTemp  <- super$fun
                             self$predTemp <- super$pred
                           },
-                          discrepancy = function(theta,thetaD,sig2,X=self$X)
+                          discrepancy = function(theta,thetaD,var,X=self$X)
                           {
-                            y   <- self$funTemp(theta,sig2)$y
+                            y   <- self$funTemp(theta,var)$y
                             z   <- self$Yexp - y
                             Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
                             if (is.null(dim(X)) && length(X)==1)
@@ -221,13 +221,25 @@ model3.class <- R6::R6Class(classname = "model3.class",
                                 e[which(e<0)] <- 1e-4
                               }
                               d <- diag(e)
-                              Cov <- t(p)%*%d%*%p
+                              if (nrow(p) == 1 & ncol(p) == 1)
+                              {
+                                Cov <- as.numeric(p)^2*d
+                              } else
+                              {
+                                Cov <- t(p)%*%d%*%p
+                              }
                             }
                             if (is.null(dim(X))){long <- length(X)}else{
                               long <- dim(X)[1]}
                             if (long==1)
                             {
-                              biais <- rnorm(n=self$n,0,sqrt(Cov))
+                              if (nrow(p) == 1 & ncol(p) == 1)
+                              {
+                                biais <- rnorm(1,0,sqrt(Cov))
+                              } else
+                              {
+                                biais <- rnorm(n=self$n,0,sqrt(Cov))
+                              }
                             } else
                             {
                               biais <- mvrnorm(n=self$n,rep(0,long),Cov)
@@ -235,18 +247,18 @@ model3.class <- R6::R6Class(classname = "model3.class",
                             }
                             return(list(biais=biais,cov=Cov))
                           },
-                          fun = function(theta,thetaD,sig2,X=self$X)
+                          fun = function(theta,thetaD,var,X=self$X)
                           {
-                            self$disc <- self$discrepancy(theta,thetaD,sig2,X)
-                            foo <- self$funTemp(theta,sig2)
+                            self$disc <- self$discrepancy(theta,thetaD,var,X)
+                            foo <- self$funTemp(theta,var)
                             y <- foo$y
                             yc  <- foo$yc
                             return(list(y=self$disc$biais+y,cov=self$disc$cov,yc=yc))
                           },
-                          pred = function(theta,thetaD,sig2,x.new)
+                          pred = function(theta,thetaD,var,x.new)
                           {
-                            self$disc <- self$discrepancy(theta,thetaD,sig2,x.new)
-                            foo <- self$predTemp(theta,sig2,x.new)
+                            self$disc <- self$discrepancy(theta,thetaD,var,x.new)
+                            foo <- self$predTemp(theta,var,x.new)
                             y <- foo$y
                             yc  <- foo$yc
                             return(list(y=self$disc$biais+y,cov=self$disc$cov,yc=yc))
@@ -256,11 +268,11 @@ model3.class <- R6::R6Class(classname = "model3.class",
 
 
 model3.class$set("public","plot",
-                 function(theta,thetaD,sig,select.X=NULL)
+                 function(theta,thetaD,var,select.X=NULL)
                  {
                    if(is.null(dim(self$X))==FALSE & is.null(select.X))
                    {stop('Graphic representation is not available in dimension >1')}
-                   res <- self$fun(theta,thetaD,sig)
+                   res <- self$fun(theta,thetaD,var)
                    Xplot <- self$X
                    if(is.null(select.X)==FALSE){Xplot <- select.X}
                    binf <- min(Xplot)
@@ -304,11 +316,11 @@ model3.class$set("public","print",
 
 
 model3.class$set("public","likelihood",
-                 function(theta,thetaD,sig2)
+                 function(theta,thetaD,var)
                  {
                    self$m.exp <- self$code(self$X,theta)
-                   temp <- self$fun(theta,thetaD,sig2)
-                   self$V.exp <- sig2*diag(self$n) + temp$cov
+                   temp <- self$fun(theta,thetaD,var)
+                   self$V.exp <- var*diag(self$n) + temp$cov
                    # return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                    #                                              invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
                    return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
@@ -412,7 +424,7 @@ model2.class <- R6::R6Class(classname = "model2.class",
                             return(list(GP=GP,doe=D))
                           }
                         },
-                        fun = function(theta,sig2)
+                        fun = function(theta,var)
                         {
                           if(self$p==1)
                           {
@@ -426,10 +438,10 @@ model2.class <- R6::R6Class(classname = "model2.class",
                           names(Xnew) <- c("DOE","doeParam")
                           pr <- predict(self$GP,newdata=as.data.frame(Xnew),type="UK",
                                         cov.compute=TRUE,interval="confidence",checkNames=FALSE)
-                          err <- rnorm(n=self$n,mean = 0,sd=sqrt(sig2))
+                          err <- rnorm(n=self$n,mean = 0,sd=sqrt(var))
                           return(list(y=pr$mean+err,Cov.GP=pr$cov,yc=pr$mean,lower=pr$lower95,upper=pr$upper95))
                         },
-                        pred = function(theta,sig2,x.new)
+                        pred = function(theta,var,x.new)
                         {
                           if (is.matrix(x.new)){l <- nrow(x.new)} else{l <- length(x.new)}
                           if(self$p==1)
@@ -441,23 +453,29 @@ model2.class <- R6::R6Class(classname = "model2.class",
                             Xnew  <- cbind(x.new,Xtemp)
                           }
                           Xnew <- as.data.frame(Xnew)
-                          names(Xnew) <- c("DOE","doeParam")
+                          #names(Xnew) <- c("DOE","doeParam")
                           pr <- predict(self$GP,newdata=as.data.frame(Xnew),type="UK",
                                         cov.compute=TRUE,interval="confidence",checkNames=FALSE)
-                          err <- rnorm(n=self$n,mean = 0,sd=sqrt(sig2))
+                          if (length(pr$mean) == 1)
+                          {
+                            err <- rnorm(n=1,mean = 0,sd=sqrt(var))
+                          } else
+                          {
+                            err <- rnorm(n=self$n,mean = 0,sd=sqrt(var))
+                          }
                           return(list(y=pr$mean+err,Cov.GP=pr$cov,yc=pr$mean,lower=pr$lower95,upper=pr$upper95))
                         })
                         )
 
 
 model2.class$set("public","likelihood",
-                 function(theta,sig2)
+                 function(theta,var)
                  {
-                   temp <- self$fun(theta,sig2)
+                   temp <- self$fun(theta,var)
                    self$m.exp <- temp$yc
                    if (length(theta)!=self$p)
                    {stop('You have given the wrong number of parameter')}
-                   self$V.exp <- sig2*diag(self$n) + temp$Cov.GP
+                   self$V.exp <- var*diag(self$n) + temp$Cov.GP
                    # return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                    #                                                invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
                    return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
@@ -465,13 +483,13 @@ model2.class$set("public","likelihood",
 
 
 model2.class$set("public","plot",
-                 function(theta,sig,points=FALSE,select.X=NULL)
+                 function(theta,var,points=FALSE,select.X=NULL)
                  {
                    if (length(theta)!=self$p)
                    {stop('You have given the wrong number of parameter')}
                    if(self$d>1 & is.null(select.X))
                    {stop('Graphic representation is not available in dimension >1')}
-                   res <- self$fun(theta,sig)
+                   res <- self$fun(theta,var)
                    Xplot <- self$X
                    if(is.null(select.X)==FALSE){
                      Xplot <- select.X
@@ -533,19 +551,26 @@ model4.class <- R6::R6Class(classname = "model4.class",
                         inherit = model2.class,
                         public=list(
                           funC = NULL,
+                          predTemp = NULL,
                           disc = NULL,
                           initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA,
                                               opt.disc=list(kernel.type=NULL))
                           {
                             super$initialize(code, X, Yexp, model, opt.emul)
-                            self$funC <- super$fun
+                            self$opt.disc  <- list(kernel.type=opt.disc$kernel.type)
+                            if (is.null(self$opt.disc$kernel.type)==TRUE)
+                            {
+                              self$opt.disc$kernel.type="gauss"
+                            }
+                            self$funC     <- super$fun
+                            self$predTemp <- super$pred
                           },
-                          discrepancy = function(theta,thetaD,sig2,X=self$X)
+                          discrepancy = function(theta,thetaD,var,X=self$X)
                           {
-                            y   <- self$funC(theta,sig2)$y
+                            y   <- self$funC(theta,var)$y
                             z   <- self$Yexp - y
                             Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
-                            if (nrow(X)==1 || is.null(dim(X)))
+                            if (is.null(dim(X)) && length(X)==1)
                             {} else
                             {
                               p <- eigen(Cov)$vectors
@@ -555,12 +580,25 @@ model4.class <- R6::R6Class(classname = "model4.class",
                                 e[which(e<0)] <- 1e-4
                               }
                               d <- diag(e)
-                              Cov <- t(p)%*%d%*%p
+                              if (nrow(p) == 1 & ncol(p) == 1)
+                              {
+                                Cov <- as.numeric(p)^2*d
+                              } else
+                              {
+                                Cov <- t(p)%*%d%*%p
+                              }
                             }
-                            if (is.null(dim(X))){long <- 1}else{long <- dim(X)[1]}
+                            if (is.null(dim(X))){long <- length(X)}else{
+                              long <- dim(X)[1]}
                             if (long==1)
                             {
-                              biais <- rnorm(n=self$n,0,sqrt(Cov))
+                              if (nrow(p) == 1 & ncol(p) == 1)
+                              {
+                                biais <- rnorm(1,0,sqrt(Cov))
+                              } else
+                              {
+                                biais <- rnorm(n=self$n,0,sqrt(Cov))
+                              }
                             } else
                             {
                               biais <- mvrnorm(n=self$n,rep(0,long),Cov)
@@ -568,18 +606,18 @@ model4.class <- R6::R6Class(classname = "model4.class",
                             }
                             return(list(biais=biais,cov=Cov))
                           },
-                          pred = function(theta,thetaD,sig2,x.new)
+                          pred = function(theta,thetaD,var,x.new)
                           {
-                            self$disc <- self$discrepancy(theta,thetaD,sig2,x.new)
-                            foo <- self$predTemp(theta,sig2,x.new)
+                            self$disc <- self$discrepancy(theta,thetaD,var,x.new)
+                            foo <- self$predTemp(theta,var,x.new)
                             y <- foo$y
                             yc  <- foo$yc
                             return(list(y=self$disc$biais+y,cov=self$disc$cov,yc=yc))
                           },
-                          fun = function(theta,thetaD,sig2,X=self$X)
+                          fun = function(theta,thetaD,var,X=self$X)
                           {
-                            foo <- self$funC(theta,sig2)
-                            self$disc <- self$discrepancy(theta,thetaD,sig2,X)
+                            foo <- self$funC(theta,var)
+                            self$disc <- self$discrepancy(theta,thetaD,var,X)
                             y <- foo$y
                             Cov.GP <- foo$Cov.GP
                             yc <- foo$yc
@@ -592,11 +630,11 @@ model4.class <- R6::R6Class(classname = "model4.class",
 
 
 model4.class$set("public","likelihood",
-                 function(theta,thetaD,sig2)
+                 function(theta,thetaD,var)
                  {
-                   temp <- self$fun(theta,thetaD,sig2)
+                   temp <- self$fun(theta,thetaD,var)
                    self$m.exp <- temp$yc
-                   self$V.exp <- sig2*diag(self$n) + temp$Cov.GP +temp$Cov.D
+                   self$V.exp <- var*diag(self$n) + temp$Cov.GP +temp$Cov.D
                    # return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                    #                                                invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
                    return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
@@ -605,7 +643,7 @@ model4.class$set("public","likelihood",
 
 
 model4.class$set("public","plot",
-                 function(theta,thetaD,sig,points=FALSE,select.X=NULL)
+                 function(theta,thetaD,var,points=FALSE,select.X=NULL)
                  {
                    if (length(theta)!=self$p)
                    {stop('You have given the wrong number of parameter')}
@@ -613,9 +651,9 @@ model4.class$set("public","plot",
                    {stop('Graphic representation is not available in dimension >1')}
                    if(is.null(select.X))
                    {
-                     res <- self$fun(theta,thetaD,sig,self$X)
+                     res <- self$fun(theta,thetaD,var,self$X)
                    } else{
-                     res <- self$fun(theta,thetaD,sig,select.X)
+                     res <- self$fun(theta,thetaD,var,select.X)
                      }
                    Xplot <- self$X
                    if(is.null(select.X)==FALSE){Xplot <- select.X}
@@ -664,9 +702,9 @@ model4.class$set("public","print",
                    print(self$GP)
                    cat("\n")
                    cat("A discrepancy is added:\n")
-                   cat(paste("Mean of the biais:",round(mean(self$disc$biais),5),"\n",sep=" "))
-                   cat(paste("Covariance of the biais:",round(mean(self$disc$cov),3),"\n",sep=" "))
-                   cat("Kernel chossen: Gaussian")
+                   # cat(paste("Mean of the biais:",round(mean(self$disc$biais),5),"\n",sep=" "))
+                   # cat(paste("Covariance of the biais:",round(mean(self$disc$cov),5),"\n",sep=" "))
+                   cat("Chosen kernel:", self$opt.disc$kernel.type)
                  }
 )
 
