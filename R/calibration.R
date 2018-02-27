@@ -418,6 +418,7 @@ calibrate.class$set("public","print",
                     {
                       cat("Call:\n\nWith the function:\n")
                       print(self$md$code)
+                      cat("\nSelected model :",self$md$model,"\n")
                       if (self$onlyCV==TRUE)
                       {
                         cat("\nCross validation:\n Method:",self$opt.valid$type.valid,"\n")

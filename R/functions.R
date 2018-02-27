@@ -182,24 +182,24 @@ prior <- function(type.prior,opt.prior,log=TRUE)
   n <- length(type.prior)
   if (n == 1)
   {
-  switch(type.prior,
-         gaussian = {
-           obj = gaussian.class$new(type.prior,opt.prior,log)
-           return(obj)
-         },
-         gamma={
-           obj = gamma.class$new(type.prior,opt.prior,log)
-           return(obj)
-         },
-         invGamma={
-           obj = invGamma.class$new(type.prior,opt.prior,log)
-           return(obj)
-         },
-         unif={
-           obj = unif.class$new(type.prior,opt.prior,log)
-           return(obj)
-         }
-  )
+    switch(type.prior,
+           gaussian = {
+             obj = gaussian.class$new(type.prior,opt.prior,log)
+             return(obj)
+           },
+           gamma={
+             obj = gamma.class$new(type.prior,opt.prior,log)
+             return(obj)
+           },
+           invGamma={
+             obj = invGamma.class$new(type.prior,opt.prior,log)
+             return(obj)
+           },
+           unif={
+             obj = unif.class$new(type.prior,opt.prior,log)
+             return(obj)
+           }
+    )
   } else
   {
     NAmes <- c("Prior1")
@@ -402,14 +402,8 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' ###### Prediction between 1 and 1.2
 #' X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
 #' pr <- prediction(mdfit,X.new)
-#'
-#' ####### Run regular calibration plus cross validation (the plot function is available)
-#' opt.valid <- list(type.valid='loo',nCV=10)
-#' mdfitCV <- calibrate(md,pr,opt.estim,opt.valid)
-#' print(mdfitCV)
-#' ####### Run cross validataion only (the plot function is disabled)
-#' mdfitCV2 <- calibrate(md,pr,opt.estim,opt.valid,onlyCV=TRUE)
-#' print(mdfitCV2)
+#' print(pr)
+#' plot(pr,select.X=X[,1])
 #'
 #'
 #' ############### For the second model
@@ -427,13 +421,11 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' sig=diag(4),Nchains=1,burnIn=3000)
 #' ###### Run the calibration
 #' mdfit2 <- calibrate(md2,pr,opt.estim)
-#' ####### The plot generated is a list of ggplot
-#' p <- plot(mdfit2,select.X=X[,1])
-#' print(mdfit2)
-#' ####### Run cross validataion only (the plot function is disabled)
-#' opt.valid <- list(type.valid='loo',nCV=10)
-#' mdfitCV2 <- calibrate(md2,pr,opt.estim,opt.valid,onlyCV=TRUE)
-#' print(mdfitCV2)
+#' ###### Prediction between 1 and 1.2
+#' X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
+#' pr <- prediction(mdfit2,X.new)
+#' print(pr)
+#' plot(pr,select.X=X[,1])
 #'
 #'
 #' ############### For the third model
@@ -445,14 +437,11 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
 #' ###### Run the calibration
 #' mdfit3 <- calibrate(md3,pr,opt.estim)
-#' ####### The plot generated is a list of ggplot
-#' p <- plot(mdfit3,select.X=X[,1])
-#' print(mdfit3)
-#' ####### Run cross validataion only (the plot function is disabled)
-#' opt.valid <- list(type.valid='loo',nCV=10)
-#' mdfitCV <- calibrate(md3,pr,opt.estim,opt.valid,onlyCV=TRUE)
-#' print(mdfitCV)
-#'
+#' ###### Prediction between 1 and 1.2
+#' X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
+#' pr <- prediction(mdfit2,X.new)
+#' print(pr)
+#' plot(pr,select.X=X[,1])
 #'
 #' ############### For the fourth model
 #' binf <- c(0.9,0.9,10.5)
@@ -466,13 +455,11 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
 #' ###### Run the calibration
 #' mdfit4 <- calibrate(md4,pr,opt.estim)
-#' ####### The plot generated is a list of ggplot
-#' p <- plot(mdfit4,select.X=X[,1])
-#' print(mdfit4)
-#' ####### Run cross validataion only (the plot function is disabled)
-#' opt.valid <- list(type.valid='loo',nCV=10)
-#' mdfitCV <- calibrate(md4,pr,opt.estim,opt.valid,onlyCV=TRUE)
-#' print(mdfitCV)
+#' ###### Prediction between 1 and 1.2
+#' X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
+#' pr <- prediction(mdfit2,X.new)
+#' print(pr)
+#' plot(pr,select.X=X[,1])
 #'
 #' @export
 prediction <-function(modelfit,x.new)
@@ -625,15 +612,16 @@ unscale <- function(M,binf,bsup,diag=FALSE,sym=FALSE){
             }
           }
         }
-      }
+    }
     } else {
       # Pour les matrice symétriques en cours...
     }
-  } else {
-    temp<-unscale.matrix.diag(M,binf,bsup)
-  }
+    } else {
+      temp<-unscale.matrix.diag(M,binf,bsup)
+    }
   return(temp)
-}
+  }
+
 
 
 #' Function that deals with negative eigen values in a matrix not positive definite

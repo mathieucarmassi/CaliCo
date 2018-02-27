@@ -22,7 +22,7 @@ done
 The realized estimation is realized similarly as it is defined in [1]
 }
 \examples{
-### The code to calibrate
+###################### The code to calibrate
 X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
 code <- function(X,theta)
 {
@@ -30,58 +30,78 @@ code <- function(X,theta)
 }
 Yexp <- code(X,c(1,1,11))+rnorm(10,0,0.1)
 
+############### For the first model
+###### Definition of the model
+md <- model(code,X,Yexp,"model1")
+###### Definition of the prior densities
+pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
+list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
+###### Definition of the calibration options
+opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
+sig=diag(4),Nchains=1,burnIn=3000)
+###### Run the calibration
+mdfit <- calibrate(md,pr,opt.estim)
+###### Prediction between 1 and 1.2
+X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
+pr <- prediction(mdfit,X.new)
+print(pr)
+plot(pr,select.X=X[,1])
 
-# Definition of the different models
-md1 <- model(code,X,Yexp,"model1")
 
-### For the second model
+############### For the second model
+###### Definition of the model
+### The lower and upper bound vector for the parameter
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
-DOE <- DiceDesign::lhsDesign(10,5)$design
-DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
-DOE[,1:2] <- unscale(DOE[,1:2],c(0,0),c(1.5,1.5))
-opt.emul <- list(p=3,n.emul=10,type="matern5_2",binf=binf,bsup=bsup,DOE=DOE)
+opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 md2 <- model(code,X,Yexp,"model2",opt.emul)
-
-### For the third model
-md3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
-
-### For the fourth model
-md4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc=list(kernel.type="matern5_2"))
-
-### Definition of the priors
-pr1 <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
+###### Definition of the prior densities
+pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
+###### Definition of the calibration options
+opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
+sig=diag(4),Nchains=1,burnIn=3000)
+###### Run the calibration
+mdfit2 <- calibrate(md2,pr,opt.estim)
+###### Prediction between 1 and 1.2
+X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
+pr <- prediction(mdfit2,X.new)
+print(pr)
+plot(pr,select.X=X[,1])
 
-pr2 <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
+
+############### For the third model
+md3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
+###### Definition of the prior densities
+pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
+###### Definition of the calibration options
+opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
+###### Run the calibration
+mdfit3 <- calibrate(md3,pr,opt.estim)
+###### Prediction between 1 and 1.2
+X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
+pr <- prediction(mdfit2,X.new)
+print(pr)
+plot(pr,select.X=X[,1])
 
-### Calibration with estimation options
-opt.estim1=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,0.1),k=rep(5e-4,4),sig=diag(4),Nchains=1,burnIn=300)
-opt.estim2=list(Ngibbs=400,Nmh=600,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=300)
-
-### Calibration model1
-modelfit <- calibrate(md1,pr1,opt.estim1)
-
-###
-x.new <- cbind(seq(1,1.5,length.out=10),seq(1,1.5,length.out=10))
-emul <- prediction(modelfit,x.new)
-emul$plot(select.X=x.new[,1])
-
-
-modelfit2 <- calibrate(md2,pr1,opt.estim1)
-###Prediction
-x.new <- cbind(seq(1,1.5,length.out=10),seq(1,1.5,length.out=10))
-emul <- prediction(modelfit2,x.new)
-emul$plot(select.X=x.new[,1])
-
-### For the third model
-modelfit3 <- calibrate(md3,pr2,opt.estim2)
-### Prediction
-x.new <- cbind(seq(1,1.5,length.out=10),seq(1,1.5,length.out=10))
-emul <- prediction(modelfit3,x.new)
-emul$plot(select.X=x.new[,1])
-
+############### For the fourth model
+binf <- c(0.9,0.9,10.5)
+bsup <- c(1.1,1.1,11.5)
+opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+md4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc=list(kernel.type="matern5_2"))
+###### Definition of the prior densities
+pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
+list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
+###### Definition of the calibration options
+opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
+###### Run the calibration
+mdfit4 <- calibrate(md4,pr,opt.estim)
+###### Prediction between 1 and 1.2
+X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
+pr <- prediction(mdfit2,X.new)
+print(pr)
+plot(pr,select.X=X[,1])
 
 }
 \seealso{

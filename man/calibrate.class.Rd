@@ -34,7 +34,7 @@ during the estimation process.
 
 \item{\code{output}}{list of several chains and acceptation ratios}
 
-\item{\code{activateCV}}{activates only the cross validation}
+\item{\code{onlyCV}}{activates only the cross validation}
 
 \item{\code{errorCV}}{output of the CV errors}
 

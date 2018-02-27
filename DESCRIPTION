@@ -35,5 +35,6 @@ LinkingTo:
     RcppArmadillo,
     Matrix
 Suggests: knitr,
-    rmarkdown
+    rmarkdown,
+    testthat
 VignetteBuilder: knitr

@@ -4,7 +4,7 @@
 \alias{calibrate}
 \title{Generates \code{\link{calibrate.class}} objects}
 \usage{
-calibrate(md, pr, opt.estim, opt.valid = NULL, activateCV = FALSE)
+calibrate(md, pr, opt.estim, opt.valid = NULL, onlyCV = FALSE)
 }
 \arguments{
 \item{md}{a \code{\link{model.class}} object}
@@ -22,7 +22,7 @@ calibrate(md, pr, opt.estim, opt.valid = NULL, activateCV = FALSE)
 \item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method emplemented so far.}
 }}
 
-\item{activateCV}{if TRUE run the cross validation only (default activateCV=FALSE)}
+\item{onlyCV}{if TRUE run the cross validation only (default onlyCV=FALSE)}
 }
 \value{
 \code{calibrate} returns a \code{\link{calibrate.class}} object. Two main methods are available:
@@ -43,7 +43,7 @@ allows to choose one X for the x scale in the output plot}}
 done from a \code{\link{model.class}} and a \code{\link{prior.class}} objects.
 }
 \examples{
-### The code to calibrate
+###################### The code to calibrate
 X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
 code <- function(X,theta)
 {
@@ -51,65 +51,90 @@ code <- function(X,theta)
 }
 Yexp <- code(X,c(1,1,11))+rnorm(10,0,0.1)
 
-### For the first model
-md1 <- model(code,X,Yexp,"model1")
+############### For the first model
+###### Definition of the model
+md <- model(code,X,Yexp,"model1")
+###### Definition of the prior densities
+pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
+list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
+###### Definition of the calibration options
+opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
+sig=diag(4),Nchains=1,burnIn=3000)
+###### Run the calibration
+mdfit <- calibrate(md,pr,opt.estim)
+####### The plot generated is a list of ggplot
+p <- plot(mdfit,select.X=X[,1])
+print(mdfit)
+####### Run regular calibration plus cross validation (the plot function is available)
+opt.valid <- list(type.valid='loo',nCV=10)
+mdfitCV <- calibrate(md,pr,opt.estim,opt.valid)
+print(mdfitCV)
+####### Run cross validataion only (the plot function is disabled)
+mdfitCV2 <- calibrate(md,pr,opt.estim,opt.valid,onlyCV=TRUE)
+print(mdfitCV2)
 
-### For the second model
+
+############### For the second model
+###### Definition of the model
+### The lower and upper bound vector for the parameter
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
 opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 md2 <- model(code,X,Yexp,"model2",opt.emul)
-
-### For the third model
-md3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
-
-### For the fourth model
-md4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc=list(kernel.type="matern5_2"))
-
-### Definition of the priors
-pr1 <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
+###### Definition of the prior densities
+pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
+###### Definition of the calibration options
+opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
+sig=diag(4),Nchains=1,burnIn=3000)
+###### Run the calibration
+mdfit2 <- calibrate(md2,pr,opt.estim)
+####### The plot generated is a list of ggplot
+p <- plot(mdfit2,select.X=X[,1])
+print(mdfit2)
+####### Run cross validataion only (the plot function is disabled)
+opt.valid <- list(type.valid='loo',nCV=10)
+mdfitCV2 <- calibrate(md2,pr,opt.estim,opt.valid,onlyCV=TRUE)
+print(mdfitCV2)
 
-pr2 <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
+
+############### For the third model
+md3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
+###### Definition of the prior densities
+pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
+###### Definition of the calibration options
+opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
+###### Run the calibration
+mdfit3 <- calibrate(md3,pr,opt.estim)
+####### The plot generated is a list of ggplot
+p <- plot(mdfit3,select.X=X[,1])
+print(mdfit3)
+####### Run cross validataion only (the plot function is disabled)
+opt.valid <- list(type.valid='loo',nCV=10)
+mdfitCV <- calibrate(md3,pr,opt.estim,opt.valid,onlyCV=TRUE)
+print(mdfitCV)
 
-### Calibration with estimation options
-opt.estim1=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),sig=diag(4),Nchains=1,burnIn=3000)
-opt.estim2=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
 
-### Calibration model1
-modelfit <- calibrate(md1,pr1,opt.estim1)
-p <- modelfit$plot(select.X=X[,1])
-modelfit$print()
-# Calibration plus cross validation
-opt.valid <- list(type.valid='loo',nCV=4)
-modelfitCV <- calibrate(md1,pr1,opt.estim1,opt.valid)
-p <- modelfitCV$plot(select.X=X[,1])
-modelfitCV$print()
-# Cross validataion only
-modelfitCV2 <- calibrate(md1,pr1,opt.estim1,opt.valid,activateCV=TRUE)
-modelfitCV2$print()
-
-### Calibration model2
-modelfit2 <- calibrate(md2,pr1,opt.estim1)
-p <- modelfit2$plot(select.X=X[,1])
-opt.valid <- list(type.valid='loo',nCV=4)
-# Cross validataion only
-modelfitCV2 <- calibrate(md2,pr1,opt.estim1,opt.valid,activateCV=TRUE)
-p <- modelfit2$plot(select.X=X[,1])
-
-### Calibration model3
-modelfit3 <- calibrate(md3,pr2,opt.estim2)
-opt.valid <- list(type.valid='loo',nCV=4)
-# Cross validataion only
-modelfit3CV <- calibrate(md3,pr2,opt.estim2,opt.valid,activateCV=TRUE)
-p <- modelfit3$plot(select.X=X[,1])
-
-### Calibration model4
-modelfit4 <- calibrate(md4,pr2,opt.estim2)
-# Cross validataion only
-modelfit4CV <- calibrate(md4,pr2,opt.estim2,opt.valid,activateCV=TRUE)
-p <- modelfit4$plot(select.X=X[,1])
+############### For the fourth model
+binf <- c(0.9,0.9,10.5)
+bsup <- c(1.1,1.1,11.5)
+opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+md4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc=list(kernel.type="matern5_2"))
+###### Definition of the prior densities
+pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
+list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
+###### Definition of the calibration options
+opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
+###### Run the calibration
+mdfit4 <- calibrate(md4,pr,opt.estim)
+####### The plot generated is a list of ggplot
+p <- plot(mdfit4,select.X=X[,1])
+print(mdfit4)
+####### Run cross validataion only (the plot function is disabled)
+opt.valid <- list(type.valid='loo',nCV=10)
+mdfitCV <- calibrate(md4,pr,opt.estim,opt.valid,onlyCV=TRUE)
+print(mdfitCV)
 
 }
 \seealso{

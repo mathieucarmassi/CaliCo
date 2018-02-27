@@ -2,6 +2,8 @@
 
 export(DefPos)
 export(Kernel.class)
+export(MetropolisHastingsCpp)
+export(MetropolisHastingsCppD)
 export(calibrate)
 export(calibrate.class)
 export(kernel.fun)

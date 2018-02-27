@@ -9,7 +9,33 @@ using namespace Rcpp;
 using namespace std;
 using namespace arma;
 
-
+//' C++ implementation of the algorithm for parameter calibration (without discrepancy)
+//'
+//' Run a Metropolis Hastings within Gibbs algortithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
+//' the sample set generated in the Metropolis within Gibbs. This algorithm is suitable only for models without discrepancy.
+//'
+//' @param Ngibbs the number of iteration in the Metropolis within Gibbs
+//' @param Nmh the number of iteration in the Metropolis Hastings
+//' @param theta_init the starting point
+//' @param k the tuning vector of the step in the proposition distribution
+//' @param SIGMA the covaraince of the proposition distribution
+//' @param Yf the vector of recorded data
+//' @param binf the lower bound of the parameters to calibrate
+//' @param bsup the upper bound of the parameters to calibrate
+//' @param LogTest the log posterior density disbution
+//' @param stream (default=1) if stream=0 the progress bar is desabled
+//' @return list of outputs: \itemize{
+//' \item PHIwg the points of the Metropolis within Gibbs algorithm in the transformed space
+//' \item PHI the points of the Metropolis Hastings algorithm in the transformed space
+//' \item THETAwg the points of the Metropolis within Gibbs algorithm in the real space
+//' \item THETA the points of the Metropolis Hastings algorithm in the real space
+//' \item AcceptationRatioWg the vector of the acceptance ratio for each parameter in the Metropolis within Gibbs
+//' \item AcceptationRatio the acceptance ratio in the Metropolis Hastings
+//' \item S the covariance computed after the Metropolis within Gibbs
+//' \item LikeliWG the likelihood computed at each iteration of the Metropolis within Gibbs algorithm
+//' \item Likeli the likelihood computed at each iteration of the Metropolis Hastings algorithm
+//'  }
+//' @export
 // [[Rcpp::export]]
 List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,
                            arma::vec binf, arma::vec bsup, Function LogTest, int stream)
@@ -215,6 +241,34 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   return 0;
 }
 
+
+//' C++ implementation of the algorithm for parameter calibration (with discrepancy)
+//'
+//' Run a Metropolis Hastings within Gibbs algortithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
+//' the sample set generated in the Metropolis within Gibbs. This algorithm is suitable only for models with discrepancy.
+//'
+//' @param Ngibbs the number of iteration in the Metropolis within Gibbs
+//' @param Nmh the number of iteration in the Metropolis Hastings
+//' @param theta_init the starting point
+//' @param k the tuning vector of the step in the proposition distribution
+//' @param SIGMA the covaraince of the proposition distribution
+//' @param Yf the vector of recorded data
+//' @param binf the lower bound of the parameters to calibrate
+//' @param bsup the upper bound of the parameters to calibrate
+//' @param LogTest the log posterior density disbution
+//' @param stream (default=1) if stream=0 the progress bar is desabled
+//' @return list of outputs: \itemize{
+//' \item PHIwg the points of the Metropolis within Gibbs algorithm in the transformed space
+//' \item PHI the points of the Metropolis Hastings algorithm in the transformed space
+//' \item THETAwg the points of the Metropolis within Gibbs algorithm in the real space
+//' \item THETA the points of the Metropolis Hastings algorithm in the real space
+//' \item AcceptationRatioWg the vector of the acceptance ratio for each parameter in the Metropolis within Gibbs
+//' \item AcceptationRatio the acceptance ratio in the Metropolis Hastings
+//' \item S the covariance computed after the Metropolis within Gibbs
+//' \item LikeliWG the likelihood computed at each iteration of the Metropolis within Gibbs algorithm
+//' \item Likeli the likelihood computed at each iteration of the Metropolis Hastings algorithm
+//'  }
+//' @export
 // [[Rcpp::export]]
 List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,
                            arma::vec binf, arma::vec bsup, Function LogTest, int stream)
