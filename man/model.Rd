@@ -35,10 +35,10 @@ generated as a maximin LHS}}
 \value{
 \code{model} returns a \code{model.class} object. This class contains two main methods:
 \itemize{
-\item{$plot(\eqn{\Theta},\eqn{\sigma^2}, points=FALSE)}{ this metod generates the plot for a new
+\item{plot(mdfit,\eqn{\Theta},var, points=FALSE)}{ this metod generates the plot for a new
 \eqn{\Theta}, \eqn{\sigma^2} and a new set of data. The option points allows to vizualize the points from
 the Design Of Experiments (DOE) used for establishing the surrogate.}
-\item{$print()}{ this method presents the main information about the model.}
+\item{print()}{ this method presents the main information about the model.}
 }
 }
 \description{

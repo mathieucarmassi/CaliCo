@@ -224,24 +224,24 @@ calibrate.class$set("private","MAPestimator",
                       {
                         chain <- out$THETA[-c(1:self$opt.estim$burnIn),]
                         dens <- apply(chain,2,density)
-                        if (chain[nrow(chain),1]==chain[1,1] & chain[nrow(chain),2]==chain[1,2])
-                        {
-                          cat("\n")
-                          cat("Call:\n")
-                          print(self$md$model)
-                          cat("\n")
-                          cat("With the function:\n")
-                          print(self$md$code)
-                          cat("\n")
-                          cat("Acceptation rate of the Metropolis within Gibbs algorithm:\n")
-                          print(paste(round(out$AcceptationRatioWg/self$opt.estim$Ngibbs*100,2),
-                                      "%",sep = ""))
-                          cat("\n")
-                          cat("Acceptation rate of the Metropolis Hastings algorithm:\n")
-                          print(paste(out$AcceptationRatio/self$opt.estim$Nmh*100,"%",sep = ""))
-                          cat("\n")
-                          stop('the MCMC chain did not move, please try to launch again with different values of k')
-                        }
+                        # if (chain[nrow(chain),1]==chain[1,1] & chain[nrow(chain),2]==chain[1,2])
+                        # {
+                        #   cat("\n")
+                        #   cat("Call:\n")
+                        #   print(self$md$model)
+                        #   cat("\n")
+                        #   cat("With the function:\n")
+                        #   print(self$md$code)
+                        #   cat("\n")
+                        #   cat("Acceptation rate of the Metropolis within Gibbs algorithm:\n")
+                        #   print(paste(round(out$AcceptationRatioWg/self$opt.estim$Ngibbs*100,2),
+                        #               "%",sep = ""))
+                        #   cat("\n")
+                        #   cat("Acceptation rate of the Metropolis Hastings algorithm:\n")
+                        #   print(paste(out$AcceptationRatio/self$opt.estim$Nmh*100,"%",sep = ""))
+                        #   cat("\n")
+                        #   stop('the MCMC chain did not move, please try to launch again with different values of k')
+                        # }
                         map <- function(dens)
                         {
                           dens$x[which(dens$y==max(dens$y))]

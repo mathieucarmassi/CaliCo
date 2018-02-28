@@ -16,8 +16,8 @@ Gaussian, the hyperparameters would be the mean and the standard deviation. See 
 }
 \value{
 \code{prior} returns a \code{\link{prior.class}} object. Two main methods are available:
-\itemize{\item{$plot()}{ display the probability density of the prior}
-\item{$print()}{ return the main information concerning the prior distribution}}
+\itemize{\item{plot()}{ display the probability density of the prior}
+\item{print()}{ return the main information concerning the prior distribution}}
 }
 \description{
 \code{prior} is a function that generates a \code{\link{prior.class}} containing information about one or

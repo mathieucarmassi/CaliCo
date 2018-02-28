@@ -36,10 +36,10 @@
 #' }
 #' @return \code{model} returns a \code{model.class} object. This class contains two main methods:
 #' \itemize{
-#' \item{$plot(\eqn{\Theta},\eqn{\sigma^2}, points=FALSE)}{ this metod generates the plot for a new
+#' \item{plot(mdfit,\eqn{\Theta},var, points=FALSE)}{ this metod generates the plot for a new
 #' \eqn{\Theta}, \eqn{\sigma^2} and a new set of data. The option points allows to vizualize the points from
 #' the Design Of Experiments (DOE) used for establishing the surrogate.}
-#' \item{$print()}{ this method presents the main information about the model.}
+#' \item{print()}{ this method presents the main information about the model.}
 #' }
 #' @author M. Carmassi
 #' @seealso \code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
@@ -147,14 +147,13 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
 #' }
 #'
 #' @import ggplot2
-#' @import gridExtra
 #' @param  type.prior the vector of the prior types selected. For example type.prior=c("gaussian","beta")
 #' @param opt.prior list of the hyperparameters relatives to the prior selected. If the first prior selected is
 #' Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.
 #' @param log (default=TRUE) if the log value is wanted or not.
 #' @return \code{prior} returns a \code{\link{prior.class}} object. Two main methods are available:
-#' \itemize{\item{$plot()}{ display the probability density of the prior}
-#' \item{$print()}{ return the main information concerning the prior distribution}}
+#' \itemize{\item{plot()}{ display the probability density of the prior}
+#' \item{print()}{ return the main information concerning the prior distribution}}
 #' @author M. Carmassi
 #' @seealso \code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 #' @examples
@@ -250,8 +249,9 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' \item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method emplemented so far.}
 #' }
 #' @return \code{calibrate} returns a \code{\link{calibrate.class}} object. Two main methods are available:
-#' \itemize{\item{$plot()}{ display the probability density of the prior with different options:}
+#' \itemize{\item{plot()}{ display the probability density of the prior with different options:}
 #' \itemize{
+#' \item {mdfit}{The calibrated model (a \code{\link{calibrate.class}} object)}
 #' \item {graph}{ The vector of the graph wanted. By default all the graph are displayed and graph=c("acf","chains","densities","output").
 #' "acf" displays the correlation graph of the MCMC chains, "chains" plot the chains, "densities" shows the comparison of the
 #' densities a priori and a posteriori, and "output" displays the output of the code with the calibrated one and its credibility
@@ -260,7 +260,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' \item {CI}{ Allows to add the posterior credibility interval to the output plot. By default CI=TRUE}
 #' \item {select.X}{ When the number of X is >1, this option has to be activated to display the output plot. select.X
 #' allows to choose one X for the x scale in the output plot}}
-#' \item{$print()}{ return the main information concerning the estim.class object}}
+#' \item{print()}{ return the main information concerning the estim.class object}}
 #' @author M. Carmassi
 #' @seealso \code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 #' @examples

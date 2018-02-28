@@ -26,8 +26,9 @@ calibrate(md, pr, opt.estim, opt.valid = NULL, onlyCV = FALSE)
 }
 \value{
 \code{calibrate} returns a \code{\link{calibrate.class}} object. Two main methods are available:
-\itemize{\item{$plot()}{ display the probability density of the prior with different options:}
+\itemize{\item{plot()}{ display the probability density of the prior with different options:}
 \itemize{
+\item {mdfit}{The calibrated model (a \code{\link{calibrate.class}} object)}
 \item {graph}{ The vector of the graph wanted. By default all the graph are displayed and graph=c("acf","chains","densities","output").
 "acf" displays the correlation graph of the MCMC chains, "chains" plot the chains, "densities" shows the comparison of the
 densities a priori and a posteriori, and "output" displays the output of the code with the calibrated one and its credibility
@@ -36,7 +37,7 @@ interval (if CI=TRUE).}
 \item {CI}{ Allows to add the posterior credibility interval to the output plot. By default CI=TRUE}
 \item {select.X}{ When the number of X is >1, this option has to be activated to display the output plot. select.X
 allows to choose one X for the x scale in the output plot}}
-\item{$print()}{ return the main information concerning the estim.class object}}
+\item{print()}{ return the main information concerning the estim.class object}}
 }
 \description{
 \code{calibration} is a function that allows us to generate a \code{\link{calibrate.class}} class in which the estimation is
