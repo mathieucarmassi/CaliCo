@@ -322,7 +322,7 @@ If we get back to our initial value we can plot on the same graph, the initial b
 Yt <- code(X,11)
 gdata <- data.frame(y=Yt,x=X,type="Theoretical results")
 
-t[[4]]+geom_line(aes(x,y,colour=type), gdata)+ggtitle("Results for Model1")+xlab("x")+ylab("y")+theme(legend.position="right",legend.text=element_text(size = '7'))
+plot(mdfit1)[[4]]+geom_line(aes(x,y,colour=type), gdata)+ggtitle("Results for Model1")+xlab("x")+ylab("y")+theme(legend.position="right",legend.text=element_text(size = '7'))
 ```
 
 The same results are available for $\mathcal{M}_2$ which is not using the real code but the Gaussian process instead:
