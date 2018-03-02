@@ -7,10 +7,10 @@
 DefPos(X)
 }
 \arguments{
-\item{M}{the matrix or the vector}
+\item{X}{the matrix or the vector}
 }
 \value{
-the new matrix M
+the new matrix X
 }
 \description{
 Function that deals with negative eigen values in a matrix not positive definite

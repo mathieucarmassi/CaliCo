@@ -33,7 +33,7 @@ Cov <- kernel.fun(X,var,psi,kernel.type="matern5_2")
 
 }
 \seealso{
-\code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{esim.class}}
+\code{\link{model.class}}, \code{\link{prior.class}}
 }
 \author{
 M. Carmassi

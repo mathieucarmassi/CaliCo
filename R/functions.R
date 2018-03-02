@@ -2,7 +2,7 @@
 #'
 #' \code{model} is a function that generates a calibration model and the associated likelihood.
 #'
-#'
+#' @import ggplot2
 #' @details The different statistical models are: \itemize{\item{Model1:
 #' \deqn{for i in [1,...,n]  Yexp_i=f(x_i,\Theta)+\epsilon(x_i)}}
 #' \item{Model2:
@@ -146,7 +146,6 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
 #' are the two hyperparameters. The vector \eqn{c(a,b)} is the one looked for in opt.prior.}
 #' }
 #'
-#' @import ggplot2
 #' @param  type.prior the vector of the prior types selected. For example type.prior=c("gaussian","beta")
 #' @param opt.prior list of the hyperparameters relatives to the prior selected. If the first prior selected is
 #' Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.
@@ -234,7 +233,6 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' done from a \code{\link{model.class}} and a \code{\link{prior.class}} objects.
 #'
 #' @useDynLib CaliCo
-#' @importFrom Rcpp evalCpp
 #'
 #' @param md a \code{\link{model.class}} object
 #' @param pr a \code{\link{prior.class}} object
@@ -313,10 +311,6 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' ####### The plot generated is a list of ggplot
 #' p <- plot(mdfit2,select.X=X[,1])
 #' print(mdfit2)
-#' ####### Run cross validataion only (the plot function is disabled)
-#' opt.valid <- list(type.valid='loo',nCV=10)
-#' mdfitCV2 <- calibrate(md2,pr,opt.estim,opt.valid,onlyCV=TRUE)
-#' print(mdfitCV2)
 #'
 #'
 #' ############### For the third model
@@ -325,16 +319,13 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 #' ###### Definition of the calibration options
-#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
+#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),
+#' k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
 #' ###### Run the calibration
 #' mdfit3 <- calibrate(md3,pr,opt.estim)
 #' ####### The plot generated is a list of ggplot
 #' p <- plot(mdfit3,select.X=X[,1])
 #' print(mdfit3)
-#' ####### Run cross validataion only (the plot function is disabled)
-#' opt.valid <- list(type.valid='loo',nCV=10)
-#' mdfitCV <- calibrate(md3,pr,opt.estim,opt.valid,onlyCV=TRUE)
-#' print(mdfitCV)
 #'
 #'
 #' ############### For the fourth model
@@ -346,16 +337,13 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 #' ###### Definition of the calibration options
-#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
+#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),
+#' k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
 #' ###### Run the calibration
 #' mdfit4 <- calibrate(md4,pr,opt.estim)
 #' ####### The plot generated is a list of ggplot
 #' p <- plot(mdfit4,select.X=X[,1])
 #' print(mdfit4)
-#' ####### Run cross validataion only (the plot function is disabled)
-#' opt.valid <- list(type.valid='loo',nCV=10)
-#' mdfitCV <- calibrate(md4,pr,opt.estim,opt.valid,onlyCV=TRUE)
-#' print(mdfitCV)
 #'
 #' @export
 calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
@@ -365,20 +353,20 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 }
 
 
-#' Generates \code{\link{predict.class}} objects
+#' Generates \code{\link{prediction.class}} objects
 #'
-#' \code{predict} is a function that allows us to generate a class in which the estimation is
+#' \code{prediction} is a function that allows us to generate a class in which the estimation is
 #' done
 #'
 #' The realized estimation is realized similarly as it is defined in [1]
 #'
 #' @useDynLib CaliCo
 #'
-#' @param modelfit a \code{\link{estim.class}} object
-#' @param newdata newdata for the prediction
-#' @return return a \code{\link{predict.class}} object with two main methods
+#' @param modelfit a \code{\link{calibrate.class}} object
+#' @param x.new newdata for the prediction
+#' @return return a \code{\link{prediction.class}} object with two main methods
 #' @author M. Carmassi
-#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{esim.class}}
+#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}
 #' @examples
 #' ###################### The code to calibrate
 #' X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
@@ -434,7 +422,8 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 #' ###### Definition of the calibration options
-#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
+#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),
+#' k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
 #' ###### Run the calibration
 #' mdfit3 <- calibrate(md3,pr,opt.estim)
 #' ###### Prediction between 1 and 1.2
@@ -452,7 +441,8 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 #' ###### Definition of the calibration options
-#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
+#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),
+#' k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
 #' ###### Run the calibration
 #' mdfit4 <- calibrate(md4,pr,opt.estim)
 #' ###### Prediction between 1 and 1.2
@@ -483,7 +473,7 @@ prediction <-function(modelfit,x.new)
 #' \item{matern5_2}{ \deqn{\sigma^2(1+\sqrt{5}d^2/\psi+5d^2/(3\psi^2))exp{-\sqrt{5}d^2/\psi}}}}
 #' @return \code{Kernel.fun} returns a covariance matrix
 #' @author M. Carmassi
-#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}, \code{\link{esim.class}}
+#' @seealso \code{\link{model.class}}, \code{\link{prior.class}}
 #' @examples
 #' X <- cbind(seq(0,10,length.out=10),seq(8,20,length.out=10))
 #' var <- 2
@@ -523,7 +513,7 @@ kernel.fun <- function(X,var,psi,kernel.type="gauss")
 #' @return y the vector unscaled
 #' @examples
 #' X <- runif(3)
-#' Y <-unscale.vector(X,c(10,10,1O),c(15,15,15))
+#' Y <-unscale.vector(X,rep(10,3),rep(15,3))
 #' print(Y)
 #' @export
 unscale.vector <- function(x,binf,bsup){
@@ -556,8 +546,8 @@ unscale.vector <- function(x,binf,bsup){
 #' @param bsup the upper bound
 #' @return the normalized diagonal
 #' @examples
-#' X <- ones(3)*runif(3)
-#' Y <-unscale.matrix.diag(X,c(10,10,1O),c(15,15,15))
+#' X <- diag(3)*runif(3)
+#' Y <-unscale.matrix.diag(X,rep(10,3),rep(15,3))
 #' print(Y)
 #' @export
 unscale.matrix.diag <- function(M,binf,bsup){
@@ -583,8 +573,8 @@ unscale.matrix.diag <- function(M,binf,bsup){
 #' @param sym default value False if we do not have a symetric matrix
 #' @return the unscaled vector or matrix
 #' @examples
-#' X <- ones(3)*runif(3)
-#' Y <- unscale(X,c(10,10,1O),c(15,15,15))
+#' X <- diag(3)*runif(3)
+#' Y <- unscale(X,rep(10,3),rep(15,3))
 #' print(Y)
 #' @export
 unscale <- function(M,binf,bsup,diag=FALSE,sym=FALSE){
@@ -626,8 +616,8 @@ unscale <- function(M,binf,bsup,diag=FALSE,sym=FALSE){
 
 #' Function that deals with negative eigen values in a matrix not positive definite
 #'
-#' @param M the matrix or the vector
-#' @return the new matrix M
+#' @param X the matrix or the vector
+#' @return the new matrix X
 #' @export
 DefPos <- function(X)
 {

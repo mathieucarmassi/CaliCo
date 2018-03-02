@@ -37,14 +37,14 @@ calibrate.class <- R6::R6Class(classname = "calibrate.class",
                              bsup       = NULL,
                              initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL,onlyCV)
                              {
-                               library(parallel)
+                               #library(parallel)
                                self$onlyCV <- onlyCV
                                self$md         <- md
                                self$pr         <- pr
                                self$opt.estim  <- opt.estim
                                self$opt.valid  <- opt.valid
                                self$logPost    <- private$logLikelihood(self$md$model)
-                               self$n.cores    <- detectCores()
+                               self$n.cores    <- 2
                                if (self$opt.estim$burnIn > self$opt.estim$Nmh)
                                {
                                  stop("The burnIn must be inferior to Nmh")

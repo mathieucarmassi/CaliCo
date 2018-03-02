@@ -93,10 +93,6 @@ mdfit2 <- calibrate(md2,pr,opt.estim)
 ####### The plot generated is a list of ggplot
 p <- plot(mdfit2,select.X=X[,1])
 print(mdfit2)
-####### Run cross validataion only (the plot function is disabled)
-opt.valid <- list(type.valid='loo',nCV=10)
-mdfitCV2 <- calibrate(md2,pr,opt.estim,opt.valid,onlyCV=TRUE)
-print(mdfitCV2)
 
 
 ############### For the third model
@@ -105,16 +101,13 @@ md3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
 pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 ###### Definition of the calibration options
-opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
+opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),
+k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
 ###### Run the calibration
 mdfit3 <- calibrate(md3,pr,opt.estim)
 ####### The plot generated is a list of ggplot
 p <- plot(mdfit3,select.X=X[,1])
 print(mdfit3)
-####### Run cross validataion only (the plot function is disabled)
-opt.valid <- list(type.valid='loo',nCV=10)
-mdfitCV <- calibrate(md3,pr,opt.estim,opt.valid,onlyCV=TRUE)
-print(mdfitCV)
 
 
 ############### For the fourth model
@@ -126,16 +119,13 @@ md4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc=list(kernel.type="matern5_2"
 pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
 ###### Definition of the calibration options
-opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
+opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),
+k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
 ###### Run the calibration
 mdfit4 <- calibrate(md4,pr,opt.estim)
 ####### The plot generated is a list of ggplot
 p <- plot(mdfit4,select.X=X[,1])
 print(mdfit4)
-####### Run cross validataion only (the plot function is disabled)
-opt.valid <- list(type.valid='loo',nCV=10)
-mdfitCV <- calibrate(md4,pr,opt.estim,opt.valid,onlyCV=TRUE)
-print(mdfitCV)
 
 }
 \seealso{

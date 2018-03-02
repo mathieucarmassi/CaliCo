@@ -46,6 +46,7 @@ $$
 The function $f_t$ is chosen with only one forced variable and one parameter $\theta$. Let us say that experiments are available and can be expressed by $Y_exp$. The belief on the value of $\theta$ shows that a non-negligible gap is present.
 
 ```{r, fig.width=4,echo=FALSE,fig.align='center'}
+options(mc.cores=1)
 library(ggplot2)
 n=10
 X <- seq(0,1,length.out=n)

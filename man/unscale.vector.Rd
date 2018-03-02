@@ -21,6 +21,6 @@ Function which unscale a vector between two bounds
 }
 \examples{
 X <- runif(3)
-Y <-unscale.vector(X,c(10,10,1O),c(15,15,15))
+Y <-unscale.vector(X,rep(10,3),rep(15,3))
 print(Y)
 }

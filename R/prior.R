@@ -22,7 +22,6 @@ prior.class <- R6::R6Class(classname = "prior.class",
                                self$opt.prior   <- opt.prior
                                self$log         <- log
                                private$checkPrior()
-                               private$loadPackages()
                              }
                            ))
 
@@ -36,16 +35,6 @@ prior.class$set("private","checkPrior",
                   }
                 })
 
-prior.class$set("private","loadPackages",
-                function()
-                {
-                  library(R6)
-                  library(DiceDesign)
-                  library(DiceKriging)
-                  library(FactoMineR)
-                  library(ggplot2)
-                  library(gridExtra)
-                })
 
 
 gaussian.class <- R6::R6Class(classname = "gaussian.class",

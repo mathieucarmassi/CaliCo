@@ -24,7 +24,7 @@ the unscaled vector or matrix
 Function which unscale un matrix or a vector
 }
 \examples{
-X <- ones(3)*runif(3)
-Y <- unscale(X,c(10,10,1O),c(15,15,15))
+X <- diag(3)*runif(3)
+Y <- unscale(X,rep(10,3),rep(15,3))
 print(Y)
 }

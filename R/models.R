@@ -56,7 +56,6 @@ model.class <- R6::R6Class(classname = "model.class",
                      private$checkModels()
                      private$checkEmul()
                      private$checkCode()
-                     private$loadPackages()
                    }
                  ))
 
@@ -69,18 +68,6 @@ model.class$set("private","checkModels",
           }
         })
 
-model.class$set("private","loadPackages",
-                function()
-                {
-                  library(R6)
-                  library(DiceDesign)
-                  library(DiceKriging)
-                  library(FactoMineR)
-                  library(Rcpp)
-                  library(RcppArmadillo)
-                  library(MASS)
-                  library(coda)
-                })
 
 model.class$set("private","checkEmul",
                 function()
