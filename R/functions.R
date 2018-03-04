@@ -2,7 +2,7 @@
 #'
 #' \code{model} is a function that generates a calibration model and the associated likelihood.
 #'
-#' @import ggplot2
+#' @import ggplot2 MASS R6 FactoMineR DiceKriging DiceDesign coda parallel testthat
 #' @details The different statistical models are: \itemize{\item{Model1:
 #' \deqn{for i in [1,...,n]  Yexp_i=f(x_i,\Theta)+\epsilon(x_i)}}
 #' \item{Model2:

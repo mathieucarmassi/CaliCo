@@ -30,7 +30,7 @@ Collate:
     'Kernel.R'
     'calibration.R'
 LinkingTo:
-    Rcpp (>= 0.12.12),
+    Rcpp,
     RcppArmadillo,
     Matrix
 Suggests: knitr,

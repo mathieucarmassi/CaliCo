@@ -47,7 +47,16 @@ The function $f_t$ is chosen with only one forced variable and one parameter $\t
 
 ```{r, fig.width=4,echo=FALSE,fig.align='center'}
 options(mc.cores=1)
+library(CaliCo)
+library(R6)
 library(ggplot2)
+library(FactoMineR)
+library(DiceKriging)
+library(DiceDesign)
+library(MASS)
+library(coda)
+library(parallel)
+library(gridExtra)
 n=10
 X <- seq(0,1,length.out=n)
 code <- function(X,theta)
