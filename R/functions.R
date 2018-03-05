@@ -135,7 +135,7 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
 #' \item{The Gaussian density:
 #' \deqn{f(x)=1/(\sigma*\sqrt(2\pi))exp{-1/2*((x-\mu)/\sigma)^2}}
 #' where \strong{\eqn{\mu}} and \strong{\eqn{\sigma}} (the mean and the standard deviation)
-#' are the two hyperparameters. The vector \eqn{c(\mu,\sigma)} is the one looked for in opt.prior.}
+#' are the two hyperparameters. The vector \eqn{c(\mu,\sigma^2)} is the one looked for in opt.prior.}
 #' \item{The Gamma density:
 #' \deqn{f(x)=1/(k^a*\Gamma(a))*x^(a-1)*exp(-(x/k))}
 #' where \strong{\eqn{a}} and \strong{\eqn{k}} (the shape and the scale)
@@ -146,7 +146,7 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
 #' are the two hyperparameters. The vector \eqn{c(a,b)} is the one looked for in opt.prior.}
 #' }
 #'
-#' @param  type.prior the vector of the prior types selected. For example type.prior=c("gaussian","beta")
+#' @param  type.prior the vector of the prior types selected. For example type.prior=c("gaussian","gamma")
 #' @param opt.prior list of the hyperparameters relatives to the prior selected. If the first prior selected is
 #' Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.
 #' @param log (default=TRUE) if the log value is wanted or not.
@@ -154,7 +154,7 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
 #' \itemize{\item{plot()}{ display the probability density of the prior}
 #' \item{print()}{ return the main information concerning the prior distribution}}
 #' @author M. Carmassi
-#' @seealso \code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
+#' @seealso \code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 #' @examples
 #' #### Only one prior is wanted
 #' ## For a Gaussian Prior
@@ -240,12 +240,15 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' \item{Nmh}{ Number of iteration of the Metropolis Hastings algorithm}
 #' \item{thetaInit}{ Initial point}
 #' \item{k}{ Tuning parameter for the covariance matrix sig}
-#' \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}}
-#' @param onlyCV if TRUE run the cross validation only (default onlyCV=FALSE)
+#' \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}
+#' \item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which is a coda object)}
+#' \item{burnIn}{ Number of iteration to withdraw}
+#' }
 #' @param opt.valid list of cross validation options (default opt.valid=FALSE)\itemize{
 #' \item{nCV}{ Number of iterations for the cross validation}
 #' \item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method emplemented so far.}
 #' }
+#' @param onlyCV if TRUE run the cross validation only (default onlyCV=FALSE)
 #' @return \code{calibrate} returns a \code{\link{calibrate.class}} object. Two main methods are available:
 #' \itemize{\item{plot()}{ display the probability density of the prior with different options:}
 #' \itemize{
@@ -253,9 +256,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' \item {graph}{ The vector of the graph wanted. By default all the graph are displayed and graph=c("acf","chains","densities","output").
 #' "acf" displays the correlation graph of the MCMC chains, "chains" plot the chains, "densities" shows the comparison of the
 #' densities a priori and a posteriori, and "output" displays the output of the code with the calibrated one and its credibility
-#' interval (if CI=TRUE).}
-#' \item {separated}{ Allows to separate each graphs by displying one by one all the graphs. By default separated=FALSE}
-#' \item {CI}{ Allows to add the posterior credibility interval to the output plot. By default CI=TRUE}
+#' interval.}
 #' \item {select.X}{ When the number of X is >1, this option has to be activated to display the output plot. select.X
 #' allows to choose one X for the x scale in the output plot}}
 #' \item{print()}{ return the main information concerning the estim.class object}}

@@ -7,7 +7,7 @@
 prior(type.prior, opt.prior, log = TRUE)
 }
 \arguments{
-\item{type.prior}{the vector of the prior types selected. For example type.prior=c("gaussian","beta")}
+\item{type.prior}{the vector of the prior types selected. For example type.prior=c("gaussian","gamma")}
 
 \item{opt.prior}{list of the hyperparameters relatives to the prior selected. If the first prior selected is
 Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.}
@@ -29,7 +29,7 @@ The densities implemented are defined as follow
 \item{The Gaussian density:
 \deqn{f(x)=1/(\sigma*\sqrt(2\pi))exp{-1/2*((x-\mu)/\sigma)^2}}
 where \strong{\eqn{\mu}} and \strong{\eqn{\sigma}} (the mean and the standard deviation)
-are the two hyperparameters. The vector \eqn{c(\mu,\sigma)} is the one looked for in opt.prior.}
+are the two hyperparameters. The vector \eqn{c(\mu,\sigma^2)} is the one looked for in opt.prior.}
 \item{The Gamma density:
 \deqn{f(x)=1/(k^a*\Gamma(a))*x^(a-1)*exp(-(x/k))}
 where \strong{\eqn{a}} and \strong{\eqn{k}} (the shape and the scale)
@@ -60,7 +60,7 @@ grid.arrange(plot(priors$Prior1),plot(priors$Prior2),nrow=2)
 
 }
 \seealso{
-\code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
+\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 }
 \author{
 M. Carmassi

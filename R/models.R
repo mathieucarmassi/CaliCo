@@ -15,8 +15,8 @@
 #' @field binf the lower bound of the parameters for the DOE
 #' @field bsup the upper bound of the parameters for the DOE
 #' @field opt.emul a list of parameter for the surrogate \itemize{
-#' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
-#' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
+#' \item{\strong{p}}{ the number of parameter in the model (default value 1)}
+#' \item{\strong{n.emul}}{ the number of points for constituting the Design Of Experiments (DOE) (default value 100)}
 #' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
 #' \item{\strong{binf}}{ the lower bound of the parameter vector (default value 0)}
 #' \item{\strong{bsup}}{ the upper bound of the parameter vector (default value 1)}

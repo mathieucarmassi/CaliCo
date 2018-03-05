@@ -42,6 +42,7 @@ gaussian.class <- R6::R6Class(classname = "gaussian.class",
                               public = list(
                                 mean  = NULL,
                                 var   = NULL,
+                                sd    = NULL,
                                 binf  = NULL,
                                 bsup  = NULL,
                                 initialize = function(type.prior=NA,opt.prior=NA,log=TRUE)
@@ -49,6 +50,7 @@ gaussian.class <- R6::R6Class(classname = "gaussian.class",
                                   super$initialize(type.prior,opt.prior,log)
                                   self$mean  <- unlist(self$opt.prior)[1]
                                   self$var   <- unlist(self$opt.prior)[2]
+                                  self$sd    <- sqrt(self$var)
                                   self$binf  <- self$mean - 4*sqrt(self$var)
                                   self$bsup  <- self$mean + 4*sqrt(self$var)
                                 },
@@ -56,13 +58,13 @@ gaussian.class <- R6::R6Class(classname = "gaussian.class",
                                   {
                                   if (self$log == FALSE)
                                   {
-                                    return(1/(sqrt(2*pi*self$var))*
-                                               exp(-1/(2*self$var)*
+                                    return(1/(sqrt(2*pi*self$sd))*
+                                               exp(-1/(2*self$sd)*
                                                      (x-self$mean)^2))
                                     } else
                                   {
-                                    return(log(1/(sqrt(2*pi*self$var))*
-                                                   exp(-1/(2*self$var)*
+                                    return(log(1/(sqrt(2*pi*self$sd))*
+                                                   exp(-1/(2*self$sd)*
                                                          (x-self$mean)^2)))
                                   }
                                 },
