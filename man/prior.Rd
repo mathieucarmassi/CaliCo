@@ -56,7 +56,6 @@ plot(gamma)
 
 #### For several priors
 priors <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
-grid.arrange(plot(priors$Prior1),plot(priors$Prior2),nrow=2)
 
 }
 \seealso{

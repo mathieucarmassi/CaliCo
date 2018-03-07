@@ -20,7 +20,7 @@
 #' @field binf the lower bound of the parameters for the DOE
 #' @field bsup the upper bound of the parameters for the DOE
 #' @export
-calibrate.class <- R6::R6Class(classname = "calibrate.class",
+calibrate.class <- R6Class(classname = "calibrate.class",
                            public = list(
                              md         = NULL,
                              pr         = NULL,

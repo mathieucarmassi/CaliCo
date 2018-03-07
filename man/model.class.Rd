@@ -14,6 +14,7 @@ This class comes with a set of methods, some of them being useful for the user:
 See the documentation for \code{\link{model}}... Other methods
 should not be called as they are designed to be used during the calibration process.
 
+
 Fields should not be changed or manipulated by the user as they are updated internally
 during the estimation process.
 }

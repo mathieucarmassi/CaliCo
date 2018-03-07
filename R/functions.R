@@ -2,7 +2,6 @@
 #'
 #' \code{model} is a function that generates a calibration model and the associated likelihood.
 #'
-#' @import ggplot2 MASS R6 FactoMineR DiceKriging DiceDesign coda parallel testthat
 #' @details The different statistical models are: \itemize{\item{Model1:
 #' \deqn{for i in [1,...,n]  Yexp_i=f(x_i,\Theta)+\epsilon(x_i)}}
 #' \item{Model2:
@@ -100,10 +99,6 @@
 model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="matern5_2",
                                                            binf=0,bsup=1,DOE=NULL),opt.disc=list(kernel.type=NULL))
 {
-  library(R6)
-  library(FactoMineR)
-  library(DiceDesign)
-  library(DiceKriging)
   switch(model,
          model1={
            obj = model1.class$new(code,X,Yexp,model)
@@ -171,12 +166,10 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
 #'
 #' #### For several priors
 #' priors <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
-#' grid.arrange(plot(priors$Prior1),plot(priors$Prior2),nrow=2)
 #'
 #' @export
 prior <- function(type.prior,opt.prior,log=TRUE)
 {
-  library(R6)
   n <- length(type.prior)
   if (n == 1)
   {
@@ -353,7 +346,6 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
   return(res)
 }
 
-
 #' Generates \code{\link{prediction.class}} objects
 #'
 #' \code{prediction} is a function that allows us to generate a class in which the estimation is
@@ -394,71 +386,12 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' print(pr)
 #' plot(pr,select.X=X[,1])
 #'
-#'
-#' ############### For the second model
-#' ###### Definition of the model
-#' ### The lower and upper bound vector for the parameter
-#' binf <- c(0.9,0.9,10.5)
-#' bsup <- c(1.1,1.1,11.5)
-#' opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
-#' md2 <- model(code,X,Yexp,"model2",opt.emul)
-#' ###### Definition of the prior densities
-#' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
-#' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
-#' ###### Definition of the calibration options
-#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
-#' sig=diag(4),Nchains=1,burnIn=3000)
-#' ###### Run the calibration
-#' mdfit2 <- calibrate(md2,pr,opt.estim)
-#' ###### Prediction between 1 and 1.2
-#' X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
-#' pr <- prediction(mdfit2,X.new)
-#' print(pr)
-#' plot(pr,select.X=X[,1])
-#'
-#'
-#' ############### For the third model
-#' md3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
-#' ###### Definition of the prior densities
-#' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
-#' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
-#' ###### Definition of the calibration options
-#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),
-#' k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
-#' ###### Run the calibration
-#' mdfit3 <- calibrate(md3,pr,opt.estim)
-#' ###### Prediction between 1 and 1.2
-#' X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
-#' pr <- prediction(mdfit2,X.new)
-#' print(pr)
-#' plot(pr,select.X=X[,1])
-#'
-#' ############### For the fourth model
-#' binf <- c(0.9,0.9,10.5)
-#' bsup <- c(1.1,1.1,11.5)
-#' opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
-#' md4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc=list(kernel.type="matern5_2"))
-#' ###### Definition of the prior densities
-#' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
-#' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
-#' ###### Definition of the calibration options
-#' opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),
-#' k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
-#' ###### Run the calibration
-#' mdfit4 <- calibrate(md4,pr,opt.estim)
-#' ###### Prediction between 1 and 1.2
-#' X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
-#' pr <- prediction(mdfit2,X.new)
-#' print(pr)
-#' plot(pr,select.X=X[,1])
-#'
 #' @export
 prediction <-function(modelfit,x.new)
 {
   res <- prediction.class$new(modelfit,x.new)
   return(res)
 }
-
 
 #' Generates covariances matrices thanks to \code{\link{Kernel.class}}
 #'
@@ -484,7 +417,6 @@ prediction <-function(modelfit,x.new)
 #' @export
 kernel.fun <- function(X,var,psi,kernel.type="gauss")
 {
-  library(R6)
   if (is.null(kernel.type)){kernel.type <- "gauss"}
   switch(kernel.type,
          gauss={
@@ -631,3 +563,44 @@ DefPos <- function(X)
   d <- diag(e)
   return(t(p)%*%d%*%p)
 }
+
+#' Simulate from a Multivariate Normal Distribution
+#'
+#' The matrix decomposition is done via eigen; although a Choleski decomposition might be faster, the eigendecomposition is stabler.
+#'
+#' @param n the number of samples required.
+#' @param mu a vector giving the means of the variables.
+#' @param Sigma a positive-definite symmetric matrix specifying the covariance matrix of the variables.
+#' @param tol tolerance (relative to largest variance) for numerical lack of positive-definiteness in Sigma.
+#' @param empirical logical. If true, mu and Sigma specify the empirical not population mean and covariance matrix.
+#' @param EISPACK logical: values other than FALSE are an error.
+#' @return If n = 1 a vector of the same length as mu, otherwise an n by length(mu) matrix with one sample in each row.
+#' @export
+multivariate <- function (n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISPACK = FALSE)
+{
+  p <- length(mu)
+  if (!all(dim(Sigma) == c(p, p)))
+    stop("incompatible arguments")
+  if (EISPACK)
+    stop("'EISPACK' is no longer supported by R", domain = NA)
+  eS <- eigen(Sigma, symmetric = TRUE)
+  ev <- eS$values
+  if (!all(ev >= -tol * abs(ev[1L])))
+    stop("'Sigma' is not positive definite")
+  X <- matrix(rnorm(p * n), n)
+  if (empirical) {
+    X <- scale(X, TRUE, FALSE)
+    X <- X %*% svd(X, nu = 0)$v
+    X <- scale(X, FALSE, TRUE)
+  }
+  X <- drop(mu) + eS$vectors %*% diag(sqrt(pmax(ev, 0)), p) %*%
+    t(X)
+  nm <- names(mu)
+  if (is.null(nm) && !is.null(dn <- dimnames(Sigma)))
+    nm <- dn[[1L]]
+  dimnames(X) <- list(nm, NULL)
+  if (n == 1)
+    drop(X)
+  else t(X)
+}
+

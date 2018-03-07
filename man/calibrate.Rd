@@ -15,7 +15,10 @@ calibrate(md, pr, opt.estim, opt.valid = NULL, onlyCV = FALSE)
 \item{Nmh}{ Number of iteration of the Metropolis Hastings algorithm}
 \item{thetaInit}{ Initial point}
 \item{k}{ Tuning parameter for the covariance matrix sig}
-\item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}}}
+\item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}
+\item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which is a coda object)}
+\item{burnIn}{ Number of iteration to withdraw}
+}}
 
 \item{opt.valid}{list of cross validation options (default opt.valid=FALSE)\itemize{
 \item{nCV}{ Number of iterations for the cross validation}
@@ -32,9 +35,7 @@ calibrate(md, pr, opt.estim, opt.valid = NULL, onlyCV = FALSE)
 \item {graph}{ The vector of the graph wanted. By default all the graph are displayed and graph=c("acf","chains","densities","output").
 "acf" displays the correlation graph of the MCMC chains, "chains" plot the chains, "densities" shows the comparison of the
 densities a priori and a posteriori, and "output" displays the output of the code with the calibrated one and its credibility
-interval (if CI=TRUE).}
-\item {separated}{ Allows to separate each graphs by displying one by one all the graphs. By default separated=FALSE}
-\item {CI}{ Allows to add the posterior credibility interval to the output plot. By default CI=TRUE}
+interval.}
 \item {select.X}{ When the number of X is >1, this option has to be activated to display the output plot. select.X
 allows to choose one X for the x scale in the output plot}}
 \item{print()}{ return the main information concerning the estim.class object}}

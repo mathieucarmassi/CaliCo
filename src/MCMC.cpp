@@ -51,7 +51,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   PHI.row(0)= log((THETA.row(0).t()-binf)/(bsup-binf)).t();
   double AcceptationRatio=0;
   arma::vec AcceptationRatioWg=zeros(Dim,1);
-  Function unscale("unscale"), rnorm("rnorm"), mvrnorm("mvrnorm"), runif("runif"), DefPos("DefPos");
+  Function unscale("unscale"), rnorm("rnorm"), runif("runif"), DefPos("DefPos"), mvrnorm("multivariate");
   THETAwg.row(0)=theta_init.t();
   PHIwg.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
   arma::vec theta=theta_init.rows(0,Dim-2);
@@ -63,8 +63,8 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   double alpha2 = alpha;
   if (stream==1)
   {
-    cout << "Begin of the Metropolis within Gibbs algorithm" << endl;
-    cout << "Number of iterations "<< Ngibbs << endl;
+    Rcout << "Begin of the Metropolis within Gibbs algorithm" << endl;
+    Rcout << "Number of iterations "<< Ngibbs << endl;
   }
   int barWidth = 40;
   int q = 0;
@@ -73,16 +73,16 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
     if (stream==1)
     {
       // beggining of the bar progress
-      cout.flush();
+      Rcout.flush();
       if ((i+2)%(Ngibbs/barWidth)==0)
       {
         float progress = (float)(i+2)/(float)(Ngibbs);
-        cout << "[";
+        Rcout << "[";
         q = ((float)(i+2)*(float)barWidth)/(float)(Ngibbs);
-        if (q<barWidth) cout << string(q, '=');
-        else if (q==barWidth) cout << string(q, '>');
-        else cout << " ";
-        cout << "] " << int(progress * 100.0) << " %\r";
+        if (q<barWidth) Rcout << string(q, '=');
+        else if (q==barWidth) Rcout << string(q, '>');
+        else Rcout << " ";
+        Rcout << "] " << int(progress * 100.0) << " %\r";
       }
       // end bar progress
     }
@@ -140,16 +140,16 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   //{
   //  if (AcceptationRatioWg(j)/Ngibbs < 0.2 || AcceptationRatioWg(j)/Ngibbs >0.5)
   //  {
-  //    cout << "The algorithm has stopped because your k is not good" << endl;
+  //    Rcout << "The algorithm has stopped because your k is not good" << endl;
   //    if (AcceptationRatioWg(j)/Ngibbs < 0.2)
   //    {
-  //      cout << "The "<<j+1<<"th coordinate of k is too big"<< endl;
+  //      Rcout << "The "<<j+1<<"th coordinate of k is too big"<< endl;
   //      return 0;
   //    } else
   //    {
   //      if (AcceptationRatioWg(j)/Ngibbs >0.5)
   //      {
-  //        cout << "The "<<j+1<<"th coordinate of k is too small"<< endl;
+  //        Rcout << "The "<<j+1<<"th coordinate of k is too small"<< endl;
   //        return 0;
   //      }
   //    }
@@ -160,13 +160,13 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   mat NewPhi=mean(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
   if (stream==1)
   {
-    cout << endl;
-    cout << endl;
-    cout << "Estimation of the covariance matrix...." <<endl;
-    cout << "End of the within gibbs algorithm"<< endl;
-    cout << endl;
-    cout << "Begin of the metropolis hastings algorithm using the covariance computed" << endl;
-    cout << "Number of iterations "<< Nmh <<endl;
+    Rcout << endl;
+    Rcout << endl;
+    Rcout << "Estimation of the covariance matrix...." <<endl;
+    Rcout << "End of the within gibbs algorithm"<< endl;
+    Rcout << endl;
+    Rcout << "Begin of the metropolis hastings algorithm using the covariance computed" << endl;
+    Rcout << "Number of iterations "<< Nmh <<endl;
   }
   q = 0;
   double t=1;
@@ -177,16 +177,16 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
     if (stream==1)
     {
       // beggining of the bar progress
-      cout.flush();
+      Rcout.flush();
       if ((i+2)%(Nmh/barWidth)==0)
       {
         float progress = (float)(i+2)/(float)(Nmh);
-        cout << "[";
+        Rcout << "[";
         q = ((float)(i+2)*(float)barWidth)/(float)(Nmh);
-        if (q<barWidth) cout << string(q, '=');
-        else if (q==barWidth) cout << string(q, '>');
-        else cout << " ";
-        cout << "] " << int(progress * 100.0) << " %\r";
+        if (q<barWidth) Rcout << string(q, '=');
+        else if (q==barWidth) Rcout << string(q, '>');
+        else Rcout << " ";
+        Rcout << "] " << int(progress * 100.0) << " %\r";
       }
       // end bar progress
     }
@@ -226,8 +226,8 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   }
   if (stream==1)
   {
-    std::cout << std::endl;
-    cout << "End of the Metropolis Hastings algorithm"<< endl;
+    Rcout << std::endl;
+    Rcout << "End of the Metropolis Hastings algorithm"<< endl;
   }
   return List::create(Named("PHIwg")=PHIwg,Named("THETAwg")=THETAwg,Named("PHI")=PHI,Named("THETA")=THETA,
                             Named("AcceptationRatio")=AcceptationRatio, Named("AcceptationRatioWg")=AcceptationRatioWg
@@ -282,7 +282,7 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
   PHI.row(0)= log((THETA.row(0).t()-binf)/(bsup-binf)).t();
   double AcceptationRatio=0;
   arma::vec AcceptationRatioWg=zeros(Dim,1);
-  Function unscale("unscale"), rnorm("rnorm"), mvrnorm("mvrnorm"), runif("runif"), DefPos("DefPos");
+  Function unscale("unscale"), rnorm("rnorm"), mvrnorm("multivariate"), runif("runif"), DefPos("DefPos");
   THETAwg.row(0)=theta_init.t();
   PHIwg.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
   arma::vec theta=theta_init.rows(0,Dim-4);
@@ -292,8 +292,8 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
   double alpha2 = alpha;
   if (stream==1)
   {
-    cout << "Begin of the Metropolis within Gibbs algorithm" << endl;
-    cout << "Number of iterations "<< Ngibbs << endl;
+    Rcout << "Begin of the Metropolis within Gibbs algorithm" << endl;
+    Rcout << "Number of iterations "<< Ngibbs << endl;
   }
   int barWidth = 40;
   int q = 0;
@@ -302,16 +302,16 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
     if (stream==1)
     {
       // beggining of the bar progress
-      cout.flush();
+      Rcout.flush();
       if ((i+2)%(Ngibbs/barWidth)==0)
       {
         float progress = (float)(i+2)/(float)(Ngibbs);
-        cout << "[";
+        Rcout << "[";
         q = ((float)(i+2)*(float)barWidth)/(float)(Ngibbs);
-        if (q<barWidth) cout << string(q, '=');
-        else if (q==barWidth) cout << string(q, '>');
-        else cout << " ";
-        cout << "] " << int(progress * 100.0) << " %\r";
+        if (q<barWidth) Rcout << string(q, '=');
+        else if (q==barWidth) Rcout << string(q, '>');
+        else Rcout << " ";
+        Rcout << "] " << int(progress * 100.0) << " %\r";
       }
       // end bar progress
     }
@@ -360,16 +360,16 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
   // {
   //   if (AcceptationRatioWg(j)/Ngibbs < 0.25 || AcceptationRatioWg(j)/Ngibbs >0.5)
   //   {
-  //     cout << "The algorithm has stopped because your k is not good" << endl;
+  //     Rcout << "The algorithm has stopped because your k is not good" << endl;
   //     if (AcceptationRatioWg(j)/Ngibbs < 0.25)
   //     {
-  //       cout << "The "<<j+1<<"th coordinate of k is too big"<< endl;
+  //       Rcout << "The "<<j+1<<"th coordinate of k is too big"<< endl;
   //       return 0;
   //     } else
   //     {
   //       if (AcceptationRatioWg(j)/Ngibbs >0.5)
   //       {
-  //         cout << "The "<<j+1<<"th coordinate of k is too small"<< endl;
+  //         Rcout << "The "<<j+1<<"th coordinate of k is too small"<< endl;
   //         return 0;
   //       }
   //     }
@@ -380,14 +380,14 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
   mat NewPhi=mean(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
   if (stream==1)
   {
-    cout << endl;
-    cout << endl;
-    cout << "Estimation of the covariance matrix...." <<endl;
-    cout << "End of the within gibbs algorithm"<< endl;
-    cout << endl;
-    /*cout << "The acceptance rate is: " << AcceptationRatioWg/Ngibbs << endl;*/
-    cout << "Begin of the metropolis hastings algorithm using the covariance computed" << endl;
-    cout << "Number of iterations "<< Nmh <<endl;
+    Rcout << endl;
+    Rcout << endl;
+    Rcout << "Estimation of the covariance matrix...." <<endl;
+    Rcout << "End of the within gibbs algorithm"<< endl;
+    Rcout << endl;
+    /*Rcout << "The acceptance rate is: " << AcceptationRatioWg/Ngibbs << endl;*/
+    Rcout << "Begin of the metropolis hastings algorithm using the covariance computed" << endl;
+    Rcout << "Number of iterations "<< Nmh <<endl;
   }
   q = 0;
   double t=1;
@@ -398,16 +398,16 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
       if (stream==1)
       {
         // beggining of the bar progress
-        cout.flush();
+        Rcout.flush();
         if ((i+2)%(Nmh/barWidth)==0)
         {
           float progress = (float)(i+2)/(float)(Nmh);
-          cout << "[";
+          Rcout << "[";
           q = ((float)(i+2)*(float)barWidth)/(float)(Nmh);
-          if (q<barWidth) cout << string(q, '=');
-          else if (q==barWidth) cout << string(q, '>');
-          else cout << " ";
-          cout << "] " << int(progress * 100.0) << " %\r";
+          if (q<barWidth) Rcout << string(q, '=');
+          else if (q==barWidth) Rcout << string(q, '>');
+          else Rcout << " ";
+          Rcout << "] " << int(progress * 100.0) << " %\r";
         }
         // end bar progress
       }
@@ -446,8 +446,8 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
     }
     if (stream==1)
     {
-      std::cout << std::endl;
-      cout << "End of the Metropolis Hastings algorithm"<< endl;
+      Rcout << std::endl;
+      Rcout << "End of the Metropolis Hastings algorithm"<< endl;
     }
     return List::create(Named("PHIwg")=PHIwg,Named("THETAwg")=THETAwg,Named("PHI")=PHI,Named("THETA")=THETA,
                               Named("AcceptationRatio")=AcceptationRatio, Named("AcceptationRatioWg")=AcceptationRatioWg

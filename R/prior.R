@@ -1,5 +1,6 @@
 #' A Reference Class to generates differents \code{\link{prior.class}} objects
 #'
+#'
 #' @description See the function \code{\link{prior}} which produces an instance of this class
 #' This class comes with a set of methods, some of them being useful for the user:
 #' See the documentation \code{\link{prior}}. Other methods
@@ -11,7 +12,7 @@
 #' @field opt.prior the charasteristics of the selected prior
 #' @field log if we want the log result or not
 #' @export
-prior.class <- R6::R6Class(classname = "prior.class",
+prior.class <- R6Class(classname = "prior.class",
                            public = list(
                              type.prior  = NULL,
                              opt.prior   = NULL,
@@ -37,7 +38,7 @@ prior.class$set("private","checkPrior",
 
 
 
-gaussian.class <- R6::R6Class(classname = "gaussian.class",
+gaussian.class <- R6Class(classname = "gaussian.class",
                               inherit = prior.class,
                               public = list(
                                 mean  = NULL,
@@ -85,7 +86,7 @@ gaussian.class <- R6::R6Class(classname = "gaussian.class",
                               ))
 
 
-unif.class <- R6::R6Class(classname = "unif.class",
+unif.class <- R6Class(classname = "unif.class",
                               inherit = prior.class,
                               public = list(
                                 binf    = NULL,
@@ -136,7 +137,7 @@ unif.class <- R6::R6Class(classname = "unif.class",
                               ))
 
 
-gamma.class <- R6::R6Class(classname = "gamma.class",
+gamma.class <- R6Class(classname = "gamma.class",
                           inherit = prior.class,
                           public = list(
                             shape    = NULL,
@@ -183,7 +184,7 @@ gamma.class <- R6::R6Class(classname = "gamma.class",
 
 
 #Inverse gamma to be completed....
-invGamma.class <- R6::R6Class(classname = "invGamma.class",
+invGamma.class <- R6Class(classname = "invGamma.class",
                            inherit = prior.class,
                            public = list(
                              shape    = NULL,
