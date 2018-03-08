@@ -44,7 +44,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                self$opt.estim  <- opt.estim
                                self$opt.valid  <- opt.valid
                                self$logPost    <- private$logLikelihood(self$md$model)
-                               self$n.cores    <- 2
+                               self$n.cores    <- 1
                                if (self$opt.estim$burnIn > self$opt.estim$Nmh)
                                {
                                  stop("The burnIn must be inferior to Nmh")
