@@ -1,11 +1,11 @@
 ---
-title: "Introduction"
+title: "Introduction to CaliCo"
 author: "Mathieu Carmassi"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 bibliography: biblio.bib
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Introduction to CaliCo}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
