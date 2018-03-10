@@ -80,7 +80,7 @@
 #' plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
 #' print(model2)
 #'
-#'
+#' \dontrun{
 #' ###### For the third model
 #' model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
 #' plot(model3,theta=c(1,1,11),thetaD=c(0,0.01),var=0.01,select.X=X[,1])
@@ -93,7 +93,7 @@
 #' model4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc)
 #' plot(model4,c(1,1,11),c(0,0.1),0.01,select.X=X[,1])
 #' print(model4)
-#'
+#'}
 #'
 #' @export
 model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="matern5_2",
@@ -282,6 +282,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' opt.valid <- list(type.valid='loo',nCV=10)
 #' mdfitCV <- calibrate(md,pr,opt.estim,opt.valid)
 #' print(mdfitCV)
+#' \dontrun{
 #' ####### Run cross validataion only (the plot function is disabled)
 #' mdfitCV2 <- calibrate(md,pr,opt.estim,opt.valid,onlyCV=TRUE)
 #' print(mdfitCV2)
@@ -338,7 +339,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' ####### The plot generated is a list of ggplot
 #' p <- plot(mdfit4,select.X=X[,1])
 #' print(mdfit4)
-#'
+#'}
 #' @export
 calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 {

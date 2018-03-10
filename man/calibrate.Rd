@@ -71,6 +71,7 @@ print(mdfit)
 opt.valid <- list(type.valid='loo',nCV=10)
 mdfitCV <- calibrate(md,pr,opt.estim,opt.valid)
 print(mdfitCV)
+\dontrun{
 ####### Run cross validataion only (the plot function is disabled)
 mdfitCV2 <- calibrate(md,pr,opt.estim,opt.valid,onlyCV=TRUE)
 print(mdfitCV2)
@@ -127,7 +128,7 @@ mdfit4 <- calibrate(md4,pr,opt.estim)
 ####### The plot generated is a list of ggplot
 p <- plot(mdfit4,select.X=X[,1])
 print(mdfit4)
-
+}
 }
 \seealso{
 \code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}

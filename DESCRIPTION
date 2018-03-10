@@ -2,8 +2,7 @@ Package: CaliCo
 Type: Package
 Title: Code Calibration in a Bayesian Framework
 Version: 0.1.0
-Authors@R: as.person(c(
-    "Mathieu Carmassi <mathieu.carmassi@gmail.com> [aut, cre]"))
+Authors@R: person("Mathieu", "Carmassi", email = "mathieu.carmassi@gmail.com",role = c("aut", "cre"))
 Description: Calibration of every computational code. It uses a Bayesian framework to rule the estimation. With a new data set, the prediction will create a prevision set taking into account the new calibrated parameters. The choices between several models is also available.
 License: GPL (>= 2)
 Encoding: UTF-8

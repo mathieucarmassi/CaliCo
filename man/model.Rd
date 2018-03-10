@@ -96,7 +96,7 @@ model2 <- model(code,X,Yexp,"model2",opt.emul)
 plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
 print(model2)
 
-
+\dontrun{
 ###### For the third model
 model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
 plot(model3,theta=c(1,1,11),thetaD=c(0,0.01),var=0.01,select.X=X[,1])
@@ -109,7 +109,7 @@ opt.emul=list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 model4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc)
 plot(model4,c(1,1,11),c(0,0.1),0.01,select.X=X[,1])
 print(model4)
-
+}
 
 }
 \seealso{
