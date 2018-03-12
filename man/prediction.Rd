@@ -22,6 +22,7 @@ done
 The realized estimation is realized similarly as it is defined in [1]
 }
 \examples{
+\dontrun{
 ###################### The code to calibrate
 X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
 code <- function(X,theta)
@@ -46,7 +47,7 @@ X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
 pr <- prediction(mdfit,X.new)
 print(pr)
 plot(pr,select.X=X[,1])
-
+}
 }
 \seealso{
 \code{\link{model.class}}, \code{\link{prior.class}}

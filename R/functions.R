@@ -365,6 +365,7 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' @author M. Carmassi
 #' @seealso \code{\link{model.class}}, \code{\link{prior.class}}
 #' @examples
+#' \dontrun{
 #' ###################### The code to calibrate
 #' X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
 #' code <- function(X,theta)
@@ -389,7 +390,7 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' pr <- prediction(mdfit,X.new)
 #' print(pr)
 #' plot(pr,select.X=X[,1])
-#'
+#'}
 #' @export
 prediction <-function(modelfit,x.new)
 {
