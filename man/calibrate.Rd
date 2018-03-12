@@ -45,6 +45,7 @@ allows to choose one X for the x scale in the output plot}}
 done from a \code{\link{model.class}} and a \code{\link{prior.class}} objects.
 }
 \examples{
+\dontrun{
 ###################### The code to calibrate
 X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
 code <- function(X,theta)
@@ -71,7 +72,7 @@ print(mdfit)
 opt.valid <- list(type.valid='loo',nCV=10)
 mdfitCV <- calibrate(md,pr,opt.estim,opt.valid)
 print(mdfitCV)
-\dontrun{
+
 ####### Run cross validataion only (the plot function is disabled)
 mdfitCV2 <- calibrate(md,pr,opt.estim,opt.valid,onlyCV=TRUE)
 print(mdfitCV2)

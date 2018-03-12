@@ -41,6 +41,7 @@ are the two hyperparameters. The vector \eqn{c(a,b)} is the one looked for in op
 }
 }
 \examples{
+\dontrun{
 #### Only one prior is wanted
 ## For a Gaussian Prior
 gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
@@ -56,7 +57,7 @@ plot(gamma)
 
 #### For several priors
 priors <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
-
+}
 }
 \seealso{
 \code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}

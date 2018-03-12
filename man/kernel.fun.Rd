@@ -26,11 +26,12 @@ kernel.fun(X, var, psi, kernel.type = "gauss")
 \code{Kernel.fun} is a function that allows us to generate covariances matrices from data
 }
 \examples{
+\dontrun{
 X <- cbind(seq(0,10,length.out=10),seq(8,20,length.out=10))
 var <- 2
 psi <- 0.1
 Cov <- kernel.fun(X,var,psi,kernel.type="matern5_2")
-
+}
 }
 \seealso{
 \code{\link{model.class}}, \code{\link{prior.class}}

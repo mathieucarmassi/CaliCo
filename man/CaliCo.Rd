@@ -21,11 +21,10 @@ Date:    2017-11-07
 License: GPL-2 | GPL-3
 }
 \examples{
+\dontrun{
 # Introduction to CaliCo
 vignette("CaliCo-introduction")
-
-# information on how to use the package
-vignette("CaliCo-package")
+}
 }
 \references{
 Bachoc, F., Blois, G., Garnie, J., and Martinez, J.-M. (2014). Calibration and improved prediction of computer models

@@ -59,6 +59,7 @@ where \eqn{for i in [1,\dots,n] \epsilon(x_i)~N(0,\sigma^2)}, \eqn{F(.,.)~PG(m_1
 There is four kind of models in calibration. They are properly defined in [1].
 }
 \examples{
+\dontrun{
 ###### The code to calibrate
 X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
 code <- function(X,theta)
@@ -96,7 +97,7 @@ model2 <- model(code,X,Yexp,"model2",opt.emul)
 plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
 print(model2)
 
-\dontrun{
+
 ###### For the third model
 model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
 plot(model3,theta=c(1,1,11),thetaD=c(0,0.01),var=0.01,select.X=X[,1])

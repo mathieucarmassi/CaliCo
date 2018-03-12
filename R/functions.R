@@ -43,6 +43,7 @@
 #' @author M. Carmassi
 #' @seealso \code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 #' @examples
+#' \dontrun{
 #' ###### The code to calibrate
 #' X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
 #' code <- function(X,theta)
@@ -80,7 +81,7 @@
 #' plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
 #' print(model2)
 #'
-#' \dontrun{
+#'
 #' ###### For the third model
 #' model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
 #' plot(model3,theta=c(1,1,11),thetaD=c(0,0.01),var=0.01,select.X=X[,1])
@@ -151,6 +152,7 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
 #' @author M. Carmassi
 #' @seealso \code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 #' @examples
+#' \dontrun{
 #' #### Only one prior is wanted
 #' ## For a Gaussian Prior
 #' gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
@@ -166,7 +168,7 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
 #'
 #' #### For several priors
 #' priors <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
-#'
+#'}
 #' @export
 prior <- function(type.prior,opt.prior,log=TRUE)
 {
@@ -256,6 +258,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' @author M. Carmassi
 #' @seealso \code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
 #' @examples
+#' \dontrun{
 #' ###################### The code to calibrate
 #' X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
 #' code <- function(X,theta)
@@ -282,7 +285,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' opt.valid <- list(type.valid='loo',nCV=10)
 #' mdfitCV <- calibrate(md,pr,opt.estim,opt.valid)
 #' print(mdfitCV)
-#' \dontrun{
+#'
 #' ####### Run cross validataion only (the plot function is disabled)
 #' mdfitCV2 <- calibrate(md,pr,opt.estim,opt.valid,onlyCV=TRUE)
 #' print(mdfitCV2)
@@ -410,11 +413,12 @@ prediction <-function(modelfit,x.new)
 #' @author M. Carmassi
 #' @seealso \code{\link{model.class}}, \code{\link{prior.class}}
 #' @examples
+#' \dontrun{
 #' X <- cbind(seq(0,10,length.out=10),seq(8,20,length.out=10))
 #' var <- 2
 #' psi <- 0.1
 #' Cov <- kernel.fun(X,var,psi,kernel.type="matern5_2")
-#'
+#'}
 #' @export
 kernel.fun <- function(X,var,psi,kernel.type="gauss")
 {
@@ -446,9 +450,11 @@ kernel.fun <- function(X,var,psi,kernel.type="gauss")
 #' @param bsup the upper bound
 #' @return y the vector unscaled
 #' @examples
+#' \dontrun{
 #' X <- runif(3)
 #' Y <-unscale.vector(X,rep(10,3),rep(15,3))
 #' print(Y)
+#' }
 #' @export
 unscale.vector <- function(x,binf,bsup){
   n = length(x)
@@ -480,9 +486,11 @@ unscale.vector <- function(x,binf,bsup){
 #' @param bsup the upper bound
 #' @return the normalized diagonal
 #' @examples
+#' \dontrun{
 #' X <- diag(3)*runif(3)
 #' Y <-unscale.matrix.diag(X,rep(10,3),rep(15,3))
 #' print(Y)
+#' }
 #' @export
 unscale.matrix.diag <- function(M,binf,bsup){
   n <- dim(M)[1]
@@ -507,9 +515,11 @@ unscale.matrix.diag <- function(M,binf,bsup){
 #' @param sym default value False if we do not have a symetric matrix
 #' @return the unscaled vector or matrix
 #' @examples
+#' \dontrun{
 #' X <- diag(3)*runif(3)
 #' Y <- unscale(X,rep(10,3),rep(15,3))
 #' print(Y)
+#' }
 #' @export
 unscale <- function(M,binf,bsup,diag=FALSE,sym=FALSE){
   if (diag==FALSE){

@@ -46,10 +46,9 @@
 #' science, pages 409–423.
 #' @references Santner, T., Williams, B., and Notz, W. (2003). The Design and Analysis of Computer Experiments. Springer-Verlab.
 #' @examples
+#' \dontrun{
 #' # Introduction to CaliCo
 #' vignette("CaliCo-introduction")
-#'
-#' # information on how to use the package
-#' vignette("CaliCo-package")
+#' }
 #' @name CaliCo
 NULL
