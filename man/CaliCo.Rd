@@ -21,47 +21,33 @@ Date:    2017-11-07
 License: GPL-2 | GPL-3
 }
 \examples{
-\dontrun{
 # Introduction to CaliCo
-vignette("CaliCo-introduction")
-}
+\dontrun{vignette("CaliCo-introduction")}
 }
 \references{
-Bachoc, F., Blois, G., Garnie, J., and Martinez, J.-M. (2014). Calibration and improved prediction of computer models
-by universal kriging. Computational Statistics and Data Analysis, pages 81–97
+Bachoc et al. (2014) <arXiv:1301.4114v2>
 
-Bayarri, M., Berger, J., Sacks, P. R., Cafeo, J. A., Cavendish, J., Lin, C. H., and Tu, J. (2007 b). A framework for
-validation of computer models. Technometrics.
+Bayarri et al. (2007 b) <doi:10.1198/004017007000000092>
 
-Cox, D., Park, J. S., and Singer, C. (2001). A statistical method for tuning a computer code to a data base. Computational
-Statistics and Data Analysis.
+Carmassi et al. (2018) <arXiv:1801.01810>
 
-Damblin, G. (2015). Contributions statistiques au calage et à la validation des codes de calculs. PhD thesis, University
-Paris-Saclay
+Cox et al. (2001) <doi:10.1016/S0167-9473(00)00057-8>
 
-Hastings, W. K. (1970). Mont carlo sampling methods using marlov chains and their applications. Biometrika.
+Hastings (1970) <doi:10.2307/2334940>
 
-Higdon, D., Kennedy, M. C., Cavendish, J., Cafeo, J., and Ryne, R. (2004). Combining field data and computer
-simulations for calibration and prediction. SIAM Journal on Scientific Computing.
+Higdon et al. (2004) <doi:10.1137/S1064827503426693>
 
-Kennedy, M. C. and O’Hagan, A. (2001). Bayesian calibration of computer models. Journal of the Royal Statistical
-Society, serie B, Methodological.
+Kennedy et al. (2001) <doi:10.1111/1467-9868.00294>
 
-Kennedy, M. C. and O’Hagan, A. (2001b). Supplementary details on bayesian calibration of computer models. Journal
-of the Royal Statistical Society, serie B, Methodological.
+Kennedy et al. (2001b) <doi:10.1.1.28.2835>
 
-Liu, F., Bayarri, S., and Berger, J. (2009). Modularization in bayesian analysis, with emphasis on analysis of computer
-models. Bayesian Analysis, pages 119–150.
+Liu et al. (2009) <doi:10.1214/09-BA404>
 
-Robert, C. (1996). Méthodes de monte carlo par chaines de markov. economica.
+Roustant et al. (2012) <hal:00495766v1>
 
-Roustant, O., Ginsbourger, D., and Devills, Y. (2012). Dicekriging, diceoptim : Two r packages for the analysis of
-computer experiments by kriging-based metamodeling and optimization. Journal of Statistical Software.
+Sacks et al. (1989) <doi:10.1214/ss/1177012413>
 
-Sacks, J., Welch, W. J., and Toby J. Mitchell, H. P. W. (1989). Design and analysis of computer experiments. Statistical
-science, pages 409–423.
-
-Santner, T., Williams, B., and Notz, W. (2003). The Design and Analysis of Computer Experiments. Springer-Verlab.
+Santner et al. (2003, ISBN:978-1-4757-3799-8)
 }
 \author{
 Mathieu Carmassi
