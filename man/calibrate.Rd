@@ -61,74 +61,14 @@ md <- model(code,X,Yexp,"model1")
 pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
 ###### Definition of the calibration options
-opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
-sig=diag(4),Nchains=1,burnIn=3000)
+opt.estim=list(Ngibbs=200,Nmh=400,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
+sig=diag(4),Nchains=1,burnIn=100)
 ###### Run the calibration
 mdfit <- calibrate(md,pr,opt.estim)
 ####### The plot generated is a list of ggplot
 p <- plot(mdfit,select.X=X[,1])
+p$output
 print(mdfit)
-####### Run regular calibration plus cross validation (the plot function is available)
-opt.valid <- list(type.valid='loo',nCV=10)
-mdfitCV <- calibrate(md,pr,opt.estim,opt.valid)
-print(mdfitCV)
-
-####### Run cross validataion only (the plot function is disabled)
-mdfitCV2 <- calibrate(md,pr,opt.estim,opt.valid,onlyCV=TRUE)
-print(mdfitCV2)
-
-
-############### For the second model
-###### Definition of the model
-### The lower and upper bound vector for the parameter
-binf <- c(0.9,0.9,10.5)
-bsup <- c(1.1,1.1,11.5)
-opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
-md2 <- model(code,X,Yexp,"model2",opt.emul)
-###### Definition of the prior densities
-pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
-list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
-###### Definition of the calibration options
-opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
-sig=diag(4),Nchains=1,burnIn=3000)
-###### Run the calibration
-mdfit2 <- calibrate(md2,pr,opt.estim)
-####### The plot generated is a list of ggplot
-p <- plot(mdfit2,select.X=X[,1])
-print(mdfit2)
-
-
-############### For the third model
-md3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
-###### Definition of the prior densities
-pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
-list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
-###### Definition of the calibration options
-opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),
-k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
-###### Run the calibration
-mdfit3 <- calibrate(md3,pr,opt.estim)
-####### The plot generated is a list of ggplot
-p <- plot(mdfit3,select.X=X[,1])
-print(mdfit3)
-
-
-############### For the fourth model
-binf <- c(0.9,0.9,10.5)
-bsup <- c(1.1,1.1,11.5)
-opt.emul <- list(p=3,n.emul=50,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
-md4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc=list(kernel.type="matern5_2"))
-###### Definition of the prior densities
-pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gaussian","gamma","gamma"),opt.prior=
-list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1),c(2,0.1),c(2,0.1)))
-###### Definition of the calibration options
-opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,2,0.1,0.1),
-k=rep(5e-3,6),sig=diag(6),Nchains=1,burnIn=3000)
-###### Run the calibration
-mdfit4 <- calibrate(md4,pr,opt.estim)
-####### The plot generated is a list of ggplot
-p <- plot(mdfit4,select.X=X[,1])
-print(mdfit4)
 }
 }
 \seealso{
