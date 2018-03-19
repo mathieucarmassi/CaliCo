@@ -15,3 +15,8 @@ See the [vignette](https://github.com/mathieucarmassi/CaliCo/blob/master/vignett
 ```
 devtools::install_github("mathieucarmassi/CaliCo", build_vignettes=TRUE)
 ```
+
+
+Total number of downloads:
+
+> ![](http://cranlogs.r-pkg.org/badges/grand-total/CaliCo)
