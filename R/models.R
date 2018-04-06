@@ -1,9 +1,11 @@
 #' A Reference Class to generates differents model objects
 #'
+#'
 #' @description See the function \code{\link{model}} which produces an instance of this class
 #' This class comes with a set of methods, some of them being useful for the user:
 #' See the documentation for \code{\link{model}}... Other methods
 #' should not be called as they are designed to be used during the calibration process.
+#'
 #'
 #' Fields should not be changed or manipulated by the user as they are updated internally
 #' during the estimation process.
@@ -24,8 +26,9 @@
 #' @field model the model choice (see \code{\link{model}} for more specification).
 #' @field opt.disc a list of parameter for the discrepancy \itemize{
 #' \item{\strong{kernel.type}}{ the kernel choosen for the Gaussian process}}
+#'
 #' @export
-model.class <- R6::R6Class(classname = "model.class",
+model.class <- R6Class(classname = "model.class",
                  public = list(
                    code      = NULL,
                    X         = NULL,
@@ -91,7 +94,7 @@ model.class$set("private","checkCode",
                 })
 
 
-model1.class <- R6::R6Class(classname = "model1.class",
+model1.class <- R6Class(classname = "model1.class",
                         inherit = model.class,
                         public=list(
                         m.exp = NULL,
@@ -174,7 +177,7 @@ model1.class$set("public","print",
                  }
 )
 
-model3.class <- R6::R6Class(classname = "model3.class",
+model3.class <- R6Class(classname = "model3.class",
                         inherit = model1.class,
                         public=list(
                           funTemp  = NULL,
@@ -305,7 +308,7 @@ model3.class$set("public","print",
 model3.class$set("public","likelihood",
                  function(theta,thetaD,var)
                  {
-                   self$m.exp <- self$code(self$X,theta)
+                   self$m.exp <- self$code(self$X,as.vector(theta))
                    temp <- self$fun(theta,thetaD,var)
                    self$V.exp <- var*diag(self$n) + temp$cov
                    # return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
@@ -315,7 +318,7 @@ model3.class$set("public","likelihood",
 
 
 
-model2.class <- R6::R6Class(classname = "model2.class",
+model2.class <- R6Class(classname = "model2.class",
                         inherit = model.class,
                         public = list(
                           n.emul   = NULL,
@@ -458,7 +461,7 @@ model2.class <- R6::R6Class(classname = "model2.class",
 model2.class$set("public","likelihood",
                  function(theta,var)
                  {
-                   temp <- self$fun(theta,var)
+                   temp <- self$fun(as.vector(theta),var)
                    self$m.exp <- temp$yc
                    if (length(theta)!=self$p)
                    {stop('You have given the wrong number of parameter')}
@@ -534,7 +537,7 @@ model2.class$set("public","print",
 
 
 
-model4.class <- R6::R6Class(classname = "model4.class",
+model4.class <- R6Class(classname = "model4.class",
                         inherit = model2.class,
                         public=list(
                           funC = NULL,
@@ -619,7 +622,7 @@ model4.class <- R6::R6Class(classname = "model4.class",
 model4.class$set("public","likelihood",
                  function(theta,thetaD,var)
                  {
-                   temp <- self$fun(theta,thetaD,var)
+                   temp <- self$fun(as.vector(theta),thetaD,var)
                    self$m.exp <- temp$yc
                    self$V.exp <- var*diag(self$n) + temp$Cov.GP +temp$Cov.D
                    # return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%

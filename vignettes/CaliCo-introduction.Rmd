@@ -46,9 +46,7 @@ $$
 The function $f_t$ is chosen with only one forced variable and one parameter $\theta$. Let us say that experiments are available and can be expressed by $Y_exp$. The belief on the value of $\theta$ shows that a non-negligible gap is present.
 
 ```{r, fig.width=4,echo=FALSE,fig.align='center'}
-library(CaliCo)
 library(ggplot2)
-library(gridExtra)
 n=10
 X <- seq(0,1,length.out=n)
 code <- function(X,theta)
@@ -150,6 +148,7 @@ plot(model1,11,0.01)
 Note that the method `plot` generates a `ggplot`. It is possible to store the plot into a variable and make some changes. For example, if one is interested in adding a title, the labels, decrease the size of the legend and move it a little:
 
 ```{r, echo=TRUE,fig.width=4,fig.align="center"}
+library(ggplot2)
 p <- plot(model1,11,0.01)
 p+ggtitle("Model1 and experiments")+ylab("y")+xlab("t")+
   theme(legend.position=c(0.6,0.75),legend.text=element_text(size = '7'))
@@ -237,9 +236,10 @@ plot(gaussian)
 
 Where the prior function generates a `prior.class` object which contains methods as `plot()` or `print()`. The arguments are `type.prior` and `opt.prior`. The option `opt.prior` contains the specification of the density selected. For example, a Gaussian density will get a vector with its mean and its variance, a Gamma density the scale and the shape. This option is initially a `list` because when several priors are defined, that allows to serated each characteristics. Identically as before, the `plot()` method returns a `ggplot` which can be stored into a variable and then modified by the user. To define sevaral prior densities, the rigth way is illustrated as the following
 
-```{r, fig.width=4,fig.height=5,fig.align='center'}
+```{r, fig.width=4,fig.align='center'}
 priors <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
-grid.arrange(plot(priors$Prior1),plot(priors$Prior2),nrow=2)
+plot(priors$Prior1)
+plot(priors$Prior2)
 ```
 
 The `grid.arrange` function allows to visualize both prior densities at the same time. The variable `priors` stores a list of the prior's number whished defined as a `prior.class` objects.

@@ -13,7 +13,7 @@
 #' @field upperPred the upper bound of the 90\% credibility interval
 #' @field meanPred the predicted value
 #' @export
-prediction.class <- R6::R6Class(classname = "predict.class",
+prediction.class <- R6Class(classname = "predict.class",
                            public = list(
                              modelfit = NULL,
                              x.new     = NULL,

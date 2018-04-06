@@ -9,7 +9,7 @@
 #' @field Kernel.type the chosen form of covariance
 #' @field Cov the covariance
 #' @export
-Kernel.class <- R6::R6Class(classname = "Kernel.class",
+Kernel.class <- R6Class(classname = "Kernel.class",
                            public = list(
                              X           = NULL,
                              var         = NULL,
@@ -34,7 +34,7 @@ Kernel.class <- R6::R6Class(classname = "Kernel.class",
                            ))
 
 
-gauss.class <- R6::R6Class(classname= "gauss.class",
+gauss.class <- R6Class(classname= "gauss.class",
                            inherit = Kernel.class,
                            public = list(
                              initialize = function(X,var,psi,Kernel.type="gauss")
@@ -70,7 +70,7 @@ gauss.class <- R6::R6Class(classname= "gauss.class",
                              }
                            ))
 
-exp.class <- R6::R6Class(classname= "exp.class",
+exp.class <- R6Class(classname= "exp.class",
                            inherit = Kernel.class,
                          public = list(
                            initialize = function(X,var,psi,Kernel.type="exp")
@@ -107,7 +107,7 @@ exp.class <- R6::R6Class(classname= "exp.class",
 ))
 
 
-matern3_2.class <- R6::R6Class(classname= "matern3_2.class",
+matern3_2.class <- R6Class(classname= "matern3_2.class",
                          inherit = Kernel.class,
                          public = list(
                          initialize = function(X,var,psi,Kernel.type="matern3_2")
@@ -146,7 +146,7 @@ matern3_2.class <- R6::R6Class(classname= "matern3_2.class",
 ))
 
 
-matern5_2.class <- R6::R6Class(classname= "matern5_2.class",
+matern5_2.class <- R6Class(classname= "matern5_2.class",
                                inherit = Kernel.class,
                                public = list(
                                initialize = function(X,var,psi,Kernel.type="matern5_2")

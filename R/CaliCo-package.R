@@ -3,6 +3,10 @@
 #' The CaliCo package provides three categories of important functions:
 #' \code{\link{model}}, \code{\link{prior}}, \code{\link{calibrate}} and \code{\link{prediction}}.
 #'
+#' @useDynLib CaliCo
+#' @importFrom R6 R6Class
+#' @import ggplot2 DiceKriging DiceDesign FactoMineR coda parallel testthat MASS
+#'
 #' @details
 #' Package: CaliCo
 #'
