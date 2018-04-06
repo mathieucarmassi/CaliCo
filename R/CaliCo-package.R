@@ -5,6 +5,7 @@
 #'
 #' @useDynLib CaliCo
 #' @importFrom R6 R6Class
+#' @importFrom stats rnorm
 #' @import ggplot2 DiceKriging DiceDesign FactoMineR coda parallel testthat MASS
 #'
 #' @details
@@ -25,6 +26,8 @@
 #' by universal kriging. Computational Statistics and Data Analysis, pages 81–97
 #' @references Bayarri, M., Berger, J., Sacks, P. R., Cafeo, J. A., Cavendish, J., Lin, C. H., and Tu, J. (2007 b). A framework for
 #' validation of computer models. Technometrics.
+#' @references Carmassi, M., Barbillon ,P., Chiodetti, M., Keller, M., Parent, E. (2018). Bayesian calibration of a numerical code for prediction,
+#' arXiv preprint arXiv:1801.01810.
 #' @references Cox, D., Park, J. S., and Singer, C. (2001). A statistical method for tuning a computer code to a data base. Computational
 #' Statistics and Data Analysis.
 #' @references Damblin, G. (2015). Contributions statistiques au calage et à la validation des codes de calculs. PhD thesis, University
@@ -46,9 +49,6 @@
 #' @references Santner, T., Williams, B., and Notz, W. (2003). The Design and Analysis of Computer Experiments. Springer-Verlab.
 #' @examples
 #' # Introduction to CaliCo
-#' vignette("CaliCo-introduction")
-#'
-#' # information on how to use the package
-#' vignette("CaliCo-package")
+#' \dontrun{vignette("CaliCo-introduction")}
 #' @name CaliCo
 NULL

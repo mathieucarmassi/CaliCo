@@ -59,13 +59,14 @@ where \eqn{for i in [1,\dots,n] \epsilon(x_i)~N(0,\sigma^2)}, \eqn{F(.,.)~PG(m_1
 There is four kind of models in calibration. They are properly defined in [1].
 }
 \examples{
+\dontrun{
 ###### The code to calibrate
-X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
+X <- cbind(seq(0,1,length.out=4),seq(0,1,length.out=4))
 code <- function(X,theta)
 {
   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 }
-Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
+Yexp <- code(X,c(1,1,11))+rnorm(4,0,0.1)
 
 ###### For the first model
 ### Generate the model
@@ -74,42 +75,29 @@ model1 <- model(code,X,Yexp,"model1")
 plot(model1,c(1,1,11),0.1,select.X=X[,1])
 ### Summury of the foo class generated
 print(model1)
-### Acces of the function in the model
-model1$fun(c(1,1,11),0.1)
-### Get acces to the likelihood
-model1$likelihood(c(1,1,11),0.1)
 
 ###### For the second model
 ### Generate the model with setup for the Gaussian Process
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
-opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+opt.emul <- list(p=3,n.emul=10,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 model2 <- model(code,X,Yexp,"model2",opt.emul)
 ### Plot the model
 plot(model2,c(1,1,11),0.1,select.X=X[,1])
 
 ### Use your own design of experiments
-DOE <- DiceDesign::lhsDesign(100,5)$design
+DOE <- DiceDesign::lhsDesign(10,5)$design
 DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
-opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=DOE)
+opt.emul <- list(p=3,n.emul=10,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=DOE)
 model2 <- model(code,X,Yexp,"model2",opt.emul)
 plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
-print(model2)
-
 
 ###### For the third model
 model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
 plot(model3,theta=c(1,1,11),thetaD=c(0,0.01),var=0.01,select.X=X[,1])
 print(model3)
 
-###### For the fourth model
-### Desactivation of the input DOE
-opt.disc=list(kernel.type="matern5_2")
-opt.emul=list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
-model4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc)
-plot(model4,c(1,1,11),c(0,0.1),0.01,select.X=X[,1])
-print(model4)
-
+}
 
 }
 \seealso{

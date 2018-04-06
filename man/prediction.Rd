@@ -22,6 +22,7 @@ done
 The realized estimation is realized similarly as it is defined in [1]
 }
 \examples{
+\dontrun{
 ###################### The code to calibrate
 X <- cbind(seq(0,1,length.out=10),seq(0,1,length.out=10))
 code <- function(X,theta)
@@ -37,8 +38,8 @@ md <- model(code,X,Yexp,"model1")
 pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
 list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
 ###### Definition of the calibration options
-opt.estim=list(Ngibbs=2000,Nmh=6000,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
-sig=diag(4),Nchains=1,burnIn=3000)
+opt.estim=list(Ngibbs=200,Nmh=600,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
+sig=diag(4),Nchains=1,burnIn=100)
 ###### Run the calibration
 mdfit <- calibrate(md,pr,opt.estim)
 ###### Prediction between 1 and 1.2
@@ -46,7 +47,7 @@ X.new <- cbind(seq(1,1.2,length.out=10),seq(1,1.2,length.out=10))
 pr <- prediction(mdfit,X.new)
 print(pr)
 plot(pr,select.X=X[,1])
-
+}
 }
 \seealso{
 \code{\link{model.class}}, \code{\link{prior.class}}

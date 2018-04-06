@@ -20,7 +20,9 @@ y the vector unscaled
 Function which unscale a vector between two bounds
 }
 \examples{
+\dontrun{
 X <- runif(3)
 Y <-unscale.vector(X,rep(10,3),rep(15,3))
 print(Y)
+}
 }

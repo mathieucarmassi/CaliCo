@@ -10,8 +10,13 @@ devtools::install_github("mathieucarmassi/CaliCo")
 
 ## Use and example
 
-See the [vignette](https://github.com/mathieucarmassi/CaliCo/blob/master/vignettes/introduction.Rmd). To build the vignettes on intallation, you need to run the following code:
+See the [vignette](https://github.com/mathieucarmassi/CaliCo/blob/master/vignettes/CaliCo-introduction.Rmd). To build the vignettes on intallation, you need to run the following code:
 
 ```
 devtools::install_github("mathieucarmassi/CaliCo", build_vignettes=TRUE)
 ```
+
+
+Total number of downloads:
+
+> ![](http://cranlogs.r-pkg.org/badges/grand-total/CaliCo)

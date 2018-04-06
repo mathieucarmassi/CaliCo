@@ -20,7 +20,9 @@ the normalized diagonal
 Funcion which unscale only the diagonal component of a matrix
 }
 \examples{
+\dontrun{
 X <- diag(3)*runif(3)
 Y <-unscale.matrix.diag(X,rep(10,3),rep(15,3))
 print(Y)
+}
 }
