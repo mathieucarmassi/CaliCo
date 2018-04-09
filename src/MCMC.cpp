@@ -37,11 +37,12 @@ using namespace arma;
 //'  }
 //' @export
 // [[Rcpp::export]]
-List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,
+List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec r, arma::mat SIGMA, arma::vec Yf,
                            arma::vec binf, arma::vec bsup, Function LogTest, int stream)
 {
   double Dim = theta_init.size();
   int D;
+  arma::vec k = theta_init/100;
   arma::mat PHIwg=randu<arma::mat>(Ngibbs,Dim), THETAwg=randu<arma::mat>(Ngibbs,Dim);
   arma::mat LikeliWG=randu<arma::mat>(Ngibbs,Dim);
   arma::vec Likeli=zeros(Nmh,1);
@@ -55,7 +56,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   THETAwg.row(0)=theta_init.t();
   PHIwg.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
   arma::vec theta=theta_init.rows(0,Dim-2);
-  double Verr=THETAwg(0,(Dim-1));
+  double Verr=THETAwg(0,Dim-1);
   //Rcpp::List res = as<Rcpp::List>(model(theta,Verr));
   //arma::vec Yg=res["y"];
   // arma::vec Yg=as<arma::vec>(model(theta,Verr));
@@ -103,7 +104,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
           theta_star(j) = as<double>(unscale(exp(phi_star(j)),binf(j),bsup(j)));
         }
       }
-      Verr = theta_star((Dim-1));
+      Verr = theta_star(Dim-1);
       theta = theta_star.rows(0,Dim-2);
       double beta = as<double>(LogTest(theta,Verr));
       double logR = beta-alpha;
@@ -125,12 +126,12 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
       {
         if (AcceptationRatioWg(j)/i<0.2)
         {
-          k(j) = k(j)*0.9;
+          k(j) = k(j)*(1-r(0));
         } else
         {
           if (AcceptationRatioWg(j)/i>0.5)
           {
-            k(j) = k(j)*1.1;
+            k(j) = k(j)*(1+r(0));
           }
         }
       }
@@ -193,7 +194,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
     vec phi_star = as<vec>(mvrnorm(1,NewPhi.t(),t*S));
     vec theta_star = as<vec>(unscale(exp(phi_star.t()),binf,bsup));
     theta = theta_star.rows(0,Dim-2);
-    Verr = theta_star((Dim-1));
+    Verr = theta_star(Dim-1);
     double beta2 = as<double>(LogTest(theta,Verr));
     double logR2 = beta2 - alpha2;
     if(log(as<double>(runif(1))) < logR2)
@@ -214,12 +215,12 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
     {
       if (AcceptationRatio/i<0.2)
       {
-        t = t*0.8;
+        t = t*(1-r(1));
       } else
       {
         if (AcceptationRatio/i>0.5)
         {
-          t = t*1.2;
+          t = t*(1+r(1));
         }
       }
     }
@@ -270,11 +271,12 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
 //'  }
 //' @export
 // [[Rcpp::export]]
-List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec k, arma::mat SIGMA, arma::vec Yf,
+List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec r, arma::mat SIGMA, arma::vec Yf,
                            arma::vec binf, arma::vec bsup, Function LogTest, int stream)
 {
   double Dim = theta_init.size();
   int D;
+  arma::vec k = theta_init/100;
   arma::mat PHIwg=randu<arma::mat>(Ngibbs,Dim), THETAwg=randu<arma::mat>(Ngibbs,Dim);
   if (Nmh!=0) {D=Nmh;} else {D=10;}
   arma::mat PHI= randu<arma::mat>(D,Dim), THETA=randu<arma::mat>(D,Dim);
@@ -345,12 +347,12 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
       {
         if (AcceptationRatioWg(j)/i<0.2)
         {
-          k(j) = k(j)*0.8;
+          k(j) = k(j)*(1-r(0));
         } else
         {
           if (AcceptationRatioWg(j)/i>0.5)
           {
-            k(j) = k(j)*1.2;
+            k(j) = k(j)*(1+r(0));
           }
         }
       }
@@ -434,12 +436,12 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
       {
         if (AcceptationRatio/i<0.2)
         {
-          t = t*0.9;
+          t = t*(1-r(1));
         } else
         {
           if (AcceptationRatio/i>0.5)
           {
-            t = t*1.1;
+            t = t*(1+r(1));
           }
         }
       }

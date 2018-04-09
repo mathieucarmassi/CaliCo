@@ -1,6 +1,7 @@
 ## ---- fig.width=4,echo=FALSE,fig.align='center'--------------------------
 library(ggplot2)
-n=20
+
+n=10
 X <- seq(0,1,length.out=n)
 code <- function(X,theta)
 {
@@ -26,8 +27,8 @@ for (i in 1:100){
 }
 
 qq <- apply(Y_prior,2,quantile,probs=c(0.05,0.95))
-gdata <- data.frame(y=Yexp,x=X,upper=qq[2,],lower=qq[1,],type="Experiments",fill="credibility interval at 90%")
-gdata2 <- data.frame(y=Yt,x=X,upper=qq[2,],lower=qq[1,],type="Prior belief",fill="credibility interval at 90%")
+gdata <- data.frame(y=Yexp,x=X,upper=qq[2,],lower=qq[1,],type="Experiments",fill="credibility interval a priori at 90%")
+gdata2 <- data.frame(y=Yt,x=X,upper=qq[2,],lower=qq[1,],type="Prior belief",fill="credibility interval a priori at 90%")
 gdata <- rbind(gdata,gdata2)
 
 p2 <- ggplot(gdata)+geom_line(aes(x=x,y=y,col=type))+geom_ribbon(aes(x=x,ymax=upper,ymin=lower,fill=fill),alpha=0.3)+theme_light()+theme(legend.title=element_blank(),legend.key=element_rect(colour=NA),legend.text=element_text(size = '8'))
@@ -36,7 +37,7 @@ p2
 ## ---- echo=TRUE----------------------------------------------------------
 library(CaliCo)
 # Number of experiments
-n=20
+n=10
 # Time interval
 t <- seq(0,1,length.out=n)
 # Code definition
@@ -50,13 +51,14 @@ Yexp <- code(t,10.5)+rnorm(n,0,sqrt(0.01))
 model1 <- model(code=code,X=t,Yexp=Yexp,model="model1")
 
 ## ----echo=TRUE-----------------------------------------------------------
-model1$print()
+print(model1)
 
 ## ---- echo=TRUE,fig.width=4,fig.align="center"---------------------------
-model1$plot(11,0.01)
+plot(model1,11,0.01)
 
 ## ---- echo=TRUE,fig.width=4,fig.align="center"---------------------------
-p <- model1$plot(11,0.01)
+library(ggplot2)
+p <- plot(model1,11,0.01)
 p+ggtitle("Model1 and experiments")+ylab("y")+xlab("t")+
   theme(legend.position=c(0.6,0.75),legend.text=element_text(size = '7'))
 
@@ -66,12 +68,12 @@ binf <- 8
 bsup <- 13
 
 # Set the emulation option
-opt.emul <- list(p=1,n.emul=30,type="matern3_2",binf=binf,bsup=bsup,DOE=NULL)
+opt.emul <- list(p=1,n.emul=40,type="matern3_2",binf=binf,bsup=bsup,DOE=NULL)
 # Generate the second model
 model2 <- model(code,X,Yexp,"model2",opt.emul)
 
 ## ---- echo=TRUE,fig.width=4,fig.align="center"---------------------------
-p <- model2$plot(11,0.01,points=TRUE)
+p <- plot(model2,11,0.01)
 p+ylab("y")+xlab("t")+
   theme(legend.position=c(0.6,0.75),legend.text=element_text(size = '7'))
 
@@ -85,25 +87,27 @@ model3 <- model(code,X,Yexp,"model3",opt.disc=opt.disc)
 model4 <- model(code,X,Yexp,"model4",opt.emul,opt.disc)
 
 ## ---- echo=TRUE, fig.width=4, fig.align="center"-------------------------
-p <- model3$plot(11,c(2,0.5),0.01)
+p <- plot(model3,11,c(2,0.5),0.01)
 p+ylab("y")+xlab("t")+
   theme(legend.position=c(0.6,0.75),legend.text=element_text(size = '7'))
 
 ## ---- echo=TRUE, fig.width=6, fig.align="center"-------------------------
-p <- model4$plot(11,c(1,0.1),0.01)
+p <- plot(model4,11,c(1,0.1),0.01)
 p+ylab("y")+xlab("t")+
   theme(legend.position="right",legend.text=element_text(size = '7'))
 
 ## ---- fig.width=4,fig.align='center'-------------------------------------
 gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
-p <- gaussian$plot()
-p
+plot(gaussian)
 
-## ---- fig.width=4,fig.height=5,fig.align='center'------------------------
+## ---- fig.width=4,fig.align='center'-------------------------------------
 priors <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(0.5,0.001),c(5,1)))
-grid.arrange(priors$Prior1$plot(),priors$Prior2$plot(),nrow=2)
+plot(priors$Prior1)
+plot(priors$Prior2)
 
 ## ---- echo=TRUE----------------------------------------------------------
-priors$Prior1
-priors$Prior2
+print(priors$Prior1)
+
+## ---- echo=TRUE----------------------------------------------------------
+print(priors$Prior2)
 

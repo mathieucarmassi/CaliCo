@@ -100,7 +100,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                self$bsup     <- private$boundaries()$bsup
                                MetropolisCpp <- private$MCMC(self$md$model)
                                out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
-                                                              self$opt.estim$thetaInit,self$opt.estim$k,
+                                                              self$opt.estim$thetaInit,self$opt.estim$r,
                                                               self$opt.estim$sig,self$md$Yexp,self$binf,self$bsup,self$logPost,1)
                                MAP           <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))
@@ -145,7 +145,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                MetropolisCpp <- private$MCMC(mdTemp$model)
                                out           <- MetropolisCpp(self$opt.estim$Ngibbs,
                                                               self$opt.estim$Nmh,
-                                                              self$opt.estim$thetaInit,self$opt.estim$k,
+                                                              self$opt.estim$thetaInit,self$opt.estim$r,
                                                               self$opt.estim$sig,y,binf,bsup,self$logPost,0)
                                MAP           <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))

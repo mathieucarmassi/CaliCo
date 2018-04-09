@@ -122,7 +122,7 @@ model1.class <- R6Class(classname = "model1.class",
                         },
                         likelihood = function(theta,var)
                         {
-                          self$m.exp = self$code(self$X,theta)
+                          self$m.exp = self$code(self$X,as.vector(theta))
                           if (is.na(mean(self$m.exp)))
                           {stop('Wrong number of parameter in the function')}
                           self$V.exp = var*diag(self$n)
@@ -308,8 +308,8 @@ model3.class$set("public","print",
 model3.class$set("public","likelihood",
                  function(theta,thetaD,var)
                  {
-                   self$m.exp <- self$code(self$X,theta)
-                   temp <- self$fun(theta,thetaD,var)
+                   self$m.exp <- self$code(self$X,as.vector(theta))
+                   temp <- self$fun(as.vector(theta),thetaD,var)
                    self$V.exp <- var*diag(self$n) + temp$cov
                    # return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
                    #                                              invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
@@ -461,7 +461,7 @@ model2.class <- R6Class(classname = "model2.class",
 model2.class$set("public","likelihood",
                  function(theta,var)
                  {
-                   temp <- self$fun(theta,var)
+                   temp <- self$fun(as.vector(theta),var)
                    self$m.exp <- temp$yc
                    if (length(theta)!=self$p)
                    {stop('You have given the wrong number of parameter')}
@@ -622,7 +622,7 @@ model4.class <- R6Class(classname = "model4.class",
 model4.class$set("public","likelihood",
                  function(theta,thetaD,var)
                  {
-                   temp <- self$fun(theta,thetaD,var)
+                   temp <- self$fun(as.vector(theta),thetaD,var)
                    self$m.exp <- temp$yc
                    self$V.exp <- var*diag(self$n) + temp$Cov.GP +temp$Cov.D
                    # return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
