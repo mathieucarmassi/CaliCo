@@ -4,7 +4,7 @@
 \alias{MetropolisHastingsCpp}
 \title{C++ implementation of the algorithm for parameter calibration (without discrepancy)}
 \usage{
-MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup,
+MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup,
   LogTest, stream)
 }
 \arguments{
@@ -13,8 +13,6 @@ MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup,
 \item{Nmh}{the number of iteration in the Metropolis Hastings}
 
 \item{theta_init}{the starting point}
-
-\item{k}{the tuning vector of the step in the proposition distribution}
 
 \item{SIGMA}{the covaraince of the proposition distribution}
 
@@ -27,6 +25,8 @@ MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, k, SIGMA, Yf, binf, bsup,
 \item{LogTest}{the log posterior density disbution}
 
 \item{stream}{(default=1) if stream=0 the progress bar is desabled}
+
+\item{k}{the tuning vector of the step in the proposition distribution}
 }
 \value{
 list of outputs: \itemize{

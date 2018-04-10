@@ -255,7 +255,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
 #' ###### Definition of the calibration options
-#' opt.estim=list(Ngibbs=200,Nmh=400,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
+#' opt.estim=list(Ngibbs=200,Nmh=400,thetaInit=c(1,1,11,0.1),r=c(0.3,0.3),
 #' sig=diag(4),Nchains=1,burnIn=100)
 #' ###### Run the calibration
 #' mdfit <- calibrate(md,pr,opt.estim)
@@ -302,7 +302,7 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' pr <- prior(type.prior=c("gaussian","gaussian","gaussian","gamma"),opt.prior=
 #' list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
 #' ###### Definition of the calibration options
-#' opt.estim=list(Ngibbs=200,Nmh=600,thetaInit=c(1,1,11,0.1),k=c(6e-3,1e-3,1e-5,1e-3),
+#' opt.estim=list(Ngibbs=200,Nmh=600,thetaInit=c(1,1,11,0.1),r=c(0.3,0.3),
 #' sig=diag(4),Nchains=1,burnIn=100)
 #' ###### Run the calibration
 #' mdfit <- calibrate(md,pr,opt.estim)
