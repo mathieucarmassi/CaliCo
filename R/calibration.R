@@ -29,7 +29,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                              logPost    = NULL,
                              mcmc       = NULL,
                              output     = NULL,
-                             onlyCV = NULL,
+                             onlyCV     = NULL,
                              errorCV    = NULL,
                              ResultsCV  = NULL,
                              n.cores    = NULL,
@@ -49,7 +49,8 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                  self$n.cores    <- 1
                                } else
                                {
-                                 self$n.cores    <- 2
+                                 self$n.cores    <- detectCores()
+                                 #self$n.cores <- 1
                                }
                                if (self$opt.estim$burnIn > self$opt.estim$Nmh)
                                {
@@ -143,10 +144,9 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                binf          <- private$boundaries()$binf
                                bsup          <- private$boundaries()$bsup
                                MetropolisCpp <- private$MCMC(mdTemp$model)
-                               out           <- MetropolisCpp(self$opt.estim$Ngibbs,
-                                                              self$opt.estim$Nmh,
+                               out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
                                                               self$opt.estim$thetaInit,self$opt.estim$r,
-                                                              self$opt.estim$sig,y,binf,bsup,self$logPost,0)
+                                                              self$opt.estim$sig,self$md$Yexp,binf,bsup,self$logPost,0)
                                MAP           <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))
                              }
