@@ -50,7 +50,6 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                } else
                                {
                                  self$n.cores    <- detectCores()
-                                 #self$n.cores <- 1
                                }
                                if (self$opt.estim$burnIn > self$opt.estim$Nmh)
                                {
