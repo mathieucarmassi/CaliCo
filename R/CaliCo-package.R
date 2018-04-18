@@ -13,9 +13,9 @@
 #'
 #' Type:    Package
 #'
-#' Version: 0.1.0
+#' Version: 0.1.1
 #'
-#' Date:    2017-11-07
+#' Date:    2018-04-13
 #'
 #' License: GPL-2 | GPL-3
 #'

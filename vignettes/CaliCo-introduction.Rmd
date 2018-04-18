@@ -47,7 +47,6 @@ The function $f_t$ is chosen with only one forced variable and one parameter $\t
 
 ```{r, fig.width=4,echo=FALSE,fig.align='center'}
 library(ggplot2)
-
 n=10
 X <- seq(0,1,length.out=n)
 code <- function(X,theta)
