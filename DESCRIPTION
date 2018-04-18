@@ -10,7 +10,6 @@ LazyData: true
 Imports:
     R6,
     ggplot2,
-    FactoMineR,
     DiceKriging,
     DiceDesign,
     MASS,

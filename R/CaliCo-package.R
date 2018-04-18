@@ -6,7 +6,7 @@
 #' @useDynLib CaliCo
 #' @importFrom R6 R6Class
 #' @importFrom stats rnorm
-#' @import ggplot2 DiceKriging DiceDesign FactoMineR coda parallel testthat MASS
+#' @import ggplot2 DiceKriging DiceDesign coda parallel testthat MASS
 #'
 #' @details
 #' Package: CaliCo
