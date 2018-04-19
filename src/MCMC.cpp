@@ -40,28 +40,37 @@ using namespace arma;
 List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec r, arma::mat SIGMA, arma::vec Yf,
                            arma::vec binf, arma::vec bsup, Function LogTest, int stream)
 {
+  // Dimention definition
   double Dim = theta_init.size();
+  // Variables declaration
   int D;
-  arma::vec k = theta_init/100;
+  arma::vec k = 1e-4*ones(Dim,1);
   arma::mat PHIwg=randu<arma::mat>(Ngibbs,Dim), THETAwg=randu<arma::mat>(Ngibbs,Dim);
   arma::mat LikeliWG=randu<arma::mat>(Ngibbs,Dim);
   arma::vec Likeli=zeros(Nmh,1);
   if (Nmh!=0) {D=Nmh;} else {D=10;}
   arma::mat PHI= randu<arma::mat>(D,Dim), THETA=randu<arma::mat>(D,Dim);
+  // Set the first row of THETA at the initial value (for the MWG)
   THETA.row(0)=theta_init.t();
+  // Space changing of THETA in PHI
   PHI.row(0)= log((THETA.row(0).t()-binf)/(bsup-binf)).t();
+  // Declaration of the acceptation ratios
   double AcceptationRatio=0;
   arma::vec AcceptationRatioWg=zeros(Dim,1);
+  // Functions from R
   Function unscale("unscale"), rnorm("rnorm"), runif("runif"), DefPos("DefPos"), mvrnorm("multivariate");
+  // Set the first row of THETA at the initial value (for the MH)
   THETAwg.row(0)=theta_init.t();
+  // Space changing of THETA in PHI (for the MH)
   PHIwg.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
+  // Defining Theta and measurement variance error
   arma::vec theta=theta_init.rows(0,Dim-2);
   double Verr=THETAwg(0,Dim-1);
-  //Rcpp::List res = as<Rcpp::List>(model(theta,Verr));
-  //arma::vec Yg=res["y"];
-  // arma::vec Yg=as<arma::vec>(model(theta,Verr));
+  // Compute the first ratio alpha
   double alpha = as<double>(LogTest(theta,Verr));
+  // Store that ratio in alpha2
   double alpha2 = alpha;
+  // Loading bar (if stream==0 the bar and the prints are desabled)
   if (stream==1)
   {
     Rcout << "Begin of the Metropolis within Gibbs algorithm" << endl;
@@ -87,23 +96,26 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
       }
       // end bar progress
     }
+    // Get the ith point
     vec phi_star = PHIwg.row(i).t();
     vec theta_star = THETAwg.row(i).t();
+    // Beggining of the MHWG part
     for (int j=0; j<Dim; j++)
     {
       if (j>0){
         phi_star.rows(0,j) = PHIwg.row(i+1).cols(0,j).t();
       }
+      // Proposition of a new point in the Log-normalized space
       phi_star(j) = as<double>(rnorm(1,PHIwg(i,j),sqrt(k(j)*SIGMA(j,j))));
       theta_star(j) = as<double>(unscale(exp(phi_star(j)),binf(j),bsup(j)));
-      if (j == Dim-1)
+      /*if (j == Dim-1)
       {
         while (theta_star(j) < 0)
         {
           phi_star(j) = as<double>(rnorm(1,PHIwg(i,j),sqrt(k(j)*SIGMA(j,j))));
           theta_star(j) = as<double>(unscale(exp(phi_star(j)),binf(j),bsup(j)));
         }
-      }
+      }*/
       Verr = theta_star(Dim-1);
       theta = theta_star.rows(0,Dim-2);
       double beta = as<double>(LogTest(theta,Verr));
