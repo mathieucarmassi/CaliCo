@@ -13,8 +13,8 @@ pr1 <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(1,0.01),c(1,0.01)
 pr2 <- prior(type.prior=c("gaussian","unif","gamma","gamma"),opt.prior=list(c(1,0.01),c(0,1),c(2,0.1),c(1,0.01)))
 
 #calibrate testing
-opt.estim1=list(Ngibbs=200,Nmh=600,thetaInit=c(1,0.01),k=c(6e-3,1e-4),sig=diag(2),Nchains=1,burnIn=300)
-opt.estim2=list(Ngibbs=200,Nmh=600,thetaInit=c(1,0.5,0.01,0.01),k=rep(5e-3,4),sig=diag(4),Nchains=1,burnIn=300)
+opt.estim1=list(Ngibbs=200,Nmh=600,thetaInit=c(1,0.01),r=c(0.1,0.1),sig=diag(2),Nchains=1,burnIn=300)
+opt.estim2=list(Ngibbs=200,Nmh=600,thetaInit=c(1,0.5,0.01,0.01),r=c(0.1,0.1),sig=diag(4),Nchains=1,burnIn=300)
 mdfit1 <- calibrate(md1,pr1,opt.estim1)
 mdfit2 <- calibrate(md2,pr1,opt.estim1)
 mdfit3 <- calibrate(md3,pr2,opt.estim2)

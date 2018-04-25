@@ -107,8 +107,8 @@ model1.class <- R6Class(classname = "model1.class",
                         {
                           y  <- self$code(self$X,theta)+rnorm(self$n,0,sqrt(var))
                           yc <- self$code(self$X,theta)
-                          if (is.na(mean(yc)))
-                          {stop('Wrong number of parameter in the function')}
+                          #if (is.na(mean(yc)))
+                          #{stop('Wrong number of parameter in the function')}
                           return(list(y=y, yc=yc))
                         },
                         pred = function(theta,var,x.new)
@@ -116,15 +116,15 @@ model1.class <- R6Class(classname = "model1.class",
                           if (is.matrix(x.new)){l <- nrow(x.new)} else{l <- length(x.new)}
                           y  <- self$code(x.new,theta)+rnorm(l,0,sqrt(var))
                           yc <- self$code(x.new,theta)
-                          if (is.na(mean(yc)))
-                          {stop('Wrong number of parameter in the function')}
+                          # if (is.na(mean(yc)))
+                          # {stop('Wrong number of parameter in the function')}
                           return(list(y=y, yc=yc))
                         },
                         likelihood = function(theta,var)
                         {
                           self$m.exp = self$code(self$X,as.vector(theta))
-                          if (is.na(mean(self$m.exp)))
-                          {stop('Wrong number of parameter in the function')}
+                          # if (is.na(mean(self$m.exp)))
+                          # {stop('Wrong number of parameter in the function')}
                           self$V.exp = var*diag(self$n)
                           return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                         }

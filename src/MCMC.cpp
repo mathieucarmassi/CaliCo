@@ -108,20 +108,15 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
       // Proposition of a new point in the Log-normalized space
       phi_star(j) = as<double>(rnorm(1,PHIwg(i,j),sqrt(k(j)*SIGMA(j,j))));
       theta_star(j) = as<double>(unscale(exp(phi_star(j)),binf(j),bsup(j)));
-      /*if (j == Dim-1)
-      {
-        while (theta_star(j) < 0)
-        {
-          phi_star(j) = as<double>(rnorm(1,PHIwg(i,j),sqrt(k(j)*SIGMA(j,j))));
-          theta_star(j) = as<double>(unscale(exp(phi_star(j)),binf(j),bsup(j)));
-        }
-      }*/
       Verr = theta_star(Dim-1);
       theta = theta_star.rows(0,Dim-2);
+      // Computing the new LogPost for theta star
       double beta = as<double>(LogTest(theta,Verr));
+      // Ratio for the MH
       double logR = beta-alpha;
       if (log(as<double>(runif(1))) < logR)
       {
+        // Acceptation case
         PHIwg(i+1,j)=phi_star(j);
         THETAwg(i+1,j)=theta_star(j);
         alpha = beta;
@@ -130,10 +125,12 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
       }
       else
       {
+        // Rejection case
         PHIwg(i+1,j)=PHIwg(i,j);
         THETAwg(i+1,j)=THETAwg(i,j);
         LikeliWG(i,j)=alpha;
       }
+      // Adaptive algorithm
       if (i%100==0)
       {
         if (AcceptationRatioWg(j)/i<0.2)
@@ -149,9 +146,11 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
       }
     }
 }
-  mat Stemp = cov(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
+  // Establishment of the new covariance matrix
+  mat Stemp = cov(PHIwg.rows(50/100*Ngibbs,(Ngibbs-1)));
   mat S = as<arma::mat>(DefPos(Stemp));
-  mat NewPhi=mean(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
+  // Setting a new starting point for the MH algorithm
+  mat NewPhi=mean(PHIwg.rows(50/100*Ngibbs,(Ngibbs-1)));
   if (stream==1)
   {
     Rcout << endl;
@@ -163,6 +162,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
     Rcout << "Number of iterations "<< Nmh <<endl;
   }
   q = 0;
+  // t is the new k for the second part of the algp
   double t=1;
   if (Nmh!=0)
   {
@@ -184,14 +184,18 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
       }
       // end bar progress
     }
+    // The new point is found from the new phi computed line 153
     vec phi_star = as<vec>(mvrnorm(1,NewPhi.t(),t*S));
+    // In the original space
     vec theta_star = as<vec>(unscale(exp(phi_star.t()),binf,bsup));
     theta = theta_star.rows(0,Dim-2);
     Verr = theta_star(Dim-1);
+    // Computing the logPost and Ratio for the overall new point
     double beta2 = as<double>(LogTest(theta,Verr));
     double logR2 = beta2 - alpha2;
     if(log(as<double>(runif(1))) < logR2)
     {
+      // Acceptation of the new point
       PHI.row(i+1)=phi_star.t();
       THETA.row(i+1)=theta_star.t();
       Likeli(i)=beta2;
@@ -200,10 +204,12 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
     }
     else
     {
+      // Rejection
       Likeli(i)=alpha2;
       PHI.row(i+1)=PHI.row(i);
       THETA.row(i+1)=THETA.row(i);
     }
+    // Adaptive part on t
      if (i%100==0)
     {
       if (AcceptationRatio/i<0.2)
