@@ -68,8 +68,6 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   double Verr=THETAwg(0,Dim-1);
   // Compute the first ratio alpha
   double alpha = as<double>(LogTest(theta,Verr));
-  // Store that ratio in alpha2
-  double alpha2 = alpha;
   // Loading bar (if stream==0 the bar and the prints are desabled)
   if (stream==1)
   {
@@ -147,10 +145,12 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
     }
 }
   // Establishment of the new covariance matrix
-  mat Stemp = cov(PHIwg.rows(50/100*Ngibbs,(Ngibbs-1)));
-  mat S = as<arma::mat>(DefPos(Stemp));
+  //mat Stemp = cov(PHIwg.rows(50/100*Ngibbs,(Ngibbs-1)));
+  arma::mat S=SIGMA;
+  //mat S = as<arma::mat>(DefPos(Stemp));
   // Setting a new starting point for the MH algorithm
-  mat NewPhi=mean(PHIwg.rows(50/100*Ngibbs,(Ngibbs-1)));
+  mat NewPhi = mean(PHIwg.rows(50/100*Ngibbs,(Ngibbs-1)));
+  vec NewTheta = as<vec>(unscale(exp(NewPhi.t()),binf,bsup));
   if (stream==1)
   {
     Rcout << endl;
@@ -164,6 +164,10 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   q = 0;
   // t is the new k for the second part of the algp
   double t=1;
+  // Store that ratio in alpha2
+  theta = NewTheta.rows(0,Dim-2);
+  Verr = NewTheta(Dim-1);
+  double alpha2 = as<double>(LogTest(theta,Verr));
   if (Nmh!=0)
   {
   for (int i=0; i<(Nmh-1); i++)
