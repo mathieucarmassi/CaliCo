@@ -145,11 +145,11 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
     }
 }
   // Establishment of the new covariance matrix
-  //mat Stemp = cov(PHIwg.rows(50/100*Ngibbs,(Ngibbs-1)));
-  arma::mat S=SIGMA;
-  //mat S = as<arma::mat>(DefPos(Stemp));
+  mat Stemp = cov(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
+  //arma::mat S=SIGMA;
+  mat S = as<arma::mat>(DefPos(Stemp));
   // Setting a new starting point for the MH algorithm
-  mat NewPhi = mean(PHIwg.rows(50/100*Ngibbs,(Ngibbs-1)));
+  mat NewPhi = mean(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
   vec NewTheta = as<vec>(unscale(exp(NewPhi.t()),binf,bsup));
   if (stream==1)
   {
@@ -163,7 +163,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   }
   q = 0;
   // t is the new k for the second part of the algp
-  double t=1;
+  double t=1e-2;
   // Store that ratio in alpha2
   theta = NewTheta.rows(0,Dim-2);
   Verr = NewTheta(Dim-1);
@@ -279,7 +279,7 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
 {
   double Dim = theta_init.size();
   int D;
-  arma::vec k = theta_init/100;
+  arma::vec k = 1e-4*ones(Dim,1);
   arma::mat PHIwg=randu<arma::mat>(Ngibbs,Dim), THETAwg=randu<arma::mat>(Ngibbs,Dim);
   if (Nmh!=0) {D=Nmh;} else {D=10;}
   arma::mat PHI= randu<arma::mat>(D,Dim), THETA=randu<arma::mat>(D,Dim);
@@ -361,25 +361,6 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
       }
     }
   }
-  // for (int j=0; j<Dim; j++)
-  // {
-  //   if (AcceptationRatioWg(j)/Ngibbs < 0.25 || AcceptationRatioWg(j)/Ngibbs >0.5)
-  //   {
-  //     Rcout << "The algorithm has stopped because your k is not good" << endl;
-  //     if (AcceptationRatioWg(j)/Ngibbs < 0.25)
-  //     {
-  //       Rcout << "The "<<j+1<<"th coordinate of k is too big"<< endl;
-  //       return 0;
-  //     } else
-  //     {
-  //       if (AcceptationRatioWg(j)/Ngibbs >0.5)
-  //       {
-  //         Rcout << "The "<<j+1<<"th coordinate of k is too small"<< endl;
-  //         return 0;
-  //       }
-  //     }
-  //   }
-  // }
   mat Stemp = cov(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
   mat S = as<arma::mat>(DefPos(Stemp));
   mat NewPhi=mean(PHIwg.rows(10/100*Ngibbs,(Ngibbs-1)));
@@ -395,7 +376,7 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
     Rcout << "Number of iterations "<< Nmh <<endl;
   }
   q = 0;
-  double t=1;
+  double t=1e-2;
   if (Nmh!=0)
   {
     for (int i=0; i<(Nmh-1); i++)
