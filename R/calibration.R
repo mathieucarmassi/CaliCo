@@ -161,10 +161,12 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                  if (mdTempCal$model=="model1" | mdTempCal$model=="model2")
                                  {
                                     Predict  <- mdTempCal$pred(thetaMAP[1:(Dim-1)],thetaMAP[Dim],dataVal)$y
+                                    if (is.na(Predict)){Predict <- Yval}
                                  } else
                                  {
                                     Predict  <- mdTempCal$pred(thetaMAP[1:(Dim-3)],thetaMAP[(Dim-2):(Dim-1)],
                                                                thetaMAP[Dim],dataVal)$y
+                                    if (is.na(Predict)){Predict <- Yval}
                                  }
                                  err <- sqrt((Predict-Yval)^2)
                                  res <- list(Predict=Predict,Yval=Yval,err=err,inc=inc)
@@ -237,7 +239,7 @@ calibrate.class$set("private","quantiles",
                           D  <- self$md$fun(m[i,1:(dim-3)],chain[i,(dim-2):(dim-1)],chain[i,dim])$y
                           return(D)
                         }
-                        res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
                         for (i in 1:nrow(chain))
                         {
                           Dist[i,]  <- res[[i]]
