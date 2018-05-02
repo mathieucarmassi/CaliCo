@@ -32,6 +32,9 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                              onlyCV     = NULL,
                              errorCV    = NULL,
                              ResultsCV  = NULL,
+                             q05        = NULL,
+                             q95        = NULL,
+                             coverRate  = NULL,
                              n.cores    = NULL,
                              binf       = NULL,
                              bsup       = NULL,
@@ -44,6 +47,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                self$opt.estim  <- opt.estim
                                self$opt.valid  <- opt.valid
                                self$logPost    <- private$logLikelihood(self$md$model)
+                               Dim             <- length(self$pr)
                                if (Sys.info()[['sysname']]=="Windows")
                                {
                                  self$n.cores    <- 1
@@ -61,6 +65,17 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                  {
                                    self$output  <- self$calibration()
                                    self$mcmc    <- as.mcmc(self$output$out$THETA)
+                                   chain        <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
+                                   qq           <- apply(chain,2,quantile,c(0.05,0.95))
+                                   if (self$md$model=="model1" | self$md$model=="model2")
+                                   {
+                                     self$q05  <- self$md$fun(qq[1,1:(Dim-1)],qq[1,Dim])$y
+                                     self$q95  <- self$md$fun(qq[2,1:(Dim-1)],qq[2,Dim])$y
+                                   } else
+                                   {
+                                     self$q05  <- self$md$fun(qq[1,1:(Dim-3)],qq[1,(Dim-2):(Dim-1)],qq[1,Dim])$y
+                                     self$q95  <- self$md$fun(qq[1,1:(Dim-3)],qq[1,(Dim-2):(Dim-1)],qq[1,Dim])$y
+                                   }
                                  } else
                                  {
                                    n            <- c(1:opt.estim$Nchains)
@@ -68,29 +83,62 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                    self$mcmc    <- list()
                                    for (i in 1:opt.estim$Nchains)
                                    {
-                                     self$mcmc[[i]] <- as.mcmc(self$output[[i]]$out$THETA)
+                                     if (i==1)
+                                     {
+                                       self$output    <- self$calibration()
+                                       self$mcmc[[i]] <- as.mcmc(self$output$out$THETA)
+                                       chain          <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
+                                       qq             <- apply(chain,2,quantile,c(0.05,0.95))
+                                       if (self$md$model=="model1" | self$md$model=="model2")
+                                       {
+                                         self$q05  <- self$md$fun(qq[1,1:(Dim-1)],qq[1,Dim])$y
+                                         self$q95  <- self$md$fun(qq[2,1:(Dim-1)],qq[2,Dim])$y
+                                       } else
+                                       {
+                                         self$q05  <- self$md$fun(qq[1,1:(Dim-3)],qq[1,(Dim-2):(Dim-1)],qq[1,Dim])$y
+                                         self$q95  <- self$md$fun(qq[1,1:(Dim-3)],qq[1,(Dim-2):(Dim-1)],qq[1,Dim])$y
+                                       }
+                                     } else{
+                                       self$mcmc[[i]] <- as.mcmc(self$output[[i]]$out$THETA)
+                                     }
                                    }
                                  }
                                  cat("\nEnd of the regular calibration\n\n")
                                }
                                if (is.null(self$opt.valid)==FALSE)
                                {
-                                 self$CV(1)
                                  cat(paste("\nThe cross validation is currently running on your ",
                                              self$n.cores," cores available....\n",sep=""))
-                                 Results <- as.numeric(unlist(mclapply(c(1:opt.valid$nCV),
-                                                                      self$CV,mc.cores = self$n.cores)))
+                                 Results <- mclapply(c(1:opt.valid$nCV),
+                                                     self$CV,mc.cores = self$n.cores)
+
+                                 self$coverRate <- 0
                                  for (i in 1:self$opt.valid$nCV)
                                  {
-                                   inc <- (i-1)*3+1
+                                   TempRes <- Results[[i]]
+                                   inc <- TempRes$inc
                                    if (i==1){
-                                     self$ResultsCV <- data.frame(Predicted=Results[1],Real=Results[2],Error=Results[3])
+                                     self$ResultsCV <- data.frame(Predicted=TempRes$Predict,Real=TempRes$Yval,Error=TempRes$err)
+                                     if (self$onlyCV==FALSE)
+                                     {
+                                       if (TempRes$Predict < TempRes$q95Cal[inc] & TempRes$Predict > TempRes$q05Cal[inc])
+                                       {
+                                         self$coverRate <- 1
+                                       }
+                                     }
                                      } else{
-                                       self$ResultsCV <- rbind(self$ResultsCV,data.frame(Predicted=Results[inc],
-                                                                                         Real=Results[inc+1],
-                                                                                         Error=Results[inc+2]))
-                                   }
+                                       self$ResultsCV <- rbind(self$ResultsCV,data.frame(Predicted=TempRes$Predict,
+                                                                                         Real=TempRes$Yval,Error=TempRes$err))
+                                       if (self$onlyCV==FALSE)
+                                       {
+                                         if (TempRes$Predict < TempRes$q95Cal[inc] & TempRes$Predict > TempRes$q05Cal[inc])
+                                         {
+                                           self$coverRate <- 1
+                                         }
+                                       }
+                                     }
                                  }
+                                 self$coverRate <- self$coverRate/self$opt.valid$nCV
                                  self$errorCV <- sqrt(mean(self$ResultsCV$Error))
                                }
                              },
@@ -107,6 +155,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                              },
                              CV = function(i=NA)
                              {
+                               Dim <- length(self$pr)
                                if (self$opt.valid$type.valid=="loo")
                                {
                                  inc <- sample(c(1:self$md$n),1)
@@ -123,18 +172,22 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                  Yval        <- self$md$Yexp[inc]
                                  mdTempCal   <- model(code=self$md$code,dataCal,Ycal,self$md$model,self$md$opt.emul)
                                  mdTempfit   <- self$calibrationCV(mdTempCal,Ycal)
-                                 Dim         <- length(self$pr)
                                  thetaMAP    <- mdTempfit$MAP
+                                 qqCal       <- apply(mdTempfit$out$THETA[-c(1:self$opt.estim$burnIn),],2,quantile,c(0.05,0.95))
                                  if (mdTempCal$model=="model1" | mdTempCal$model=="model2")
                                  {
+                                    q05Cal   <- self$md$fun(qqCal[1,1:(Dim-1)],qqCal[1,Dim])$y
+                                    q95Cal   <- self$md$fun(qqCal[2,1:(Dim-1)],qqCal[2,Dim])$y
                                     Predict  <- mdTempCal$pred(thetaMAP[1:(Dim-1)],thetaMAP[Dim],dataVal)$y
                                  } else
                                  {
+                                    q05Cal   <- self$md$fun(qqCal[1,1:(Dim-3)],qqCal[1,(Dim-2):(Dim-1)],qqCal[1,Dim])$y
+                                    q95Cal   <- self$md$fun(qqCal[2,1:(Dim-1)],qqCal[2,(Dim-2):(Dim-1)],qqCal[2,Dim])$y
                                     Predict  <- mdTempCal$pred(thetaMAP[1:(Dim-3)],thetaMAP[(Dim-2):(Dim-1)],
                                                                thetaMAP[Dim],dataVal)$y
                                  }
                                  err <- sqrt((Predict-Yval)^2)
-                                 res <- list(Predict=Predict,Yval=Yval,err=err)
+                                 res <- list(Predict=Predict,Yval=Yval,err=err,inc=inc,q05Cal=q05Cal,q95Cal=q95Cal)
                                  return(res)
                                }
                              },
@@ -448,6 +501,8 @@ calibrate.class$set("public","print",
                           print(head(self$ResultsCV))
                           cat("\nRMSE: ")
                           print(self$errorCV)
+                          cat("\nCover rate: \n")
+                          print(paste(round(self$coverRate*100,2),"%",sep = ""))
                         }
                       }
                     }

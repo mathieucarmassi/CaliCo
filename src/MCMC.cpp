@@ -44,7 +44,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   double Dim = theta_init.size();
   // Variables declaration
   int D;
-  arma::vec k = 1e-4*ones(Dim,1);
+  arma::vec k = 1e-2*ones(Dim,1);
   arma::mat PHIwg=randu<arma::mat>(Ngibbs,Dim), THETAwg=randu<arma::mat>(Ngibbs,Dim);
   arma::mat LikeliWG=randu<arma::mat>(Ngibbs,Dim);
   arma::vec Likeli=zeros(Nmh,1);
