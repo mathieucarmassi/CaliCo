@@ -76,18 +76,13 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                    self$mcmc    <- list()
                                    for (i in 1:opt.estim$Nchains)
                                    {
-                                     if (i==1)
-                                     {
-                                       self$output    <- self$calibration()
-                                       self$mcmc[[i]] <- as.mcmc(self$output$out$THETA)
-                                       chain          <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
-                                       qq           <- private$quantiles(chain)
-                                       self$q05     <- qq$q05
-                                       self$q95     <- qq$q95
-                                     } else{
-                                       self$mcmc[[i]] <- as.mcmc(self$output[[i]]$out$THETA)
-                                     }
+                                     self$mcmc[[i]] <- as.mcmc(self$output[[i]]$out$THETA)
                                    }
+                                   self$output    <- self$output[[1]]
+                                   chain          <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
+                                   qq             <- private$quantiles(chain)
+                                   self$q05       <- qq$q05
+                                   self$q95       <- qq$q95
                                  }
                                  cat("\nEnd of the regular calibration\n\n")
                                }
