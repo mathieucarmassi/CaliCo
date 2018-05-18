@@ -133,7 +133,7 @@ model1.class <- R6Class(classname = "model1.class",
 
 
 model1.class$set("public","plot",
-                 function(theta,var,select.X=NULL)
+                 function(theta,var,select.X=NULL,CI=TRUE)
                  {
                    if(is.null(dim(self$X))==FALSE & is.null(select.X))
                    {stop('Graphic representation is not available in dimension >1')}
@@ -144,21 +144,48 @@ model1.class$set("public","plot",
                    bsup = max(Xplot)
                    if (is.na(mean(res$yc)))
                    {stop('You have given the wrong number of parameter')}
-                   gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),type="code result")
-                   gg.data.noisy <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),
-                                             type="noisy")
-                   gg.data.exp  <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
-                                              type="experiments")
-                   gg.data <- rbind(gg.data,gg.data.noisy,gg.data.exp)
-                   p <- ggplot(gg.data)+
-                     geom_line(aes(y=y,x=x,col=type))+
-                     theme_light()+
-                     ylab("")+xlab("")+
-                     theme(legend.position=c(0.65,0.86),
-                           legend.text=element_text(size = '15'),
-                           legend.title=element_blank(),
-                           legend.key=element_rect(colour=NA),
-                           axis.text=element_text(size=20))
+                   if (CI==FALSE)
+                   {
+                     gg.data <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),type="Model output")
+                     gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),ymin=qqerr[1,],ymax=qqerr[2,],
+                                             type="CI 90% noise")
+                     gg.data.exp  <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
+                                                type="Experiments")
+                     gg.data <- rbind(gg.data,gg.data.exp)
+                     p <- ggplot(gg.data) +
+                       geom_line(aes(y=y,x=x,col=type)) +
+                       theme_light() +
+                       ylab("")+xlab("") +
+                       theme(legend.position=c(0.65,0.86),
+                             legend.text=element_text(size = '15'),
+                             legend.title=element_blank(),
+                             legend.key=element_rect(colour=NA),
+                             axis.text=element_text(size=20))
+                   } else
+                   {
+                     funCpp <- function(theta,var)
+                     {
+                       return(self$fun(theta,var)$y)
+                     }
+                     yres <- resCpp(funCpp,theta,var)
+                     qqerr <- apply(yres,1,quantile,c(0.05,0.95))
+                     gg.data <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),type="Model output")
+                     gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),ymin=qqerr[1,],ymax=qqerr[2,],
+                                             type="CI 90% noise")
+                     gg.data.exp  <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
+                                                type="Experiments")
+                     gg.data <- rbind(gg.data,gg.data.exp)
+                     p <- ggplot(gg.data) +
+                       geom_ribbon(data = gg.data.n,aes(x=x,ymin=ymin,ymax=ymax,fill=type),alpha=0.8)+
+                       geom_line(aes(y=y,x=x,col=type)) +
+                       theme_light() + scale_fill_manual(values = "skyblue3")+
+                       ylab("")+xlab("") +
+                       theme(legend.position=c(0.65,0.86),
+                             legend.text=element_text(size = '12'),
+                             legend.title=element_blank(),
+                             legend.key=element_rect(colour=NA),
+                             axis.text=element_text(size=20))
+                   }
                    return(p)
                  })
 
@@ -258,7 +285,7 @@ model3.class <- R6Class(classname = "model3.class",
 
 
 model3.class$set("public","plot",
-                 function(theta,thetaD,var,select.X=NULL)
+                 function(theta,thetaD,var,select.X=NULL,CI=TRUE)
                  {
                    if(is.null(dim(self$X))==FALSE & is.null(select.X))
                    {stop('Graphic representation is not available in dimension >1')}
@@ -267,21 +294,46 @@ model3.class$set("public","plot",
                    if(is.null(select.X)==FALSE){Xplot <- select.X}
                    binf <- min(Xplot)
                    bsup <- max(Xplot)
-                   gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),type="code result")
-                   gg.data.noisy <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),
-                                               type="with discrepancy and noise")
-                   gg.data.exp  <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
-                                              type="experiments")
-                   gg.data <- rbind(gg.data,gg.data.noisy,gg.data.exp)
-                   p <- ggplot(gg.data)+
-                     geom_line(aes(y=y,x=x,col=type))+
-                     theme_light()+
-                     ylab("")+xlab("")+
-                     theme(legend.position=c(0.65,0.86),
-                           legend.text=element_text(size = '15'),
-                           legend.title=element_blank(),
-                           legend.key=element_rect(colour=NA),
-                           axis.text=element_text(size=20))
+                   if (CI==FALSE)
+                   {
+                     gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),type="Model Output")
+                     gg.data.exp  <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
+                                                type="Experiments")
+                     gg.data <- rbind(gg.data,gg.data.exp)
+                     p <- ggplot(gg.data) +
+                       geom_line(aes(y=y,x=x,col=type)) +
+                       theme_light() +
+                       ylab("")+xlab("") +
+                       theme(legend.position=c(0.65,0.86),
+                             legend.text=element_text(size = '12'),
+                             legend.title=element_blank(),
+                             legend.key=element_rect(colour=NA),
+                             axis.text=element_text(size=20))
+                   } else
+                   {
+                     funCpp <- function(theta,thetaD,var)
+                     {
+                       return(self$fun(theta,thetaD,var)$y)
+                     }
+                     yres <- resCppD(funCpp,theta,thetaD,var)
+                     qqres <- apply(yres,1,quantile,c(0.05,0.95))
+                     gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),type="Model Output")
+                     gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),ymin=qqres[1,],ymax=qqres[2,],
+                                             type="CI 90% discrepancy + noise")
+                     gg.data.exp  <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
+                                                type="Experiments")
+                     gg.data <- rbind(gg.data,gg.data.exp)
+                     p <- ggplot(gg.data) +
+                       geom_ribbon(data = gg.data.n,aes(x=x,ymin=ymin,ymax=ymax,fill=type),alpha=0.8)+
+                       geom_line(aes(y=y,x=x,col=type)) +
+                       theme_light() + scale_fill_manual(values = "skyblue3")+
+                       ylab("")+xlab("") +
+                       theme(legend.position=c(0.65,0.86),
+                             legend.text=element_text(size = '12'),
+                             legend.title=element_blank(),
+                             legend.key=element_rect(colour=NA),
+                             axis.text=element_text(size=20))
+                   }
                    return(p)
                  })
 
@@ -473,13 +525,17 @@ model2.class$set("public","likelihood",
 
 
 model2.class$set("public","plot",
-                 function(theta,var,points=FALSE,select.X=NULL)
+                 function(theta,var,select.X=NULL,CI=c("GP","err"),points=FALSE)
                  {
                    if (length(theta)!=self$p)
                    {stop('You have given the wrong number of parameter')}
                    if(self$d>1 & is.null(select.X))
                    {stop('Graphic representation is not available in dimension >1')}
                    res <- self$fun(theta,var)
+                   funCpp <- function(theta,var)
+                   {
+                     return(self$fun(theta,var)$y)
+                   }
                    Xplot <- self$X
                    if(is.null(select.X)==FALSE){
                      Xplot <- select.X
@@ -491,30 +547,97 @@ model2.class$set("public","plot",
                    }
                    binf <- min(Xplot)
                    bsup <- max(Xplot)
-                   gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
-                                          lower=res$lower,upper=res$upper,type="Gaussian process",
-                                         fill="90% credibility interval for the Gaussian process")
-                   gg.data.exp <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),lower=res$lower,
-                                            upper=res$upper,type="experiment",
-                                            fill="90% credibility interval for the Gaussian process")
-                   gg.data <- rbind(gg.data,gg.data.exp)
-                   gg.points <- data.frame(x=self$DOE,y=self$code(self$DOE,theta))
-                   p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
-                     geom_line(aes(y=y,x=x,col=type))+
-                     theme_light()+
-                     ylab("")+xlab("")+
-                     scale_fill_manual("",values=c("grey12"))+
-                     theme(legend.position=c(0.65,0.86),
-                           legend.text=element_text(size = '15'),
-                           legend.title=element_blank(),
-                           legend.key=element_rect(colour=NA),
-                           axis.text=element_text(size=20))
-                   if (points==FALSE)
+                   if (length(CI)==1)
                    {
-                     return(p)
-                   } else
-                   {
-                     return(p+geom_jitter(data=gg.points,aes(x=x,y=y)))
+                     if (CI=="GP")
+                     {
+                       gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
+                                             lower=res$lower,upper=res$upper,type="Gaussian process",
+                                             fill="CI 90% GP")
+                       gg.data.exp <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),lower=res$lower,
+                                                 upper=res$upper,type="Experiment",
+                                                 fill="CI 90% GP")
+                       gg.data <- rbind(gg.data,gg.data.exp)
+                       gg.points <- data.frame(x=self$DOE,y=self$code(self$DOE,theta))
+                       p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
+                         geom_line(aes(y=y,x=x,col=type))+
+                         theme_light()+
+                         ylab("")+xlab("")+
+                         scale_fill_manual("",values=c("grey12"))+
+                         theme(legend.position=c(0.65,0.86),
+                               legend.text=element_text(size = '12'),
+                               legend.title=element_blank(),
+                               legend.key=element_rect(colour=NA),
+                               axis.text=element_text(size=20))
+                       if (points==FALSE)
+                       {
+                         return(p)
+                       } else
+                       {
+                         return(p+geom_jitter(data=gg.points,aes(x=x,y=y)))
+                       }
+                     } else {
+                       if (CI=="err")
+                          yres <- resCpp(funCpp,theta,var)
+                          qqerr <- apply(yres,1,quantile,c(0.05,0.95))
+                          gg.data <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),type="Model output")
+                          gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),ymin=qqerr[1,],ymax=qqerr[2,],
+                                               type="CI 90% noise")
+                          gg.data.exp  <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
+                                                  type="Experiments")
+                          gg.data <- rbind(gg.data,gg.data.exp)
+                          p <- ggplot(gg.data) +
+                            geom_ribbon(data = gg.data.n,aes(x=x,ymin=ymin,ymax=ymax,fill=type),alpha=0.8)+
+                            geom_line(aes(y=y,x=x,col=type)) +
+                            theme_light() + scale_fill_manual(values = "skyblue3")+
+                            ylab("")+xlab("") +
+                            theme(legend.position=c(0.65,0.86),
+                               legend.text=element_text(size = '12'),
+                               legend.title=element_blank(),
+                               legend.key=element_rect(colour=NA),
+                               axis.text=element_text(size=20))
+                          return(p)
+                     }
+                   } else {
+                     if (length(CI)==2)
+                     {
+                       if ((CI[1]=="GP" & CI[2]=="err") | (CI[2]=="GP" & CI[1]=="err"))
+                       {
+                         yres <- resCpp(funCpp,theta,var)
+                         qqerr <- apply(yres,1,quantile,c(0.05,0.95))
+                         gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
+                                               lower=res$lower,upper=res$upper,type="Gaussian process",
+                                               fill="CI 90% GP")
+                         gg.data.exp <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),lower=res$lower,
+                                                   upper=res$upper,type="Experiment",
+                                                   fill="CI 90% GP")
+                         gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),ymin=qqerr[1,],ymax=qqerr[2,],
+                                                 type="CI 90% noise")
+                         gg.data <- rbind(gg.data,gg.data.exp)
+                         gg.points <- data.frame(x=self$DOE,y=self$code(self$DOE,theta))
+                         p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
+                           geom_ribbon(data = gg.data.n,aes(x=x,ymin=ymin,ymax=ymax,fill=type),alpha=0.8,show.legend = FALSE)+
+                           geom_line(aes(y=y,x=x,col=type))+
+                           theme_light()+
+                           ylab("")+xlab("")+
+                           scale_fill_manual(name = NULL,values = adjustcolor(c("grey12", "skyblue3"), alpha.f = 0.3))+
+                           guides(fill = guide_legend(override.aes = list(alpha = c(0.3,0.8)))) +
+                           theme(legend.position=c(0.65,0.86),
+                                 legend.text=element_text(size = '12'),
+                                 legend.title=element_blank(),
+                                 legend.key=element_rect(colour=NA),
+                                 axis.text=element_text(size=20))
+                         if (points==FALSE)
+                         {
+                           return(p)
+                         } else
+                         {
+                           return(p+geom_jitter(data=gg.points,aes(x=x,y=y)))
+                         }
+                       } else
+                       {print("Enter the right value for the CI option")}
+                     } else
+                     {print("The length of the CI option is too long")}
                    }
                  })
 
@@ -633,7 +756,7 @@ model4.class$set("public","likelihood",
 
 
 model4.class$set("public","plot",
-                 function(theta,thetaD,var,points=FALSE,select.X=NULL)
+                 function(theta,thetaD,var,select.X=NULL,CI=c("GP","err"),points=FALSE)
                  {
                    if (length(theta)!=self$p)
                    {stop('You have given the wrong number of parameter')}
@@ -649,33 +772,101 @@ model4.class$set("public","plot",
                    if(is.null(select.X)==FALSE){Xplot <- select.X}
                    binf <- min(Xplot)
                    bsup <- max(Xplot)
-                   gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
-                                         lower=res$lower,upper=res$upper,type="Gaussian process",
-                                         fill="90% credibility interval for the Gaussian process")
-                   gg.data.dis <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),lower=res$lower,
-                                             upper=res$upper,type="Gaussian Process with discrepancy",
-                                             fill="90% credibility interval for the Gaussian process")
-                   gg.data.exp <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),lower=res$lower,
-                                             upper=res$upper,type="Experiment",
-                                             fill="90% credibility interval for the Gaussian process")
-                   gg.data <- rbind(gg.data,gg.data.dis,gg.data.exp)
-                   gg.points <- data.frame(x=self$DOE[,1],y=self$code(self$DOE,theta))
-                   p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
-                     geom_line(aes(y=y,x=x,col=type))+
-                     theme_light()+
-                     ylab("")+xlab("")+
-                     scale_fill_manual("",values=c("grey12"))+
-                     theme(legend.position=c(0.65,0.86),
-                           legend.text=element_text(size = '15'),
-                           legend.title=element_blank(),
-                           legend.key=element_rect(colour=NA),
-                           axis.text=element_text(size=20))
-                   if (points==FALSE)
+                   funCpp <- function(theta,thetaD,var)
                    {
-                     return(p)
-                   } else
+                     return(self$fun(theta,thetaD,var)$y)
+                   }
+                   if (length(CI)==1)
                    {
-                     return(p+geom_jitter(data=gg.points,aes(x=x,y=y)))
+                     if (CI=="GP")
+                     {
+                       gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
+                                             lower=res$lower,upper=res$upper,type="Gaussian process",
+                                             fill="CI 90% GP")
+                       gg.data.exp <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),lower=res$lower,
+                                                 upper=res$upper,type="Experiment",
+                                                 fill="CI 90% GP")
+                       gg.data <- rbind(gg.data,gg.data.exp)
+                       gg.points <- data.frame(x=self$DOE,y=self$code(self$DOE,theta))
+                       p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
+                         geom_line(aes(y=y,x=x,col=type))+
+                         theme_light()+
+                         ylab("")+xlab("")+
+                         scale_fill_manual("",values=c("grey12"))+
+                         theme(legend.position=c(0.65,0.86),
+                               legend.text=element_text(size = '12'),
+                               legend.title=element_blank(),
+                               legend.key=element_rect(colour=NA),
+                               axis.text=element_text(size=20))
+                       if (points==FALSE)
+                       {
+                         return(p)
+                       } else
+                       {
+                         return(p+geom_jitter(data=gg.points,aes(x=x,y=y)))
+                       }
+                     } else {
+                       if (CI=="err")
+                         yres <- resCpp(funCpp,theta,thetaD,var)
+                         qqerr <- apply(yres,1,quantile,c(0.05,0.95))
+                         gg.data <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),type="Model output")
+                         gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),ymin=qqerr[1,],ymax=qqerr[2,],
+                                               type="CI 90% discrepancy + noise")
+                         gg.data.exp  <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
+                                                  type="Experiments")
+                         gg.data <- rbind(gg.data,gg.data.exp)
+                         p <- ggplot(gg.data) +
+                            geom_ribbon(data = gg.data.n,aes(x=x,ymin=ymin,ymax=ymax,fill=type),alpha=0.8)+
+                            geom_line(aes(y=y,x=x,col=type)) +
+                            theme_light() + scale_fill_manual(values = "skyblue3")+
+                            ylab("")+xlab("") +
+                            theme(legend.position=c(0.65,0.86),
+                               legend.text=element_text(size = '12'),
+                               legend.title=element_blank(),
+                               legend.key=element_rect(colour=NA),
+                               axis.text=element_text(size=20))
+                       return(p)
+                     }
+                   } else {
+                     if (length(CI)==2)
+                     {
+                       if ((CI[1]=="GP" & CI[2]=="err") | (CI[2]=="GP" & CI[1]=="err"))
+                       {
+                         yres <- resCppD(funCpp,theta,thetaD,var)
+                         qqerr <- apply(yres,1,quantile,c(0.05,0.95))
+                         gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
+                                               lower=res$lower,upper=res$upper,type="Gaussian process",
+                                               fill="CI 90% GP")
+                         gg.data.exp <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),lower=res$lower,
+                                                   upper=res$upper,type="Experiment",
+                                                   fill="CI 90% GP")
+                         gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),ymin=qqerr[1,],ymax=qqerr[2,],
+                                                 type="CI 90% discrepancy + noise")
+                         gg.data <- rbind(gg.data,gg.data.exp)
+                         gg.points <- data.frame(x=self$DOE,y=self$code(self$DOE,theta))
+                         p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
+                           geom_ribbon(data = gg.data.n,aes(x=x,ymin=ymin,ymax=ymax,fill=type),alpha=0.8,show.legend=FALSE)+
+                           geom_line(aes(y=y,x=x,col=type))+
+                           theme_light()+
+                           ylab("")+xlab("")+
+                           scale_fill_manual(name = NULL,values = adjustcolor(c("grey12", "skyblue3"), alpha.f = 0.3))+
+                           guides(fill = guide_legend(override.aes = list(alpha = c(0.3,0.8)))) +
+                           theme(legend.position=c(0.65,0.86),
+                                 legend.text=element_text(size = '12'),
+                                 legend.title=element_blank(),
+                                 legend.key=element_rect(colour=NA),
+                                 axis.text=element_text(size=20))
+                         if (points==FALSE)
+                         {
+                           return(p)
+                         } else
+                         {
+                           return(p+geom_jitter(data=gg.points,aes(x=x,y=y)))
+                         }
+                       } else
+                       {print("Enter the right value for the CI option")}
+                     } else
+                     {print("The length of the CI option is too long")}
                    }
                  })
 
