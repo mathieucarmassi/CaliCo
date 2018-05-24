@@ -494,13 +494,25 @@ model2.class <- R6Class(classname = "model2.class",
                         },
                         fun = function(theta,var)
                         {
-                          if(self$p==1)
+                          if(self$X==0)
                           {
-                            Xnew <- cbind(self$X,rep(theta,self$n))
+                            if(self$p==1)
+                            {
+                              Xnew <- rep(theta,self$n)
+                            } else
+                            {
+                              Xnew <- matrix(rep(theta,rep(self$n,self$p)),nr=self$n,nc=self$p)
+                            }
                           } else
                           {
-                            Xtemp <- matrix(rep(theta,rep(self$n,self$p)),nr=self$n,nc=self$p)
-                            Xnew  <- cbind(self$X,Xtemp)
+                            if(self$p==1)
+                            {
+                              Xnew <- cbind(self$X,rep(theta,self$n))
+                            } else
+                            {
+                              Xtemp <- matrix(rep(theta,rep(self$n,self$p)),nr=self$n,nc=self$p)
+                              Xnew  <- cbind(self$X,Xtemp)
+                            }
                           }
                           Xnew <- as.data.frame(Xnew)
                           names(Xnew) <- c("DOE","doeParam")
