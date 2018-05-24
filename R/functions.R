@@ -56,7 +56,7 @@
 #' ### Generate the model
 #' model1 <- model(code,X,Yexp,"model1")
 #' ### Plot the results with the first column of X
-#' plot(model1,c(1,1,11),0.1,select.X=X[,1])
+#' plot(model1,c(1,1,11),0.01,select.X=X[,1])
 #' ### Summury of the foo class generated
 #' print(model1)
 #'
@@ -64,17 +64,25 @@
 #' ### Generate the model with setup for the Gaussian Process
 #' binf <- c(0.9,0.9,10.5)
 #' bsup <- c(1.1,1.1,11.5)
-#' opt.emul <- list(p=3,n.emul=10,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
+#' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
 #' model2 <- model(code,X,Yexp,"model2",opt.emul)
 #' ### Plot the model
 #' plot(model2,c(1,1,11),0.1,select.X=X[,1])
 #'
 #' ### Use your own design of experiments
-#' DOE <- DiceDesign::lhsDesign(10,5)$design
+#' DOE <- DiceDesign::lhsDesign(100,5)$design
 #' DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
-#' opt.emul <- list(p=3,n.emul=10,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=DOE)
-#' model2 <- model(code,X,Yexp,"model2",opt.emul)
-#' plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
+#' Ysim <- matrix(nr=100,nc=1)
+#' for (i in 1:100)
+#' {
+#'   covariates <- as.matrix(DOE[i,1:2])
+#'   dim(covariates) <- c(1,2)
+#'   Ysim[i] <- code(covariates,DOE[i,3:5])
+#' }
+#' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=NULL)
+#' sim.data <- list(Ysim=Ysim,DOEsim=DOE)
+#' model2 <- model(code=NULL,X,Yexp,"model2",opt.emul,sim.data)
+#' p <- plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
 #'
 #' ###### For the third model
 #' model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
@@ -84,8 +92,7 @@
 #'}
 #'
 #' @export
-model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="matern5_2",
-                                                           binf=0,bsup=1,DOE=NULL),opt.disc=list(kernel.type=NULL))
+model <- function(code,X,Yexp,model="model1",...)
 {
   switch(model,
          model1={
@@ -93,15 +100,23 @@ model <- function(code,X,Yexp,model="model1",opt.emul=list(p=1,n.emul=100,type="
            return(obj)
          },
          model2={
-           obj = model2.class$new(code,X,Yexp,model,opt.emul)
+           if(!exists("opt.emul")){opt.emul=list(p=1,n.emul=100,type="matern5_2",
+                                                binf=0,bsup=1,DOE=NULL)}
+           if(!exists("sim.data")){sim.data=list(Ysim=NULL,DOEsim=NULL)}
+           obj = model2.class$new(code,X,Yexp,model,opt.emul,sim.data)
            return(obj)
          },
          model3={
+           if (!exists("opt.disc")){opt.disc=list(kernel.type=NULL)}
            obj = model3.class$new(code,X,Yexp,model,opt.disc)
            return(obj)
          },
          model4={
-           obj = model4.class$new(code,X,Yexp,model,opt.emul,opt.disc)
+           if (!exists("opt.emul")){opt.emul=list(p=1,n.emul=100,type="matern5_2",
+                                                binf=0,bsup=1,DOE=NULL)}
+           if (!exists("opt.disc")){opt.disc=list(kernel.type=NULL)}
+           if (!exists("sim.data")){sim.data=list(Ysim=NULL,DOEsim=NULL)}
+           obj = model4.class$new(code,X,Yexp,model,opt.emul,opt.disc,sim.data)
            return(obj)
          }
   )
