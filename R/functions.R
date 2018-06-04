@@ -100,10 +100,10 @@ model <- function(code,X,Yexp,model="model1",...)
            return(obj)
          },
          model2={
-           if(!exists("opt.emul")){opt.emul=list(p=1,n.emul=100,type="matern5_2",
-                                                binf=0,bsup=1,DOE=NULL)}
-           if(!exists("sim.data")){sim.data=list(Ysim=NULL,DOEsim=NULL)}
-           obj = model2.class$new(code,X,Yexp,model,opt.emul,sim.data)
+           if(!exists("opt.pg")){opt.pg=list(type="matern5_2",DOE=NULL)}
+           if(!exists("opt.emul")){opt.emul=list(p=1,n.emul=100,binf=0,bsup=1)}
+           if(!exists("opt.sim")){opt.sim=list(Ysim=NULL,DOEsim=NULL)}
+           obj = model2.class$new(code,X,Yexp,model,opt.pg,opt.emul,opt.sim)
            return(obj)
          },
          model3={
@@ -112,11 +112,11 @@ model <- function(code,X,Yexp,model="model1",...)
            return(obj)
          },
          model4={
-           if (!exists("opt.emul")){opt.emul=list(p=1,n.emul=100,type="matern5_2",
-                                                binf=0,bsup=1,DOE=NULL)}
+           if(!exists("opt.pg")){opt.pg=list(type="matern5_2",DOE=NULL)}
+           if(!exists("opt.emul")){opt.emul=list(p=1,n.emul=100,binf=0,bsup=1)}
+           if(!exists("opt.sim")){opt.sim=list(Ysim=NULL,DOEsim=NULL)}
            if (!exists("opt.disc")){opt.disc=list(kernel.type=NULL)}
-           if (!exists("sim.data")){sim.data=list(Ysim=NULL,DOEsim=NULL)}
-           obj = model4.class$new(code,X,Yexp,model,opt.emul,opt.disc,sim.data)
+           obj = model4.class$new(code,X,Yexp,model,opt.pg,opt.emul,opt.disc,opt.sim)
            return(obj)
          }
   )

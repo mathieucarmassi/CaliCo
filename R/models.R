@@ -57,7 +57,6 @@ model.class <- R6Class(classname = "model.class",
                      self$opt.emul <- opt.emul
                      self$model     <- model
                      private$checkModels()
-                     private$checkEmul()
                      private$checkCode()
                    }
                  ))
@@ -75,7 +74,7 @@ model.class$set("private","checkModels",
 model.class$set("private","checkEmul",
                 function()
                   {
-                  N <- c("p","n.emul","type","binf","bsup","DOE")
+                  N <- c("p","n.emul","binf","bsup")
                   N2 <- names(self$opt.emul)
                   for (i in 1:length(N))
                   {
@@ -380,7 +379,7 @@ model2.class <- R6Class(classname = "model2.class",
                         public = list(
                           n.emul   = NULL,
                           opt.emul = NULL,
-                          sim.data = NULL,
+                          opt.sim  = NULL,
                           Ysim     = NULL,
                           DOEsim   = NULL,
                           GP       = NULL,
@@ -389,9 +388,10 @@ model2.class <- R6Class(classname = "model2.class",
                           design   = NULL,
                           p        = NULL,
                           type     = NULL,
+                          D        = NULL,
                           m.exp    = NULL,
                           V.exp    = NULL,
-                        initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA,sim.data=NA)
+                        initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.pg=NA,opt.emul=NA,opt.sim=NA)
                         {
                           super$initialize(code, X, Yexp, model,opt.emul)
                           self$opt.emul <- opt.emul
@@ -400,16 +400,17 @@ model2.class <- R6Class(classname = "model2.class",
                           self$bsup     <- opt.emul$bsup
                           self$n.emul   <- opt.emul$n.emul
                           self$p        <- opt.emul$p
-                          self$type     <- opt.emul$type
-                          self$DOE      <- opt.emul$DOE
-                          self$sim.data <- sim.data
-                          self$Ysim     <- sim.data$Ysim
-                          self$DOEsim   <- sim.data$DOEsim
+                          self$type     <- opt.pg$type
+                          self$DOE      <- opt.pg$DOE
+                          self$opt.sim  <- opt.sim
+                          self$Ysim     <- opt.sim$Ysim
+                          self$DOEsim   <- opt.sim$DOEsim
+                          private$checkEmul()
                           if (is.null(self$code))
                           {
-                            if (is.null(sim.data))
+                            if (is.null(opt.sim))
                             {
-                              print("The numerical code is desabled, please fill the sim.data option")
+                              print("The numerical code is desabled, please fill the opt.sim option")
                             }
                           }
                           foo           <- self$surrogate()
@@ -432,21 +433,22 @@ model2.class <- R6Class(classname = "model2.class",
                             Dim <- self$p+self$d
                             if (is.null(self$DOE)==FALSE)
                             {
-                              D <- self$DOE
+                              self$n.emul <- dim(self$DOE)[1]
+                              self$D <- self$DOE
                               ### Generating the response
                               z <- matrix(nr=self$n.emul,nc=1)
                               for (i in 1:self$n.emul)
                               {
-                                covariates <- as.matrix(D[i,1:(Dim-self$p)])
+                                covariates <- as.matrix(self$D[i,1:(Dim-self$p)])
                                 dim(covariates) <- c(1,self$d)
-                                z[i] <- self$code(covariates,D[i,(Dim-self$p+1):Dim])
+                                z[i] <- self$code(covariates,self$D[i,(Dim-self$p+1):Dim])
                               }
                               #z <- self$code(D[,1:(Dim-self$p)],D[,(Dim-self$p+1):Dim])
                               ### Converting D as a data.frame for the km function
-                              D <- as.data.frame(D)
+                              self$D <- as.data.frame(self$D)
                               ### Creation of the Gaussian Process with estimation of hyperpameters
-                              GP <- km(formula =~1, design=D, response = z,covtype = self$type)
-                              return(list(GP=GP,doe=D))
+                              GP <- km(formula =~1, design=self$D, response = z,covtype = self$type)
+                              return(list(GP=GP,doe=self$D))
                             }else
                             {
                               doe <- lhsDesign(self$n.emul,Dim)$design
@@ -472,29 +474,29 @@ model2.class <- R6Class(classname = "model2.class",
                               {stop('Mismatch between the size of the upper, lower bounds and the parameter vector')}
                               doeParam <- unscale(doe[,(Dim-self$p+1):Dim],self$binf,self$bsup)
                               ### Matrix D contains the final value for the DOE
-                              D <- cbind(DOEtemp,doeParam)
-                              self$DOE <- D
+                              self$D <- cbind(DOEtemp,doeParam)
+                              self$DOE <- self$D
                               ### Generating the response
                               z <- matrix(nr=self$n.emul,nc=1)
                               for (i in 1:self$n.emul)
                               {
-                                covariates <- as.matrix(D[i,1:(Dim-self$p)])
+                                covariates <- as.matrix(self$D[i,1:(Dim-self$p)])
                                 dim(covariates) <- c(1,self$d)
-                                z[i] <- self$code(covariates,D[i,(Dim-self$p+1):Dim])
+                                z[i] <- self$code(covariates,self$D[i,(Dim-self$p+1):Dim])
                               }
                               #z <- self$code(D[,1:(Dim-self$p)],D[,(Dim-self$p+1):Dim])
                               ### Converting D as a data.frame for the km function
-                              D <- as.data.frame(D)
+                              self$D <- as.data.frame(self$D)
                               #colnames(D) <- c("V1","V2","V3","V4","V5","V6")
                               ### Creation of the Gaussian Process with estimation of hyperpameters
-                              GP <- km(formula =~1, design=D, response = z,covtype = self$type)
-                              return(list(GP=GP,doe=D))
+                              GP <- km(formula =~1, design=self$D, response = z,covtype = self$type)
+                              return(list(GP=GP,doe=self$D))
                             }
                           }
                         },
                         fun = function(theta,var)
                         {
-                          if(self$X==0)
+                          if(is.null(dim(self$X)) && length(self$X)==1 && self$X==0)
                           {
                             if(self$p==1)
                             {
@@ -596,11 +598,24 @@ model2.class$set("public","plot",
                                                  upper=res$upper,type="Experiment",
                                                  fill="CI 90% GP")
                        gg.data <- rbind(gg.data,gg.data.exp)
-                       if (is.null(select.X))
+                       if (is.null(self$code))
                        {
-                         gg.points <- data.frame(x=self$DOE,y=res$yc)
-                       } else {
-                         gg.points <- data.frame(x=self$DOEsim[,1],y=Ysim)
+                         if (is.null(select.X))
+                         {
+                           gg.points <- data.frame(x=self$DOEsim[,1],y=self$Ysim)
+                         } else
+                         {
+                           gg.points <- data.frame(x=self$Xplot,y=self$Ysim)
+                         }
+                       }else
+                       {
+                         if (is.null(select.X))
+                         {
+                           gg.points <- data.frame(x=self$D[,1],y=self$Yc)
+                         } else
+                         {
+                           gg.points <- data.frame(x=self$Xplot,y=self$Yc)
+                         }
                        }
                        p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
                          geom_line(aes(y=y,x=x,col=type))+
@@ -657,11 +672,24 @@ model2.class$set("public","plot",
                          gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),ymin=qqerr[1,],ymax=qqerr[2,],
                                                  type="CI 90% noise")
                          gg.data <- rbind(gg.data,gg.data.exp)
-                         if (is.null(select.X))
+                         if (is.null(self$code))
                          {
-                           gg.points <- data.frame(x=self$DOE,y=res$yc)
-                         } else {
-                           gg.points <- data.frame(x=self$DOEsim[,1],y=Ysim)
+                           if (is.null(select.X))
+                           {
+                             gg.points <- data.frame(x=self$DOEsim[,1],y=self$Ysim)
+                           } else
+                           {
+                             gg.points <- data.frame(x=self$Xplot,y=self$Ysim)
+                           }
+                         }else
+                         {
+                           if (is.null(select.X))
+                           {
+                             gg.points <- data.frame(x=self$D[,1],y=self$Yc)
+                           } else
+                           {
+                             gg.points <- data.frame(x=self$Xplot,y=self$Yc)
+                           }
                          }
                          p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
                            geom_ribbon(data = gg.data.n,aes(x=x,ymin=ymin,ymax=ymax,fill=type),alpha=0.8,show.legend = FALSE)+
@@ -714,10 +742,10 @@ model4.class <- R6Class(classname = "model4.class",
                           funC = NULL,
                           predTemp = NULL,
                           disc = NULL,
-                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.emul=NA,
-                                              opt.disc=list(kernel.type=NULL),sim.data=NA)
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.pg=NA,opt.emul=NA,
+                                              opt.disc=list(kernel.type=NULL),opt.sim=NA)
                           {
-                            super$initialize(code, X, Yexp, model, opt.emul,sim.data)
+                            super$initialize(code, X, Yexp, model,opt.pg, opt.emul,opt.sim)
                             self$opt.disc  <- list(kernel.type=opt.disc$kernel.type)
                             if (is.null(self$opt.disc$kernel.type)==TRUE)
                             {
@@ -835,7 +863,25 @@ model4.class$set("public","plot",
                                                  upper=res$upper,type="Experiment",
                                                  fill="CI 90% GP")
                        gg.data <- rbind(gg.data,gg.data.exp)
-                       gg.points <- data.frame(x=self$DOE,y=self$code(self$DOE,theta))
+                       if (is.null(self$code))
+                       {
+                         if (is.null(select.X))
+                         {
+                           gg.points <- data.frame(x=self$DOEsim[,1],y=self$Ysim)
+                         } else
+                         {
+                           gg.points <- data.frame(x=self$Xplot,y=self$Ysim)
+                         }
+                       }else
+                       {
+                         if (is.null(select.X))
+                         {
+                           gg.points <- data.frame(x=self$D[,1],y=self$Yc)
+                         } else
+                         {
+                           gg.points <- data.frame(x=self$Xplot,y=self$Yc)
+                         }
+                       }
                        p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
                          geom_line(aes(y=y,x=x,col=type))+
                          theme_light()+
@@ -855,7 +901,7 @@ model4.class$set("public","plot",
                        }
                      } else {
                        if (CI=="err")
-                         yres <- resCpp(funCpp,theta,thetaD,var)
+                         yres <- resCppD(funCpp,theta,thetaD,var)
                          qqerr <- apply(yres,1,quantile,c(0.05,0.95))
                          gg.data <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),type="Model output")
                          gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),ymin=qqerr[1,],ymax=qqerr[2,],
@@ -891,14 +937,32 @@ model4.class$set("public","plot",
                          gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),ymin=qqerr[1,],ymax=qqerr[2,],
                                                  type="CI 90% discrepancy + noise")
                          gg.data <- rbind(gg.data,gg.data.exp)
-                         gg.points <- data.frame(x=self$DOE,y=self$code(self$DOE,theta))
+                         if (is.null(self$code))
+                         {
+                           if (is.null(select.X))
+                           {
+                             gg.points <- data.frame(x=self$DOEsim[,1],y=self$Ysim)
+                           } else
+                           {
+                             gg.points <- data.frame(x=self$Xplot,y=self$Ysim)
+                           }
+                         }else
+                         {
+                           if (is.null(select.X))
+                           {
+                             gg.points <- data.frame(x=self$D[,1],y=self$Yc)
+                           } else
+                           {
+                             gg.points <- data.frame(x=self$Xplot,y=self$Yc)
+                           }
+                         }
                          p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
-                           geom_ribbon(data = gg.data.n,aes(x=x,ymin=ymin,ymax=ymax,fill=type),alpha=0.8,show.legend=FALSE)+
+                           geom_ribbon(data = gg.data.n,aes(x=x,ymin=ymin,ymax=ymax,fill=type),alpha=0.8,show.legend = FALSE)+
                            geom_line(aes(y=y,x=x,col=type))+
                            theme_light()+
                            ylab("")+xlab("")+
-                           scale_fill_manual(name = NULL,values = adjustcolor(c("grey12", "skyblue3"), alpha.f = 0.3))+
-                           guides(fill = guide_legend(override.aes = list(alpha = c(0.3,0.8)))) +
+                           scale_fill_manual(name = NULL,values = adjustcolor(c("skyblue3", "grey12"), alpha.f = 0.3))+
+                           guides(fill = guide_legend(override.aes = list(alpha = c(0.8,0.3)))) +
                            theme(legend.position=c(0.65,0.86),
                                  legend.text=element_text(size = '12'),
                                  legend.title=element_blank(),
