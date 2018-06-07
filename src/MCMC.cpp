@@ -109,8 +109,8 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
       Verr = theta_star(Dim-1);
       theta = theta_star.rows(0,Dim-2);
       // Computing the new LogPost for theta star
-      double beta = as<double>(LogTest(theta,Verr));
       // Ratio for the MH
+      double beta = as<double>(LogTest(theta,Verr));
       double logR = beta-alpha;
       if (log(as<double>(runif(1))) < logR)
       {
