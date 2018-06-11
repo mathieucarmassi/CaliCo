@@ -217,7 +217,7 @@ calibrate.class$set("private","quantiles",
                       {
                         parFun <- function(i)
                         {
-                          D  <- self$md$fun(chain[i,1:(dim-1)],chain[i,dim])$y
+                          D  <- self$md$fun(chain[i,1:(dim-1)],chain[i,dim],self$md$X)$y
                           return(D)
                         }
                         res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
@@ -231,7 +231,7 @@ calibrate.class$set("private","quantiles",
                       {
                         parFun <- function(i)
                         {
-                          D  <- self$md$fun(chain[i,1:(dim-3)],chain[i,(dim-2):(dim-1)],chain[i,dim])$y
+                          D  <- self$md$fun(chain[i,1:(dim-3)],chain[i,(dim-2):(dim-1)],chain[i,dim],self$md$X)$y
                           return(D)
                         }
                         res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)

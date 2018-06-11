@@ -263,7 +263,8 @@ model3.class <- R6Class(classname = "model3.class",
                               }
                             } else
                             {
-                              biais <- mvrnorm(n=self$n,rep(0,long),Cov)
+                              biais <- mvrnorm(100,rep(0,long),Cov)
+                              dim(biais) <- c(long,100)
                               biais <- apply(biais,1,mean)
                             }
                             return(list(biais=biais,cov=Cov))

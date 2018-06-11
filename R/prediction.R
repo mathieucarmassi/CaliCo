@@ -51,7 +51,9 @@ prediction.class <- R6Class(classname = "predict.class",
                                {
                                  for (i in 1:100)
                                  {
-                                   res[i,] <- self$modelfit$md$fun(samp[i,1:(Dim-3)],samp[i,(Dim-2):(Dim-1)],samp[i,Dim],self$x.new)$y
+                                   res[i,] <- self$modelfit$md$pred(theta=samp[i,1:(Dim-3)],
+                                                                   thetaD=samp[i,(Dim-2):(Dim-1)],
+                                                                   var=samp[i,Dim],x.new=self$x.new)$y
                                  }
                                }
                                self$lowerPred <- apply(res,2,quantile,probs=0.05)
