@@ -11,18 +11,21 @@ calibrate(md, pr, opt.estim, opt.valid = NULL, onlyCV = FALSE)
 
 \item{pr}{a \code{\link{prior.class}} object}
 
-\item{opt.estim}{estimation options \itemize{\item{Ngibbs}{Number of iteration of the algorithm Metropolis within Gibbs}
+\item{opt.estim}{estimation options \itemize{\item{Ngibbs}{Number of iteration of the algorithm
+Metropolis within Gibbs}
 \item{Nmh}{ Number of iteration of the Metropolis Hastings algorithm}
 \item{thetaInit}{ Initial point}
 \item{k}{ Tuning parameter for the covariance matrix sig}
 \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}
-\item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which is a coda object)}
+\item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which
+ is a coda object)}
 \item{burnIn}{ Number of iteration to withdraw}
 }}
 
 \item{opt.valid}{list of cross validation options (default opt.valid=FALSE)\itemize{
 \item{nCV}{ Number of iterations for the cross validation}
-\item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method emplemented so far.}
+\item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method
+ emplemented so far.}
 }}
 
 \item{onlyCV}{if TRUE run the cross validation only (default onlyCV=FALSE)}
@@ -32,16 +35,18 @@ calibrate(md, pr, opt.estim, opt.valid = NULL, onlyCV = FALSE)
 \itemize{\item{plot()}{ display the probability density of the prior with different options:}
 \itemize{
 \item {mdfit}{The calibrated model (a \code{\link{calibrate.class}} object)}
-\item {graph}{ The vector of the graph wanted. By default all the graph are displayed and graph=c("acf","chains","densities","output").
-"acf" displays the correlation graph of the MCMC chains, "chains" plot the chains, "densities" shows the comparison of the
-densities a priori and a posteriori, and "output" displays the output of the code with the calibrated one and its credibility
+\item {graph}{ The vector of the graph wanted. By default all the graph are displayed and
+graph=c("acf","chains","densities","output"). "acf" displays the correlation graph of the MCMC chains,
+ "chains" plot the chains, "densities" shows the comparison of the densities a priori and a posteriori,
+  and "output" displays the output of the code with the calibrated one and its credibility
 interval.}
 \item {select.X}{ When the number of X is >1, this option has to be activated to display the output plot. select.X
 allows to choose one X for the x scale in the output plot}}
 \item{print()}{ return the main information concerning the estim.class object}}
 }
 \description{
-\code{calibration} is a function that allows us to generate a \code{\link{calibrate.class}} class in which the estimation is
+\code{calibration} is a function that allows us to generate a \code{\link{calibrate.class}}
+ class in which the estimation is
 done from a \code{\link{model.class}} and a \code{\link{prior.class}} objects.
 }
 \examples{

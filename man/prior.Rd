@@ -21,7 +21,8 @@ Gaussian, the hyperparameters would be the mean and the standard deviation. See 
 }
 \description{
 \code{prior} is a function that generates a \code{\link{prior.class}} containing information about one or
-several priors. When several priors are selected, the function \code{prior} return a list of \code{\link{prior.class}}.
+several priors. When several priors are selected, the function \code{prior}
+ return a list of \code{\link{prior.class}}.
 }
 \details{
 The densities implemented are defined as follow

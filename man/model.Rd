@@ -4,9 +4,7 @@
 \alias{model}
 \title{Generates \code{\link{model.class}} objects.}
 \usage{
-model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
-  type = "matern5_2", binf = 0, bsup = 1, DOE = NULL),
-  opt.disc = list(kernel.type = NULL))
+model(code, X, Yexp, model = "model1", ...)
 }
 \arguments{
 \item{code}{the computational code (function of X and theta)}
@@ -18,15 +16,21 @@ model(code, X, Yexp, model = "model1", opt.emul = list(p = 1, n.emul = 100,
 \item{model}{string of the model chosen ("model1","model2","model3","model4")
 by default "model1" is choosen. See details for precisions.}
 
+\item{opt.pg}{is an option list containing the parameters to establish the surrogate. \itemize{
+\item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
+\item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
+generated with the \strong{opt.emul} option.}}
+}}
+
 \item{opt.emul}{is an option list containing characteristics about emulation option. \itemize{
 \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
 \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
-\item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
 \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
-\item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
-\item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
-generated as a maximin LHS}}
-}}
+\item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}}}
+
+\item{opt.sim}{is an option list containing the design and corresponding outputs of the code \itemize{
+\item{\strong{Ysim}}{ Output of the code}
+\item{\strong{DOEsim}}{ DOE corresponding to the output of the code}}}
 
 \item{opt.disc}{is an option list containing characteristics on the discrepancy \itemize{
 \item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
@@ -72,25 +76,39 @@ Yexp <- code(X,c(1,1,11))+rnorm(4,0,0.1)
 ### Generate the model
 model1 <- model(code,X,Yexp,"model1")
 ### Plot the results with the first column of X
-plot(model1,c(1,1,11),0.1,select.X=X[,1])
+plot(model1,c(1,1,11),0.01,select.X=X[,1])
 ### Summury of the foo class generated
 print(model1)
 
 ###### For the second model
-### Generate the model with setup for the Gaussian Process
+### code function is available, no DOE generated upstream
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
-opt.emul <- list(p=3,n.emul=10,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
-model2 <- model(code,X,Yexp,"model2",opt.emul)
+opt.pg <- list(type="matern5_2", DOE=NULL)
+opt.emul <- list(p=3,n.emul=70,binf=binf,bsup=bsup)
+model2 <- model(code,X,Yexp,"model2",opt.pg,opt.emul)
 ### Plot the model
 plot(model2,c(1,1,11),0.1,select.X=X[,1])
 
-### Use your own design of experiments
-DOE <- DiceDesign::lhsDesign(10,5)$design
+### code function is available and use a specific DOE
+DOE <- DiceDesign::lhsDesign(100,5)$design
 DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
-opt.emul <- list(p=3,n.emul=10,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=DOE)
-model2 <- model(code,X,Yexp,"model2",opt.emul)
-plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
+
+opt.pg <- list(type="matern5_2", DOE=DOE)
+model2 <- model(code,X,Yexp,"model2",opt.pg)
+
+### no code function but DOE and code output available
+Ysim <- matrix(nr=100,nc=1)
+for (i in 1:100)
+{
+  covariates <- as.matrix(DOE[i,1:2])
+  dim(covariates) <- c(1,2)
+  Ysim[i] <- code(covariates,DOE[i,3:5])
+}
+
+sim.data <- list(Ysim=Ysim,DOEsim=DOE)
+model2 <- model(code=NULL,X,Yexp,"model2",sim.data)
+p <- plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
 
 ###### For the third model
 model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))

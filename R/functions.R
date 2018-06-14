@@ -21,15 +21,19 @@
 #' @param Yexp the vector of the experiments
 #' @param model string of the model chosen ("model1","model2","model3","model4")
 #' by default "model1" is choosen. See details for precisions.
+#' @param opt.pg is an option list containing the parameters to establish the surrogate. \itemize{
+#' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
+#' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
+#' generated with the \strong{opt.emul} option.}}
+#' }
 #' @param opt.emul is an option list containing characteristics about emulation option. \itemize{
 #' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
 #' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
-#' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
 #' \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
-#' \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}
-#' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
-#' generated as a maximin LHS}}
-#' }
+#' \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}}
+#' @param opt.sim is an option list containing the design and corresponding outputs of the code \itemize{
+#' \item{\strong{Ysim}}{ Output of the code}
+#' \item{\strong{DOEsim}}{ DOE corresponding to the output of the code}}
 #' @param opt.disc is an option list containing characteristics on the discrepancy \itemize{
 #' \item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
 #' }
@@ -45,33 +49,53 @@
 #' @examples
 #' \dontrun{
 #' ###### The code to calibrate
-#' X <- cbind(seq(0,1,length.out=4),seq(0,1,length.out=4))
+#' X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
 #' code <- function(X,theta)
 #' {
 #'   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 #' }
-#' Yexp <- code(X,c(1,1,11))+rnorm(4,0,0.1)
+#' Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
+#'
+#' #### Second code to test
+#' X2 <- seq(0,100,length.out=100)
+#' code2 <- function(X,theta)
+#' {
+#' return((X-2)*sin(theta*X-50))
+#' }
+#' Yexp2 <- code2(X2,0.1)+rnorm(100,0,0.1)
 #'
 #' ###### For the first model
 #' ### Generate the model
 #' model1 <- model(code,X,Yexp,"model1")
 #' ### Plot the results with the first column of X
-#' plot(model1,c(1,1,11),0.01,select.X=X[,1])
+#' plot(model1,X[,1],theta=c(1,1,11),var=0.01,CI="noise")
+#'
 #' ### Summury of the foo class generated
 #' print(model1)
 #'
+#' ### Test on the second function
+#' model12 <- model(code2,X2,Yexp2,"model1")
+#' plot(model12,X2,theta=0.1,var=0.1,CI="noise")
+#'
+#'
 #' ###### For the second model
-#' ### Generate the model with setup for the Gaussian Process
+#' ### code function is available, no DOE generated upstream
 #' binf <- c(0.9,0.9,10.5)
 #' bsup <- c(1.1,1.1,11.5)
-#' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
-#' model2 <- model(code,X,Yexp,"model2",opt.emul)
+#' opt.pg <- list(type="matern5_2", DOE=NULL)
+#' opt.emul <- list(p=3,n.emul=70,binf=binf,bsup=bsup)
+#' model2 <- model(code,X,Yexp,"model2",opt.pg,opt.emul)
 #' ### Plot the model
 #' plot(model2,c(1,1,11),0.1,select.X=X[,1])
 #'
-#' ### Use your own design of experiments
+#' ### code function is available and use a specific DOE
 #' DOE <- DiceDesign::lhsDesign(100,5)$design
 #' DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
+#'
+#' opt.pg <- list(type="matern5_2", DOE=DOE)
+#' model2 <- model(code,X,Yexp,"model2",opt.pg)
+#'
+#' ### no code function but DOE and code output available
 #' Ysim <- matrix(nr=100,nc=1)
 #' for (i in 1:100)
 #' {
@@ -79,9 +103,9 @@
 #'   dim(covariates) <- c(1,2)
 #'   Ysim[i] <- code(covariates,DOE[i,3:5])
 #' }
-#' opt.emul <- list(p=3,n.emul=100,type="matern5_2",binf=c(0.9,0.9,10.5),bsup=c(1.1,1.1,11.5),DOE=NULL)
+#'
 #' sim.data <- list(Ysim=Ysim,DOEsim=DOE)
-#' model2 <- model(code=NULL,X,Yexp,"model2",opt.emul,sim.data)
+#' model2 <- model(code=NULL,X,Yexp,"model2",sim.data)
 #' p <- plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
 #'
 #' ###### For the third model
@@ -100,10 +124,7 @@ model <- function(code,X,Yexp,model="model1",...)
            return(obj)
          },
          model2={
-           if(!exists("opt.pg")){opt.pg=list(type="matern5_2",DOE=NULL)}
-           if(!exists("opt.emul")){opt.emul=list(p=1,n.emul=100,binf=0,bsup=1)}
-           if(!exists("opt.sim")){opt.sim=list(Ysim=NULL,DOEsim=NULL)}
-           obj = model2.class$new(code,X,Yexp,model,opt.pg,opt.emul,opt.sim)
+           obj = model2.class$new(code,X,Yexp,model,...)
            return(obj)
          },
          model3={
@@ -126,7 +147,8 @@ model <- function(code,X,Yexp,model="model1",...)
 #' Generates \code{\link{prior.class}} objects.
 #'
 #' \code{prior} is a function that generates a \code{\link{prior.class}} containing information about one or
-#' several priors. When several priors are selected, the function \code{prior} return a list of \code{\link{prior.class}}.
+#' several priors. When several priors are selected, the function \code{prior}
+#'  return a list of \code{\link{prior.class}}.
 #'
 #' @details The densities implemented are defined as follow
 #' \itemize{
@@ -220,33 +242,38 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 
 #' Generates \code{\link{calibrate.class}} objects
 #'
-#' \code{calibration} is a function that allows us to generate a \code{\link{calibrate.class}} class in which the estimation is
+#' \code{calibration} is a function that allows us to generate a \code{\link{calibrate.class}}
+#'  class in which the estimation is
 #' done from a \code{\link{model.class}} and a \code{\link{prior.class}} objects.
 #'
 #' @useDynLib CaliCo
 #'
 #' @param md a \code{\link{model.class}} object
 #' @param pr a \code{\link{prior.class}} object
-#' @param opt.estim estimation options \itemize{\item{Ngibbs}{Number of iteration of the algorithm Metropolis within Gibbs}
+#' @param opt.estim estimation options \itemize{\item{Ngibbs}{Number of iteration of the algorithm
+#' Metropolis within Gibbs}
 #' \item{Nmh}{ Number of iteration of the Metropolis Hastings algorithm}
 #' \item{thetaInit}{ Initial point}
 #' \item{k}{ Tuning parameter for the covariance matrix sig}
 #' \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}
-#' \item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which is a coda object)}
+#' \item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which
+#'  is a coda object)}
 #' \item{burnIn}{ Number of iteration to withdraw}
 #' }
 #' @param opt.valid list of cross validation options (default opt.valid=FALSE)\itemize{
 #' \item{nCV}{ Number of iterations for the cross validation}
-#' \item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method emplemented so far.}
+#' \item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method
+#'  emplemented so far.}
 #' }
 #' @param onlyCV if TRUE run the cross validation only (default onlyCV=FALSE)
 #' @return \code{calibrate} returns a \code{\link{calibrate.class}} object. Two main methods are available:
 #' \itemize{\item{plot()}{ display the probability density of the prior with different options:}
 #' \itemize{
 #' \item {mdfit}{The calibrated model (a \code{\link{calibrate.class}} object)}
-#' \item {graph}{ The vector of the graph wanted. By default all the graph are displayed and graph=c("acf","chains","densities","output").
-#' "acf" displays the correlation graph of the MCMC chains, "chains" plot the chains, "densities" shows the comparison of the
-#' densities a priori and a posteriori, and "output" displays the output of the code with the calibrated one and its credibility
+#' \item {graph}{ The vector of the graph wanted. By default all the graph are displayed and
+#' graph=c("acf","chains","densities","output"). "acf" displays the correlation graph of the MCMC chains,
+#'  "chains" plot the chains, "densities" shows the comparison of the densities a priori and a posteriori,
+#'   and "output" displays the output of the code with the calibrated one and its credibility
 #' interval.}
 #' \item {select.X}{ When the number of X is >1, this option has to be activated to display the output plot. select.X
 #' allows to choose one X for the x scale in the output plot}}
@@ -514,7 +541,8 @@ DefPos <- function(X)
 
 #' Simulate from a Multivariate Normal Distribution
 #'
-#' The matrix decomposition is done via eigen; although a Choleski decomposition might be faster, the eigendecomposition is stabler.
+#' The matrix decomposition is done via eigen; although a Choleski decomposition might be faster,
+#' the eigendecomposition is stabler.
 #'
 #' @param n the number of samples required.
 #' @param mu a vector giving the means of the variables.
