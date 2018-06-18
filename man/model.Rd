@@ -65,20 +65,36 @@ There is four kind of models in calibration. They are properly defined in [1].
 \examples{
 \dontrun{
 ###### The code to calibrate
-X <- cbind(seq(0,1,length.out=4),seq(0,1,length.out=4))
+X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
 code <- function(X,theta)
 {
   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 }
-Yexp <- code(X,c(1,1,11))+rnorm(4,0,0.1)
+Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
+
+#### Second code to test
+X2 <- seq(0,100,length.out=100)
+code2 <- function(X,theta)
+{
+return((X-2)*sin(theta*X-50))
+}
+Yexp2 <- code2(X2,0.1)+rnorm(100,0,0.1)
 
 ###### For the first model
 ### Generate the model
 model1 <- model(code,X,Yexp,"model1")
 ### Plot the results with the first column of X
-plot(model1,c(1,1,11),0.01,select.X=X[,1])
+model1 \%param\% list(theta=c(1,1,11),var=0.01)
+plot(model1,X[,1],CI="err")
+
 ### Summury of the foo class generated
 print(model1)
+
+### Test on the second function
+model12 <- model(code2,X2,Yexp2,"model1")
+model12 \%param\% list(theta=0.1,var=10)
+plot(model12,X2)
+
 
 ###### For the second model
 ### code function is available, no DOE generated upstream
@@ -112,7 +128,8 @@ p <- plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
 
 ###### For the third model
 model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
-plot(model3,theta=c(1,1,11),thetaD=c(0,0.01),var=0.01,select.X=X[,1])
+model3 \%param\% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
+plot(model3,X[,1],CI="err")
 print(model3)
 
 }

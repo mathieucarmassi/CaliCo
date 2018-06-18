@@ -68,14 +68,16 @@
 #' ### Generate the model
 #' model1 <- model(code,X,Yexp,"model1")
 #' ### Plot the results with the first column of X
-#' plot(model1,X[,1],theta=c(1,1,11),var=0.01,CI="noise")
+#' model1 %param% list(theta=c(1,1,11),var=0.01)
+#' plot(model1,X[,1],CI="err")
 #'
 #' ### Summury of the foo class generated
 #' print(model1)
 #'
 #' ### Test on the second function
 #' model12 <- model(code2,X2,Yexp2,"model1")
-#' plot(model12,X2,theta=0.1,var=0.1,CI="noise")
+#' model12 %param% list(theta=0.1,var=10)
+#' plot(model12,X2)
 #'
 #'
 #' ###### For the second model
@@ -110,7 +112,8 @@
 #'
 #' ###### For the third model
 #' model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
-#' plot(model3,theta=c(1,1,11),thetaD=c(0,0.01),var=0.01,select.X=X[,1])
+#' model3 %param% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
+#' plot(model3,X[,1],CI="err")
 #' print(model3)
 #'
 #'}
@@ -128,16 +131,11 @@ model <- function(code,X,Yexp,model="model1",...)
            return(obj)
          },
          model3={
-           if (!exists("opt.disc")){opt.disc=list(kernel.type=NULL)}
-           obj = model3.class$new(code,X,Yexp,model,opt.disc)
+           obj = model3.class$new(code,X,Yexp,model,...)
            return(obj)
          },
          model4={
-           if(!exists("opt.pg")){opt.pg=list(type="matern5_2",DOE=NULL)}
-           if(!exists("opt.emul")){opt.emul=list(p=1,n.emul=100,binf=0,bsup=1)}
-           if(!exists("opt.sim")){opt.sim=list(Ysim=NULL,DOEsim=NULL)}
-           if (!exists("opt.disc")){opt.disc=list(kernel.type=NULL)}
-           obj = model4.class$new(code,X,Yexp,model,opt.pg,opt.emul,opt.disc,opt.sim)
+           obj = model4.class$new(code,X,Yexp,model,...)
            return(obj)
          }
   )
@@ -521,7 +519,6 @@ unscale <- function(M,binf,bsup,diag=FALSE,sym=FALSE){
   }
 
 
-
 #' Function that deals with negative eigen values in a matrix not positive definite
 #'
 #' @param X the matrix or the vector
@@ -579,4 +576,37 @@ multivariate <- function (n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISP
     drop(X)
   else t(X)
 }
+
+
+#' Operator to define active bindings variables
+#'
+#' @export
+"%param%" <- function (md,param)
+{
+  if ("model.class" %in% class(md))
+  {
+    if ("theta" %in% names(param) & "var" %in% names(param))
+    {
+      md$theta <- param$theta
+      md$var   <- param$var
+    } else
+    {
+      print("To realize a parametrization of the model please enter a list containing theta and var")
+    }
+    if (md$model %in% c("model3","model4"))
+    {
+      if ("theta" %in% names(param) & "var" %in% names(param))
+      {
+        md$thetaD <- param$thetaD
+      } else
+      {
+        print("For the third model 3 and 4, thetaD has to added")
+      }
+    }
+  } else
+  {
+    print("Not a model.class")
+  }
+}
+
 
