@@ -22,7 +22,7 @@
 #' @docType package
 #' @author Mathieu Carmassi
 #' @author Maintainer: \email{mathieu.carmassi@gmail.com}
-#' @references Bachoc, F., Blois, G., Garnie, J., and Martinez, J.-M. (2014). Calibration and improved prediction of computer models
+#' @references Bachoc, F., Blois, G., Garnier, J., and Martinez, J.-M. (2014). Calibration and improved prediction of computer models
 #' by universal kriging. Computational Statistics and Data Analysis, pages 81–97
 #' @references Bayarri, M., Berger, J., Sacks, P. R., Cafeo, J. A., Cavendish, J., Lin, C. H., and Tu, J. (2007 b). A framework for
 #' validation of computer models. Technometrics.
