@@ -116,10 +116,15 @@
 #' p <- plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
 #'
 #' ###### For the third model
-#' model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
+#' model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
 #' model3 %param% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
 #' plot(model3,X[,1],CI="err")
 #' print(model3)
+#'
+#'
+#' ###### For the fourth model
+#' opt.disc <- list(kernel.type="gauss")
+#' model4 <- model(code=NULL,X,Yexp,"model4",opt.disc,opt.gp,opt.sim)
 #'
 #'}
 #'

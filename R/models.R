@@ -44,6 +44,8 @@ model.class <- R6Class(classname = "model.class",
                    var       = NULL, ## variance of the measurement error
                    thetaD    = NULL, ## discrepancy parameter vector
                    n.cores   = NULL, ## number of computer cores
+                   m.exp     = NULL, ## Mean for the likelihood
+                   V.exp     = NULL, ## Variance for the likelihood
                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA)
                    {
                      self$code    <- code
@@ -124,9 +126,6 @@ model.class$set("private","checkCode",
 model1.class <- R6Class(classname = "model1.class",
                         inherit = model.class,
                         public=list(
-                        m.exp = NULL, ## Mean for the likelihood
-                        V.exp = NULL, ## Variance for the likelihood
-                        l     = NULL, ## Length of the new data for prediction
                         initialize=function(code=NA, X=NA, Yexp=NA, model=NA)
                         {
                           ### Initialize from model.class
@@ -168,6 +167,7 @@ model1.class <- R6Class(classname = "model1.class",
 model1.class$set("public","likelihood",
                 function(theta,var)
                 {
+                  browser()
                   ### Log-Likelihood
                   self$m.exp <- self$code(self$X,as.vector(theta))
                   self$V.exp <- var*diag(self$n)
@@ -250,9 +250,9 @@ model3.class <- R6Class(classname = "model3.class",
                             ## Check if the opt.emul option is filled if it is not a gaussian kernel is picked
                             if (is.null(opt.disc$kernel.type))
                             {
-                              warning("default value is selected. The discrepancy will have a Matérn 5/2 covariance
+                              warning("default value is selected. The discrepancy will have a gauss covariance
                                       structure")
-                              self$opt.disc$kernel.type="matern5_2"
+                              self$opt.disc$kernel.type="gauss"
                             } else
                             {
                               self$opt.disc  <- opt.disc
@@ -444,8 +444,6 @@ model2.class <- R6Class(classname = "model2.class",
                           doe      = NULL, ## DOE used for the surrogate
                           z        = NULL, ## output of the code for the DOE
                           GP       = NULL, ## current Gaussian process emulated
-                          cov.gp   = NULL, ## covariance matrice of the gaussian process
-                          yc       = NULL, ## surrogate output without noise
                           p        = NULL, ## number of parameters
                         initialize = function(code=NA, X=NA, Yexp=NA, model=NA,...)
                         {
@@ -516,8 +514,6 @@ model2.class <- R6Class(classname = "model2.class",
                             df <- data.frame(y=pr$mean+rnorm(nrow(X),0,sqrt(var)),
                                              type="model output")
                           }
-                          self$cov.gp <- pr$cov
-                          self$yc <- pr$mean
                           return(df)
                         })
                         )
@@ -585,10 +581,14 @@ model2.class$set("public","surrogate",
 model2.class$set("public","likelihood",
                  function(theta,var)
                  {
-                   self$m.exp <- self$yc
-                   self$V.exp <- var*diag(self$n) + self$cov.gp
+                   D  <- cbind(self$X,matrix(rep(theta,rep(nrow(self$X),self$p)),
+                                        nr=nrow(self$X),nc=self$p))
+                   pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
+                                 cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                   self$m.exp <- pr$mean
+                   self$V.exp <- var*diag(self$n) + pr$cov
                    return(-self$n/2*log(2*pi)-1/2*log(det(self$V.exp))
-                          -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
+                          -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(Yexp-self$m.exp))
                  })
 
 
@@ -699,73 +699,34 @@ model2.class$set("public","print",
 model4.class <- R6Class(classname = "model4.class",
                         inherit = model2.class,
                         public=list(
-                          funC = NULL,
-                          predTemp = NULL,
-                          disc = NULL,
-                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.gp=NA,opt.emul=NA,
-                                              opt.disc=list(kernel.type=NULL),opt.sim=NA)
+                          model2.fun = NULL, ## function from model2
+                          opt.disc   = NULL, ## discrepancy options
+                          disc       = NULL, ## discrepancy field
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,...)
                           {
+                            if (!exists("opt.emul")){self$opt.emul <- NULL} else{self$opt.emul <- opt.emul}
+                            if (!exists("opt.sim")){self$opt.sim <- NULL} else{self$opt.sim <- opt.sim}
+                            if (!exists("opt.gp")){self$opt.gp <- NULL} else{self$opt.gp <- opt.gp}
+                            if (!is.null(self$opt.gp$DOE)) self$opt.emul <- NULL
+                            if (!is.null(self$opt.sim$DOEsim)) self$opt.emul <- NULL
                             super$initialize(code, X, Yexp, model,opt.gp, opt.emul,opt.sim)
-                            self$opt.disc  <- list(kernel.type=opt.disc$kernel.type)
-                            if (is.null(self$opt.disc$kernel.type)==TRUE)
+                            ## Check if the opt.emul option is filled if it is not a gaussian kernel is picked
+                            if (is.null(opt.disc$kernel.type)==TRUE)
                             {
+                              warning("default value is selected. The discrepancy will have a gaussian covariance
+                                      structure")
                               self$opt.disc$kernel.type="gauss"
-                            }
-                            self$funC     <- super$fun
-                            self$predTemp <- super$pred
-                          },
-                          discrepancy = function(theta,thetaD,var,X=self$X)
-                          {
-                            y   <- self$funC(theta,var)$y
-                            z   <- self$Yexp - y
-                            Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
-                            if (is.null(dim(X)) && length(X)==1)
-                            {} else
-                            {
-                              p <- eigen(Cov)$vectors
-                              e <- eigen(Cov)$values
-                              if (all(e>0)){} else
-                              {
-                                e[which(e<0)] <- 1e-4
-                              }
-                              d <- diag(e)
-                              if (nrow(p) == 1 & ncol(p) == 1)
-                              {
-                                Cov <- as.numeric(p)^2*d
-                              } else
-                              {
-                                Cov <- t(p)%*%d%*%p
-                              }
-                            }
-                            if (is.null(dim(X))){long <- length(X)}else{
-                              long <- dim(X)[1]}
-                            if (long==1)
-                            {
-                              if (nrow(p) == 1 & ncol(p) == 1)
-                              {
-                                bias <- rnorm(1,0,sqrt(Cov))
-                              } else
-                              {
-                                bias <- rnorm(n=self$n,0,sqrt(Cov))
-                              }
                             } else
                             {
-                              bias <- mvrnorm(n=self$n,rep(0,long),Cov)
-                              bias <- apply(bias,1,mean)
+                              self$opt.disc <- opt.disc
                             }
-                            return(list(bias=bias,cov=Cov))
+                            self$model2.fun <- super$model.fun
+                            #self$model.fun(c(1,1,11),c(0.1,0.5),var=0.1,self$X)
                           },
-                          pred = function(theta,thetaD,var,x.new)
+                          model.fun = function(theta,thetaD,var,X=self$X)
                           {
-                            self$disc <- self$discrepancy(theta,thetaD,var,x.new)
-                            foo <- self$predTemp(theta,var,x.new)
-                            y <- foo$y
-                            yc  <- foo$yc
-                            return(list(y=self$disc$bias+y,cov=self$disc$cov,yc=yc))
-                          },
-                          fun = function(theta,thetaD,var,X=self$X)
-                          {
-                            foo <- self$funC(theta,var)
+                            browser()
+                            df <- self$model2.fun(theta,var)
                             self$disc <- self$discrepancy(theta,thetaD,var,X)
                             y <- foo$y
                             Cov.GP <- foo$Cov.GP
@@ -778,19 +739,70 @@ model4.class <- R6Class(classname = "model4.class",
 )
 
 
+## discrepancy function
+model4.class$set("public","discrepancy",
+                 ## Define method that generates a discrepancy
+                 function(theta,thetaD,var,X=self$X)
+                 {
+                   y   <- self$model2.fun(theta,var,X)$y
+                   z   <- self$Yexp - y
+                   ## Compute the discrepancy covariance
+                   Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
+                   if (is.vector(X) & length(X)==1)
+                   {} else
+                   {
+                     p <- eigen(Cov)$vectors
+                     e <- eigen(Cov)$values
+                     if (all(e>0)){} else
+                     {
+                       e[which(e<0)] <- 1e-4
+                     }
+                     d <- diag(e)
+                     if (nrow(p) == 1 & ncol(p) == 1)
+                     {
+                       Cov <- as.numeric(p)^2*d
+                     } else
+                     {
+                       Cov <- t(p)%*%d%*%p
+                     }
+                   }
+                   if (is.vector(X)){long <- length(X)}else{
+                     long <- nrow(X)}
+                   if (long==1)
+                   {
+                     if (nrow(p) == 1 & ncol(p) == 1)
+                     {
+                       bias <- rnorm(1,0,sqrt(Cov))
+                     } else
+                     {
+                       bias <- rnorm(n=self$n,0,sqrt(Cov))
+                     }
+                   } else
+                   {
+                     bias <- mvrnorm(100,rep(0,long),Cov)
+                     dim(bias) <- c(long,100)
+                     bias <- apply(bias,1,mean)
+                   }
+                   return(list(bias=bias,cov=Cov))
+                 })
+
+## Likelihood
 model4.class$set("public","likelihood",
                  function(theta,thetaD,var)
                  {
-                   temp <- self$fun(as.vector(theta),thetaD,var)
-                   self$m.exp <- temp$yc
-                   self$V.exp <- var*diag(self$n) + temp$Cov.GP +temp$Cov.D
-                   # return(1/((2*pi)^(self$n/2)*det(self$V.exp)^(1/2))*exp(-1/2*t(self$Yexp-self$m.exp)%*%
-                   #                                                invMat(self$V.exp)%*%(self$Yexp-self$m.exp)))
-                   return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
+                   D  <- cbind(self$X,matrix(rep(theta,rep(nrow(self$X),self$p)),
+                                             nr=nrow(self$X),nc=self$p))
+                   pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
+                                 cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                   dd <- self$discrepancy(theta,thetaD,var,self$X)
+                   self$m.exp <- pr$mean
+                   self$V.exp <- var*diag(self$n) + pr$cov +dd$cov
+                   return(-self$n/2*log(2*pi)-1/2*log(det(self$V.exp))
+                          -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                  })
 
 
-
+## Plot function
 model4.class$set("public","plot",
                  function(theta,thetaD,var,select.X=NULL,CI=c("GP","err"),points=FALSE)
                  {
@@ -949,9 +961,15 @@ model4.class$set("public","plot",
                    }
                  })
 
+## Print function
 model4.class$set("public","print",
                  function()
                  {
+                   if (is.null(self$theta) | is.null(self$thetaD) | is.null(self$var)){} else
+                   {
+                     self$disc  <- self$discrepancy(self$theta,self$thetaD,self$var,self$X)
+                     bias       <- summary(self$disc$bias)
+                   }
                    cat("Call:\n")
                    print(self$model)
                    cat("\n")
@@ -961,10 +979,11 @@ model4.class$set("public","print",
                    cat("A surrogate had been set up:")
                    print(self$GP)
                    cat("\n")
-                   cat("A discrepancy is added:\n")
-                   # cat(paste("Mean of the bias:",round(mean(self$disc$bias),5),"\n",sep=" "))
-                   # cat(paste("Covariance of the bias:",round(mean(self$disc$cov),5),"\n",sep=" "))
+                   cat("Summary of the bias mean:\n")
+                   print(bias)
                    cat("Chosen kernel:", self$opt.disc$kernel.type)
+                   cat(paste("\nCovariance of the bias:",round(mean(self$disc$cov),3),"\n\n",sep=" "))
+                   cat(paste("Kernel chossen: ",self$opt.disc$kernel.type,sep=""))
                  }
 )
 
