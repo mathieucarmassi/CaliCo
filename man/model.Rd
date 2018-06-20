@@ -16,7 +16,7 @@ model(code, X, Yexp, model = "model1", ...)
 \item{model}{string of the model chosen ("model1","model2","model3","model4")
 by default "model1" is choosen. See details for precisions.}
 
-\item{opt.pg}{is an option list containing the parameters to establish the surrogate. \itemize{
+\item{opt.gp}{is an option list containing the parameters to establish the surrogate. \itemize{
 \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
 \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
 generated with the \strong{opt.emul} option.}}
@@ -100,18 +100,21 @@ plot(model12,X2)
 ### code function is available, no DOE generated upstream
 binf <- c(0.9,0.9,10.5)
 bsup <- c(1.1,1.1,11.5)
-opt.pg <- list(type="matern5_2", DOE=NULL)
-opt.emul <- list(p=3,n.emul=70,binf=binf,bsup=bsup)
-model2 <- model(code,X,Yexp,"model2",opt.pg,opt.emul)
+opt.gp <- list(type="matern5_2", DOE=NULL)
+opt.emul <- list(p=3,n.emul=150,binf=binf,bsup=bsup,type="maximinLHS")
+model2 <- model(code,X,Yexp,"model2",opt.gp,opt.emul)
+model2 \%param\% list(theta=c(1,1,11),var=0.1)
 ### Plot the model
-plot(model2,c(1,1,11),0.1,select.X=X[,1])
+plot(model2,X[,1])
 
 ### code function is available and use a specific DOE
 DOE <- DiceDesign::lhsDesign(100,5)$design
 DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
 
-opt.pg <- list(type="matern5_2", DOE=DOE)
-model2 <- model(code,X,Yexp,"model2",opt.pg)
+opt.gp <- list(type="matern5_2", DOE=DOE)
+model2 <- model(code,X,Yexp,"model2",opt.gp)
+model2 \%param\% list(theta=c(1,1,11),var=0.1)
+plot(model2,X[,1])
 
 ### no code function but DOE and code output available
 Ysim <- matrix(nr=100,nc=1)
@@ -122,15 +125,22 @@ for (i in 1:100)
   Ysim[i] <- code(covariates,DOE[i,3:5])
 }
 
-sim.data <- list(Ysim=Ysim,DOEsim=DOE)
-model2 <- model(code=NULL,X,Yexp,"model2",sim.data)
-p <- plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
+opt.sim <- list(Ysim=Ysim,DOEsim=DOE)
+opt.gp <- list(type="matern5_2", DOE=NULL)
+model2 <- model(code=NULL,X,Yexp,"model2",opt.gp,opt.sim)
+model2 \%param\% list(theta=c(1,1,11),var=0.1)
+plot(model2,X[,1])
 
 ###### For the third model
-model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="matern5_2"))
+model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
 model3 \%param\% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
 plot(model3,X[,1],CI="err")
 print(model3)
+
+
+###### For the fourth model
+opt.disc <- list(kernel.type="gauss")
+model4 <- model(code=NULL,X,Yexp,"model4",opt.disc,opt.gp,opt.sim)
 
 }
 

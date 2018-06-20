@@ -35,7 +35,7 @@ during the estimation process.
 
 \item{\code{bsup}}{the upper bound of the parameters for the DOE}
 
-\item{\code{opt.pg}}{a list of parameter for the surrogate (default NULL) \itemize{
+\item{\code{opt.gp}}{a list of parameter for the surrogate (default NULL) \itemize{
 \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
 \item{\strong{DOE}}{ design of experiments for the surrogate (default value NULL)}}}
 

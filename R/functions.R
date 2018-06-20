@@ -68,7 +68,7 @@
 #' ### Generate the model
 #' model1 <- model(code,X,Yexp,"model1")
 #' ### Plot the results with the first column of X
-#' model1 %param% list(theta=c(1,1,11),var=0.01)
+#' model1 %+% list(theta=c(1,1,11),var=0.01)
 #' plot(model1,X[,1],CI="err")
 #'
 #' ### Summury of the foo class generated
@@ -76,7 +76,7 @@
 #'
 #' ### Test on the second function
 #' model12 <- model(code2,X2,Yexp2,"model1")
-#' model12 %param% list(theta=0.1,var=10)
+#' model12 %+% list(theta=0.1,var=10)
 #' plot(model12,X2)
 #'
 #'
@@ -87,7 +87,7 @@
 #' opt.gp <- list(type="matern5_2", DOE=NULL)
 #' opt.emul <- list(p=3,n.emul=150,binf=binf,bsup=bsup,type="maximinLHS")
 #' model2 <- model(code,X,Yexp,"model2",opt.gp,opt.emul)
-#' model2 %param% list(theta=c(1,1,11),var=0.1)
+#' model2 %+% list(theta=c(1,1,11),var=0.1)
 #' ### Plot the model
 #' plot(model2,X[,1])
 #'
@@ -97,7 +97,7 @@
 #'
 #' opt.gp <- list(type="matern5_2", DOE=DOE)
 #' model2 <- model(code,X,Yexp,"model2",opt.gp)
-#' model2 %param% list(theta=c(1,1,11),var=0.1)
+#' model2 %+% list(theta=c(1,1,11),var=0.1)
 #' plot(model2,X[,1])
 #'
 #' ### no code function but DOE and code output available
@@ -112,20 +112,22 @@
 #' opt.sim <- list(Ysim=Ysim,DOEsim=DOE)
 #' opt.gp <- list(type="matern5_2", DOE=NULL)
 #' model2 <- model(code=NULL,X,Yexp,"model2",opt.gp,opt.sim)
-#'
-#' p <- plot(model2, theta=c(1,1,11),var=0.1,points=FALSE,select.X=X[,1])
+#' model2 %+% list(theta=c(1,1,11),var=0.1)
+#' plot(model2,X[,1])
 #'
 #' ###### For the third model
 #' model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
-#' model3 %param% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
-#' plot(model3,X[,1],CI="err")
+#' model3 %+% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
+#' plot(model3,X[,1],CI="err2")
 #' print(model3)
 #'
 #'
 #' ###### For the fourth model
 #' opt.disc <- list(kernel.type="gauss")
 #' model4 <- model(code=NULL,X,Yexp,"model4",opt.disc,opt.gp,opt.sim)
-#'
+#' model4 %+% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
+#' print(model4)
+#' plot(model4,X[,1])
 #'}
 #'
 #' @export
@@ -591,31 +593,40 @@ multivariate <- function (n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISP
 #' Operator to define active bindings variables
 #'
 #' @export
-"%param%" <- function (md,param)
+"%+%" <- function (md,param)
 {
   if ("model.class" %in% class(md))
   {
     if ("theta" %in% names(param) & "var" %in% names(param))
     {
-      md$theta <- param$theta
-      md$var   <- param$var
+      warning("Please be carefull to the size of the parameter vector",call. = FALSE)
+      if (length(param$var) > 1)
+      {
+        stop("Wrong variance size",call. = FALSE)
+      }
+      md$theta    <- param$theta
+      md$var      <- param$var
     } else
     {
-      print("To realize a parametrization of the model please enter a list containing theta and var")
+      stop("To realize a parametrization of the model please enter a list containing theta and var",call. = FALSE)
     }
     if (md$model %in% c("model3","model4"))
     {
       if ("theta" %in% names(param) & "var" %in% names(param))
       {
+        if (length(param$thetaD) != 2)
+        {
+          stop("Wrong discrepancy parameter size",call. = FALSE)
+        }
         md$thetaD <- param$thetaD
       } else
       {
-        print("For the third model 3 and 4, thetaD has to added")
+        stop("For the third model 3 and 4, thetaD has to be added",call. = FALSE)
       }
     }
   } else
   {
-    print("Not a model.class")
+    stop("Not a model.class",call. = FALSE)
   }
 }
 

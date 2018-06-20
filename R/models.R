@@ -73,17 +73,19 @@ model.class <- R6Class(classname = "model.class",
                    }
                  ))
 
+## Function that check if the right label of model is given
 model.class$set("private","checkModels",
         function()
           ### Check if the chosen model is in the possible selection
         {
           if (!self$model %in% c("model1","model2","model3","model4"))
           {
-            stop('Please elect a correct model')
+            stop('Please elect a correct model',call. = FALSE)
           }
         })
 
 
+## Check the content of the options
 model.class$set("private","checkOptions",
                 function()
                   ### Check if there is no missing in the options
@@ -95,7 +97,7 @@ model.class$set("private","checkOptions",
                     {
                       if(names(options)[i] != N[i])
                       {
-                        stop(paste(N[i],"value is missing, please enter a correct value",sep=" "))
+                        stop(paste(N[i],"value is missing, please enter a correct value",sep=" "),call. = FALSE)
                       }
                     }
                   }
@@ -110,19 +112,254 @@ model.class$set("private","checkOptions",
                   }
                 })
 
+## Check if the code is present for Model1 or Model3
 model.class$set("private","checkCode",
                 function()
                   ### Check if the code is valid
                 {
                   if (is.null(self$code) & self$model %in% c("model1","model3"))
                   {
-                    stop("The code cannot be NULL if you chose model1 or model3")
+                    stop("The code cannot be NULL if you chose model1 or model3",call. = FALSE)
                   }
+                })
+
+## Plot function for the models
+model.class$set("public","plot",
+                function(x,CI="all",...)
+                {
+                  if (is.matrix(x)){stop("please enter a correct x to plot your model",call. = FALSE)}
+                  if (length(x)!= self$n){stop(paste("please enter a correct vector x of size",
+                                                     self$n,sep=" "),call. = FALSE)}
+                  df <- cbind(data.frame(y=self$Yexp,type="exp"),x=x)
+                  if (self$model %in% c("model1","model2"))
+                  {
+                    if (!is.null(self$theta) & !is.null(self$var))
+                    {
+                      df2 <- cbind(self$model.fun(self$theta,self$var,X=self$X,CI),x=x)
+                    } else
+                      {
+                        warning("no theta and var has been given to the model, experiments only are plotted",call.= FALSE)
+                        df2 <- NULL
+                      }
+                  } else
+                  {
+                    if (!is.null(self$theta) & !is.null(self$thetaD) & !is.null(self$var))
+                    {
+                      df2 <- cbind(self$model.fun(self$theta,self$thetaD,self$var,X=self$X,CI),x=x)
+                    } else
+                      {
+                        warning("no theta, thetaD and var has been given to the model, experiments only are plotted",call.= FALSE)
+                        df2 <- NULL
+                      }
+                  }
+                  if (!is.null(df2))
+                  {
+                    if (is.null(CI))
+                    {
+                      df <- rbind(df,df2)
+                      p  <- ggplot(df)+geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+
+                        xlab("")+ylab("")+self$gglegend() + scale_color_manual(values=c("red", "#000000"))
+                    } else if (CI == "err")
+                    {
+                      if (self$model %in% c("model3","model4"))
+                      {
+                        df <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% discrepancy + noise")
+                      } else
+                      {
+                        df <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% noise")
+                      }
+                      df2 <- df2[,names(df)]
+                      df <- rbind(df,df2)
+                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),alpha=0.4)+
+                        geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
+                        scale_fill_manual(values = adjustcolor("skyblue3"))+
+                        scale_color_manual(values=c("red", "#000000"))+self$gglegend()
+                    } else if (CI == "GP")
+                    {
+                      if (self$model %in% c("model1","model3"))
+                      {
+                        stop("No Gaussian process used for the model1 and model2, no ggplot produced",call. = FALSE)
+                      }
+                      df <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% GP")
+                      df <- rbind(df,df2)
+                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),alpha=0.4)+
+                        geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
+                        scale_fill_manual(values = adjustcolor("grey12"))+
+                        scale_color_manual(values=c("red", "#000000"))+ self$gglegend()
+                    } else if (CI == "all")
+                    {
+                      if (self$model %in% c("model1","model3"))
+                      {
+                        if (self$model == "model1"){df <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% noise")}
+                        if (self$model == "model3")
+                        {
+                          df <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% discrepancy + noise")
+                        }
+                        df <- rbind(df,df2)
+                        p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),alpha=0.4)+
+                          geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
+                          scale_fill_manual(values = adjustcolor("skyblue3"))+
+                          scale_color_manual(values=c("red", "#000000"))+self$gglegend()
+                      } else
+                      {
+                        if (self$model == "model2")
+                        {
+                          df.gp  <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% GP")
+                          df.n   <- cbind(df,q05=df2$q05n,q95=df2$q95n,fill="CI 90% noise")
+                          df2.gp <- data.frame(y=df2$y,type=df2$type,x=x,q05=df2$q05,q95=df2$q95,fill="CI 90% GP")
+                          df2.n  <- data.frame(y=df2$y,type=df2$type,x=x,q05=df2$q05n,q95=df2$q95n,
+                                               fill="CI 90% noise")
+                        } else
+                        {
+                          df.gp  <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% GP")
+                          df.n   <- cbind(df,q05=df2$q05n,q95=df2$q95n,fill="CI 90% discrepancy + noise")
+                          df2.gp <- data.frame(y=df2$y,type=df2$type,x=x,q05=df2$q05,q95=df2$q95,fill="CI 90% GP")
+                          df2.n  <- data.frame(y=df2$y,type=df2$type,x=x,q05=df2$q05n,q95=df2$q95n,
+                                               fill="CI 90% discrepancy + noise")
+                        }
+                        df     <- rbind(df.n,df2.n)
+                        df2    <- rbind(df.gp,df2.gp)
+                        p <- ggplot(df)+
+                          geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),
+                                      alpha=0.8)+
+                          geom_ribbon(data=df2,mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),
+                                      alpha=0.3,show.legend = FALSE)+
+                          geom_line(mapping = aes(x=x,y=y, color=type))+
+                          scale_fill_manual(name = NULL,values = adjustcolor(c("skyblue3", "grey12"),
+                                                                             alpha.f = 0.3))+
+                          guides(fill = guide_legend(override.aes = list(alpha = c(0.8,0.3))))+
+                          scale_color_manual(values=c("red", "#000000"))+
+                          xlab("")+ylab("")+theme_light()+self$gglegend()
+                      }
+                    } else
+                    {
+                      p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
+                        xlab("")+ylab("")+theme_light()+self$gglegend()+
+                        scale_color_manual(values=c("red"))
+                    }
+                  } else
+                  {
+                    p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
+                      xlab("")+ylab("")+theme_light()+self$gglegend()+
+                      scale_color_manual(values=c("red"))
+                  }
+                  return(p)
+                })
+
+
+## Print function
+model.class$set("public","print",
+                function(...)
+                {
+                  if (self$model %in% c("model3","model4"))
+                  {
+                    if (is.null(self$theta) | is.null(self$thetaD) | is.null(self$var)){
+                      warning("\nThe discrepancy cannot be printed if no parameters are in the model",call. = FALSE)
+                    } else
+                    {
+                      self$disc  <- self$discrepancy(self$theta,self$thetaD,self$var,self$X)
+                      bias       <- summary(self$disc$bias)
+                    }
+                  }
+                  cat("Call:\n")
+                  print(self$model)
+                  cat("\n")
+                  cat("With the function:\n")
+                  print(self$code)
+                  cat("\n")
+                  if (self$model %in% c("model1","model3"))
+                  {
+                    cat("No surrogate is selected")
+                    cat("\n\n")
+                    if (self$model == "model3")
+                    {
+                      cat("A discrepancy is added")
+                      cat("\n\n")
+                      cat("Summary of the bias mean:\n")
+                      print(bias)
+                      cat("Chosen kernel:", self$opt.disc$kernel.type)
+                      cat(paste("\nCovariance of the bias:",round(mean(self$disc$cov),3),"\n\n",sep=" "))
+                      cat(paste("Kernel chossen: ",self$opt.disc$kernel.type,sep=""))
+                    } else {
+                      cat("No discrepancy is added")
+                    }
+                  } else
+                  {
+                    cat("A surrogate had been set up:")
+                    print(self$GP)
+                    cat("\n")
+                    if (self$model == "model2")
+                    {
+                      cat("No discrepancy is added")
+                    } else
+                    {
+                      if (is.null(self$theta) | is.null(self$thetaD) | is.null(self$var)){
+                        cat("Summary of the bias mean:\n")
+                        cat("No discrepancy in the print function")
+                      } else
+                      {
+                        cat("Summary of the bias mean:\n")
+                        print(bias)
+                        cat("Chosen kernel:", self$opt.disc$kernel.type)
+                        cat(paste("\nCovariance of the bias:",round(mean(self$disc$cov),3),"\n\n",sep=" "))
+                        cat(paste("Kernel chossen: ",self$opt.disc$kernel.type,sep=""))
+                      }
+                    }
+                  }
+                })
+
+## Discrepancy function
+model.class$set("public","discrepancy",
+                ## Define method that generates a discrepancy
+                function(theta,thetaD,var,X=self$X)
+                {
+                  if (self$model=="model3")
+                  {
+                    y <- self$model1.fun(theta,var,X)$y
+                  } else y <- self$model2.fun(theta,var,X)$y
+                  z   <- self$Yexp - y
+                  ## Compute the discrepancy covariance
+                  Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
+                  if (is.vector(X) & length(X)==1)
+                  {} else
+                  {
+                    p <- eigen(Cov)$vectors
+                    e <- eigen(Cov)$values
+                    if (all(e>0)){} else
+                    {
+                      e[which(e<0)] <- 1e-4
+                    }
+                    d <- diag(e)
+                    if (nrow(p) == 1 & ncol(p) == 1)
+                    {
+                      Cov <- as.numeric(p)^2*d
+                    } else
+                    {
+                      Cov <- t(p)%*%d%*%p
+                    }
+                  }
+                  if (is.vector(X)){long <- length(X)}else{
+                    long <- nrow(X)}
+                  if (long==1)
+                  {
+                    if (nrow(p) == 1 & ncol(p) == 1)
+                    {
+                      bias <- rnorm(1,0,sqrt(Cov))
+                    } else
+                    {
+                      bias <- rnorm(n=self$n,0,sqrt(Cov))
+                    }
+                  } else
+                  {
+                    bias <- mvrnorm(100,rep(0,long),Cov)
+                    dim(bias) <- c(long,100)
+                    bias <- apply(bias,1,mean)
+                  }
+                  return(list(bias=bias,cov=Cov))
                 })
 
 
 ################################## Model 1 definition #######################################
-
 model1.class <- R6Class(classname = "model1.class",
                         inherit = model.class,
                         public=list(
@@ -141,13 +378,12 @@ model1.class <- R6Class(classname = "model1.class",
                           if (is.null(CI))
                           {
                             df <- data.frame(y=qq[2,],type="model output")
-                          } else if (CI=="err")
+                          } else if (CI=="err" | CI == "all")
                           {
                             df <- data.frame(y=qq[2,],type="model output",q05=qq[1,],q95=qq[3,],fill="CI 90% noise")
                           } else
                           {
-                            warning("The argument for the credibility interval is not valid and no credibility interval
-                                    will be displayed")
+                            warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
                             df <- data.frame(y=qq[2,],type="model output")
                           }
                           return(df)
@@ -167,7 +403,6 @@ model1.class <- R6Class(classname = "model1.class",
 model1.class$set("public","likelihood",
                 function(theta,var)
                 {
-                  browser()
                   ### Log-Likelihood
                   self$m.exp <- self$code(self$X,as.vector(theta))
                   self$V.exp <- var*diag(self$n)
@@ -175,64 +410,6 @@ model1.class$set("public","likelihood",
                          -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                 })
 
-## print function
-model1.class$set("public","print",
-                 function(...)
-                 {
-                   cat("Call:\n")
-                   print(self$model)
-                   cat("\n")
-                   cat("With the function:\n")
-                   print(self$code)
-                   cat("\n")
-                   cat("No surrogate is selected")
-                   cat("\n")
-                   cat("No discrepancy is added")
-                 })
-
-## plot function
-model1.class$set("public","plot",
-                 function(x,CI="err",...)
-                 {
-                   ### Plot generates a ggplot object
-                   if (is.matrix(x)){stop("please enter a correct x to plot your model")}
-                   if (length(x)!= self$n){stop(paste("please enter a correct vector x of size",
-                                                      self$n,sep=" "))}
-                   df <- data.frame(y=self$Yexp,type="exp")
-                   if (!is.null(self$theta) & !is.null(self$var)) {
-                     df2 <- self$model.fun(self$theta,self$var,self$X,CI)
-                     df2 <- cbind(df2,x=x)
-                     if (is.null(CI))
-                     {
-                       df  <- cbind(df,x=x)
-                       df  <- rbind(df,df2)
-                       p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                         xlab("")+ylab("")+theme_light()+self$gglegend()+
-                         scale_color_manual(values=c("red", "#000000"))
-                     } else if (CI=="err")
-                     {
-                       df  <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% noise",x=x)
-                       df  <- rbind(df,df2)
-                       p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                         xlab("")+ylab("")+theme_light()+self$gglegend()+
-                         geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),alpha=0.4)+
-                         scale_fill_manual(values = "skyblue3")+
-                         scale_color_manual(values=c("red", "#000000"))
-                     } else {
-                       df  <- cbind(df,x=x)
-                       df  <- rbind(df,df2)
-                       p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                         xlab("")+ylab("")+theme_light()+self$gglegend()
-                       scale_color_manual(values=c("red", "#000000"))
-                     }
-                   } else
-                   {
-                     p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                       xlab("")+ylab("")+theme_light()+self$gglegend()+
-                       scale_color_manual(values=c("red"))
-                   }
-                   return(p)
-                 })
 
 
 ##################################### Model 3 definition ##################################
@@ -250,8 +427,7 @@ model3.class <- R6Class(classname = "model3.class",
                             ## Check if the opt.emul option is filled if it is not a gaussian kernel is picked
                             if (is.null(opt.disc$kernel.type))
                             {
-                              warning("default value is selected. The discrepancy will have a gauss covariance
-                                      structure")
+                              warning("default value is selected. The discrepancy will have a gauss covariance structure",call. = FALSE)
                               self$opt.disc$kernel.type="gauss"
                             } else
                             {
@@ -275,9 +451,10 @@ model3.class <- R6Class(classname = "model3.class",
                             self$disc  <- self$discrepancy(theta,thetaD,var,X)
                             if (is.null(CI))
                             {
-                              df <- data.frame(y=res.model1$y+self$disc$bias,
-                                               type="model output")
-                            } else if (CI=="err")
+                              disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores))
+                              qq <- apply(disc.temp,2,mean)
+                              df <- data.frame(y=res.model1$y+qq,type="model output")
+                            } else if (CI=="err" | CI == "all")
                             {
                               disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores))
                               qq <- apply(disc.temp,2,quantile,c(0.05,0.5,0.95))
@@ -285,9 +462,8 @@ model3.class <- R6Class(classname = "model3.class",
                                                fill="CI 90% discrepancy + noise")
                             } else
                             {
-                              warning("The argument for the credibility interval is not valid and no credibility interval
-                                    will be displayed")
-                              df <- data.frame(y=res.model1$y+qq[2,],type="model output")
+                              warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
+                              df <- 0
                             }
                             return(df)
                           }
@@ -313,122 +489,6 @@ model3.class$set("public","likelihood",
                           -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                  })
 
-## discrepancy function
-model3.class$set("public","discrepancy",
-                 ## Define method that generates a discrepancy
-                 function(theta,thetaD,var,X=self$X)
-                 {
-                   y   <- self$model1.fun(theta,var,X)$y
-                   z   <- self$Yexp - y
-                   ## Compute the discrepancy covariance
-                   Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
-                   if (is.vector(X) & length(X)==1)
-                   {} else
-                   {
-                     p <- eigen(Cov)$vectors
-                     e <- eigen(Cov)$values
-                     if (all(e>0)){} else
-                     {
-                       e[which(e<0)] <- 1e-4
-                     }
-                     d <- diag(e)
-                     if (nrow(p) == 1 & ncol(p) == 1)
-                     {
-                       Cov <- as.numeric(p)^2*d
-                     } else
-                     {
-                       Cov <- t(p)%*%d%*%p
-                     }
-                   }
-                   if (is.vector(X)){long <- length(X)}else{
-                     long <- nrow(X)}
-                   if (long==1)
-                   {
-                     if (nrow(p) == 1 & ncol(p) == 1)
-                     {
-                       bias <- rnorm(1,0,sqrt(Cov))
-                     } else
-                     {
-                       bias <- rnorm(n=self$n,0,sqrt(Cov))
-                     }
-                   } else
-                   {
-                     bias <- mvrnorm(100,rep(0,long),Cov)
-                     dim(bias) <- c(long,100)
-                     bias <- apply(bias,1,mean)
-                   }
-                   return(list(bias=bias,cov=Cov))
-                 })
-
-## plot function
-model3.class$set("public","plot",
-                 function(x,CI="all",...)
-                {
-                  ### Plot generates a ggplot object
-                  if (is.matrix(x)){stop("please enter a correct x to plot your model")}
-                  if (length(x)!= self$n){stop(paste("please enter a correct vector x of size",
-                                                     self$n,sep=" "))}
-                  df <- data.frame(y=self$Yexp,type="exp")
-                  if (!is.null(self$theta) & !is.null(self$var)) {
-                    df2 <- cbind(self$model.fun(self$theta,self$thetaD,self$var,self$X,CI),x=x)
-                    if (is.null(CI))
-                    {
-                      df  <- cbind(df,x=x)
-                      df  <- rbind(df,df2)
-                      p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                        xlab("")+ylab("")+theme_light()+self$gglegend()+
-                        scale_color_manual(values=c("red", "#000000"))
-                    } else if (CI == "err")
-                    {
-                      df   <- cbind(df,q05=df2$q05,q95=df2$q95,fill=df2$fill,x=x)
-                      df   <- rbind(df,df2)
-                      p <- ggplot(df)+geom_line(mapping = aes(x=x,y=y, color=type))+
-                        xlab("")+ylab("")+theme_light()+self$gglegend()+
-                        geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill="CI 90% discrepancy + noise"),
-                                    alpha=0.4)+scale_fill_manual(values = adjustcolor("skyblue3"))+
-                        scale_color_manual(values=c("red", "#000000"))
-                    } else
-                    {
-                      warning("The argument for the credibility interval is not valid and no credibility interval
-                                                        will be displayed")
-                      df  <- cbind(df,x=x)
-                      df  <- rbind(df,df2)
-                      p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                        xlab("")+ylab("")+theme_light()+self$gglegend()+
-                        scale_color_manual(values=c("red", "#000000"))
-                    }
-                  } else
-                  {
-                    p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                      xlab("")+ylab("")+theme_light()+self$gglegend()+
-                      scale_color_manual(values=c("red"))
-                  }
-                  return(p)
-                })
-
-## print function
-model3.class$set("public","print",
-                 function(...)
-                 {
-                   if (is.null(self$theta) | is.null(self$thetaD) | is.null(self$var)){} else
-                   {
-                     self$disc  <- self$discrepancy(self$theta,self$thetaD,self$var,self$X)
-                     bias       <- summary(self$disc$bias)
-                   }
-                   cat("Call:\n")
-                   print(self$model)
-                   cat("\n")
-                   cat("With the function:\n")
-                   print(self$code)
-                   cat("\n")
-                   cat("No surrogate is selected")
-                   cat("\n\n")
-                   cat("A discrepancy is added:\n")
-                   cat("Summary of the bias mean:\n")
-                   print(bias)
-                   cat(paste("\nCovariance of the bias:",round(mean(self$disc$cov),3),"\n\n",sep=" "))
-                   cat(paste("Kernel chossen: ",self$opt.disc$kernel.type,sep=""))
-                 })
 
 
 ################################## Model 2 definition ####################################
@@ -445,24 +505,15 @@ model2.class <- R6Class(classname = "model2.class",
                           z        = NULL, ## output of the code for the DOE
                           GP       = NULL, ## current Gaussian process emulated
                           p        = NULL, ## number of parameters
-                        initialize = function(code=NA, X=NA, Yexp=NA, model=NA,...)
+                        initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.gp=NULL,opt.emul=NULL,
+                                              opt.sim=NULL,...)
                         {
-                          if (!exists("opt.emul")){self$opt.emul <- NULL} else{self$opt.emul <- opt.emul}
-                          if (!exists("opt.sim")){self$opt.sim <- NULL} else{self$opt.sim <- opt.sim}
-                          if (!exists("opt.gp")){self$opt.gp <- NULL} else{self$opt.gp <- opt.gp}
-                          if (!is.null(self$opt.gp$DOE)) self$opt.emul <- NULL
-                          if (!is.null(self$opt.sim$DOEsim)) self$opt.emul <- NULL
-                          ## Select the case wanted by the user
-                          if (!is.null(self$opt.gp))
-                          {
-                            if (is.null(self$opt.gp$DOE) & !is.null(self$opt.emul))
-                            {
-                              self$case <- "1"
-                              self$p <- self$opt.emul$p
-                            } else if (!is.null(self$opt.gp$DOE) & is.null(self$opt.emul))
-                            {self$case <- "2"} else if (!is.null(self$opt.sim)){self$case <- "3"}
-                            else{stop("please enter correct options to establish the second model")}
-                          }
+                          if (missing(opt.sim)) self$case <- 1
+                          if (missing(opt.emul) & missing(opt.sim)) self$case <- 2
+                          if (missing(opt.emul) & !missing(opt.sim)) self$case <- 3
+                          self$opt.gp   <- opt.gp
+                          self$opt.emul <- opt.emul
+                          self$opt.sim  <- opt.sim
                           ## initialize from model.class
                           super$initialize(code, X, Yexp, model)
                           if (is.null(self$code))
@@ -479,18 +530,24 @@ model2.class <- R6Class(classname = "model2.class",
                         model.fun = function(theta,var,X=self$X,CI="all")
                         {
                           X  <- as.matrix(X)
-                          if (ncol(X) != self$d){stop("please enter a correct X")}
-                          D  <- cbind(X,matrix(rep(theta,rep(nrow(X),self$p)),
-                                            nr=nrow(X),nc=self$p))
+                          self$p <- length(theta)
+                          if (ncol(X) != self$d){stop("please enter a correct X",call. = FALSE)}
+                          if (self$p == 1){
+                            D <- cbind(X,rep(theta,nrow(X)))
+                          } else
+                          {
+                            D  <- cbind(X,matrix(rep(theta,rep(nrow(X),self$p)),
+                                              nr=nrow(X),nc=self$p))
+                          }
                           pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
                                         cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                          nugget <- mvrnorm(n=100,pr$mean,diag(var,self$n))
                           if (is.null(CI))
                           {
-                            df <- data.frame(y=pr$mean+rnorm(nrow(X),0,sqrt(var)),
-                                             type="model output")
+                            qq <- apply(nugget,2,mean)
+                            df <- data.frame(y=qq,type="model output")
                           } else if (CI == "all" | CI == "err")
                           {
-                            nugget <- mvrnorm(n=100,pr$mean,diag(var,100))
                             qq <- apply(nugget,2,quantile,c(0.05,0.5,0.95))
                             if (CI == "all")
                             {
@@ -498,21 +555,18 @@ model2.class <- R6Class(classname = "model2.class",
                                                 q05=pr$lower95,q95=pr$upper95)
                             } else
                             {
-                              df  <- data.frame(y=qq[2,],type="model output",q05n=qq[1,],q95n=qq[3,],
-                                                q05=pr$lower95,q95=pr$upper95)
+                              df  <- data.frame(y=qq[2,],type="model output",q05=qq[1,],q95=qq[3,],
+                                                fill="CI 90% noise")
                             }
                           } else if (CI == "GP")
                           {
-                            nugget <- mvrnorm(n=100,pr$mean,diag(var,100))
                             qq <- apply(nugget,2,quantile,c(0.05,0.5,0.95))
                             df  <- data.frame(y=qq[2,],type="model output",q05=pr$lower95,
                                               q95=pr$upper95, fill="CI 90% GP")
                           } else
                           {
-                            warning("The argument for the credibility interval is not valid and no credibility interval
-                                                        will be displayed")
-                            df <- data.frame(y=pr$mean+rnorm(nrow(X),0,sqrt(var)),
-                                             type="model output")
+                            warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
+                            df <- 0
                           }
                           return(df)
                         })
@@ -543,7 +597,7 @@ model2.class$set("public","surrogate",
                      for (i in 1:self$opt.emul$n.emul)
                      {
                        covariates <- as.matrix(self$doe[i,1:(Dim-self$opt.emul$p)])
-                       dim(covariates) <- c(1,self$d)
+                       if (self$d == 1) {} else dim(covariates) <- c(1,self$d)
                        self$z <- c(self$z,self$code(covariates,self$doe[i,(Dim-self$opt.emul$p+1):Dim]))
                      }
                      ## Create the Gaussian Process corresponding
@@ -560,7 +614,7 @@ model2.class$set("public","surrogate",
                      for (i in 1:nrow(self$doe))
                      {
                        covariates <- as.matrix(self$doe[i,1:(self$d)])
-                       dim(covariates) <- c(1,self$d)
+                       if (self$d == 1) {} else dim(covariates) <- c(1,self$d)
                        self$z <- c(self$z,self$code(covariates,self$doe[i,(Dim-self$p+1):Dim]))
                      }
                      ## Create the Gaussian Process corresponding
@@ -592,106 +646,6 @@ model2.class$set("public","likelihood",
                  })
 
 
-## plot function
-model2.class$set("public","plot",
-                 function(x,CI="all",...)
-                 {
-                   ### Plot generates a ggplot object
-                   if (is.matrix(x)){stop("please enter a correct x to plot your model")}
-                   if (length(x)!= self$n){stop(paste("please enter a correct vector x of size",
-                                                      self$n,sep=" "))}
-                   df <- data.frame(y=self$Yexp,type="exp")
-                   if (!is.null(self$theta) & !is.null(self$var)){
-                     df2 <- cbind(self$model.fun(self$theta,self$var,self$X,CI),x=x)
-                     if (!is.null(CI))
-                     {
-                       if(CI == "err" | CI == "all")
-                       {
-                         df.noise <- cbind(df,q05=df2$q05n,q95=df2$q95n,fill="CI 90% noise",x=x)
-                         df2.noise <- data.frame(y=df2$y,type=df2$type,q05=df2$q05n,
-                                                 q95=df2$q95n,fill="CI 90% noise",x=x)
-                       }
-                       if (CI == "GP" | CI =="all")
-                       {
-                         df.gp <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% GP",x=x)
-                         df2.gp <- data.frame(y=df2$y,type=df2$type,q05=df2$q05,q95=df2$q95,fill="CI 90% GP",x=x)
-                       }
-                     }
-                     if (is.null(CI))
-                     {
-                       df  <- cbind(df,x=x)
-                       df  <- rbind(df,df2)
-                       p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                         xlab("")+ylab("")+theme_light()+self$gglegend()+
-                         scale_color_manual(values=c("red", "#000000"))
-                     } else if (CI == "err")
-                     {
-                       df   <- rbind(df.noise,df2.noise)
-                       p <- ggplot(df)+geom_line(mapping = aes(x=x,y=y, color=type))+
-                         xlab("")+ylab("")+theme_light()+self$gglegend()+
-                         geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill="CI 90% noise"),
-                                     alpha=0.4)+scale_fill_manual(values = adjustcolor("skyblue3"))+
-                         scale_color_manual(values=c("red", "#000000"))
-                     } else if (CI == "GP")
-                     {
-                       df   <- rbind(df.gp,df2.gp)
-                       p <- ggplot(df)+geom_line(mapping = aes(x=x,y=y, color=type))+
-                         xlab("")+ylab("")+theme_light()+self$gglegend()+
-                         geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill="CI 90% GP"),
-                                     alpha=0.4)+scale_fill_manual(values = adjustcolor("grey12"))+
-                         scale_color_manual(values=c("red", "#000000"))
-                     } else if (CI == "all")
-                     {
-                       df  <- rbind(df.gp,df2.gp)
-                       df2 <- rbind(df.noise,df2.noise)
-                       p <- ggplot(df)+
-                         xlab("")+ylab("")+theme_light()+self$gglegend()+
-                         geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill="CI 90% noise"),
-                                     alpha=0.3)+
-                         geom_ribbon(data=df2,mapping = aes(x=x,ymin=q05,ymax=q95,fill="CI 90% GP"),
-                                     alpha=0.8,show.legend = FALSE)+
-                         geom_line(mapping = aes(x=x,y=y, color=type))+
-                         scale_fill_manual(name = NULL,values = adjustcolor(c("skyblue3", "grey12"),
-                         alpha.f = 0.3))+
-                         guides(fill = guide_legend(override.aes = list(alpha = c(0.8,0.3))))+
-                         scale_color_manual(values=c("red", "#000000"))
-                     } else
-                     {
-                       warning("The argument for the credibility interval is not valid and no credibility interval
-                                                        will be displayed")
-                       df  <- cbind(df,x=x)
-                       df  <- rbind(df,df2)
-                       p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                         xlab("")+ylab("")+theme_light()+self$gglegend()+
-                         scale_color_manual(values=c("red", "#000000"))
-                     }
-                   } else
-                   {
-                     p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                       xlab("")+ylab("")+theme_light()+self$gglegend()+
-                       scale_color_manual(values=c("red"))
-                   }
-                   return(p)
-                 })
-
-
-### Print function
-model2.class$set("public","print",
-                 function()
-                 {
-                   cat("Call:\n")
-                   print(self$model)
-                   cat("\n")
-                   cat("With the function:\n")
-                   print(self$code)
-                   cat("\n")
-                   cat("A surrogate had been set up:")
-                   print(self$GP)
-                   cat("\n")
-                   cat("No discrepancy is added\n")
-                 }
-)
-
 
 ################################## Model 4 definition ####################################
 
@@ -702,89 +656,75 @@ model4.class <- R6Class(classname = "model4.class",
                           model2.fun = NULL, ## function from model2
                           opt.disc   = NULL, ## discrepancy options
                           disc       = NULL, ## discrepancy field
-                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,...)
+                          initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.disc=NULL,opt.gp=NULL,
+                                              opt.emul=NULL,opt.sim=NULL,...)
                           {
-                            if (!exists("opt.emul")){self$opt.emul <- NULL} else{self$opt.emul <- opt.emul}
-                            if (!exists("opt.sim")){self$opt.sim <- NULL} else{self$opt.sim <- opt.sim}
-                            if (!exists("opt.gp")){self$opt.gp <- NULL} else{self$opt.gp <- opt.gp}
-                            if (!is.null(self$opt.gp$DOE)) self$opt.emul <- NULL
-                            if (!is.null(self$opt.sim$DOEsim)) self$opt.emul <- NULL
-                            super$initialize(code, X, Yexp, model,opt.gp, opt.emul,opt.sim)
+                            if (missing(opt.sim)) self$case <- 1
+                            if (missing(opt.emul) & missing(opt.sim)) self$case <- 2
+                            if (missing(opt.emul) & !missing(opt.sim)) self$case <- 3
+                            self$opt.gp   <- opt.gp
+                            self$opt.emul <- opt.emul
+                            self$opt.sim  <- opt.sim
+                            self$opt.disc <- opt.disc
+                            super$initialize(code, X, Yexp, model,opt.gp=self$opt.gp, opt.emul=self$opt.emul,
+                                             opt.sim=self$opt.sim)
                             ## Check if the opt.emul option is filled if it is not a gaussian kernel is picked
                             if (is.null(opt.disc$kernel.type)==TRUE)
                             {
-                              warning("default value is selected. The discrepancy will have a gaussian covariance
-                                      structure")
+                              warning("default value is selected. The discrepancy will have a gaussian covariance structure",call.=FALSE)
                               self$opt.disc$kernel.type="gauss"
                             } else
                             {
                               self$opt.disc <- opt.disc
                             }
                             self$model2.fun <- super$model.fun
-                            #self$model.fun(c(1,1,11),c(0.1,0.5),var=0.1,self$X)
                           },
-                          model.fun = function(theta,thetaD,var,X=self$X)
+                          disc.par = function(i,theta=theta,thetaD=thetaD,var=var)
                           {
-                            browser()
-                            df <- self$model2.fun(theta,var)
+                            return(self$discrepancy(theta,thetaD,var,self$X)$bias)
+                          },
+                          model.fun = function(theta,thetaD,var,X=self$X,CI="all")
+                          {
+                            res.model2 <- self$model2.fun(theta,var)
                             self$disc <- self$discrepancy(theta,thetaD,var,X)
-                            y <- foo$y
-                            Cov.GP <- foo$Cov.GP
-                            yc <- foo$yc
-                            lower <- foo$lower
-                            upper <- foo$upper
-                            return(list(y=self$disc$bias+y,Cov.D=self$disc$cov,yc=yc,
-                                        lower=lower,upper=upper,Cov.GP=Cov.GP))
+                            if (is.null(CI))
+                            {
+                              disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores,
+                                                                  theta=theta,thetaD=thetaD,var=var))
+                              qq        <- apply(disc.temp,2,mean)
+                              df <- data.frame(y=res.model2$y+qq,
+                                               type="model output")
+                            } else if (CI == "err")
+                            {
+                              disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores,
+                                                                  theta=theta,thetaD=thetaD,var=var))
+                              qq        <- apply(disc.temp,2,quantile,c(0.05,0.5,0.95))
+                              df        <- data.frame(y=res.model2$y+qq[2,],type="model output",
+                                               q05=qq[1,]+res.model2$q05n,q95=qq[3,]+res.model2$q95n,
+                                               fill="CI 90% discrepancy + noise")
+                            } else if (CI == "GP")
+                            {
+                              disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores,
+                                                                  theta=theta,thetaD=thetaD,var=var))
+                              qq        <- apply(disc.temp,2,mean)
+                              df        <- data.frame(y=res.model2$y+qq,type="model ouput",q05=res.model2$q05,
+                                               q95 = res.model2$q95,fill="CI 90% GP")
+                            } else if (CI == "all")
+                            {
+                              disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores,
+                                                                  theta=theta,thetaD=thetaD,var=var))
+                              qq        <- apply(disc.temp,2,quantile,c(0.05,0.5,0.95))
+                              df        <- data.frame(y=res.model2$y+qq[2,],type="model ouput",q05=res.model2$q05,
+                                               q95 = res.model2$q95,fill="CI 90% GP",q05n=res.model2$q05n+qq[1,],
+                                               q95n=res.model2$q95n+qq[3,])
+                            } else
+                            {
+                              warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
+                              df <- 0
+                            }
+                            return(df)
                           })
 )
-
-
-## discrepancy function
-model4.class$set("public","discrepancy",
-                 ## Define method that generates a discrepancy
-                 function(theta,thetaD,var,X=self$X)
-                 {
-                   y   <- self$model2.fun(theta,var,X)$y
-                   z   <- self$Yexp - y
-                   ## Compute the discrepancy covariance
-                   Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
-                   if (is.vector(X) & length(X)==1)
-                   {} else
-                   {
-                     p <- eigen(Cov)$vectors
-                     e <- eigen(Cov)$values
-                     if (all(e>0)){} else
-                     {
-                       e[which(e<0)] <- 1e-4
-                     }
-                     d <- diag(e)
-                     if (nrow(p) == 1 & ncol(p) == 1)
-                     {
-                       Cov <- as.numeric(p)^2*d
-                     } else
-                     {
-                       Cov <- t(p)%*%d%*%p
-                     }
-                   }
-                   if (is.vector(X)){long <- length(X)}else{
-                     long <- nrow(X)}
-                   if (long==1)
-                   {
-                     if (nrow(p) == 1 & ncol(p) == 1)
-                     {
-                       bias <- rnorm(1,0,sqrt(Cov))
-                     } else
-                     {
-                       bias <- rnorm(n=self$n,0,sqrt(Cov))
-                     }
-                   } else
-                   {
-                     bias <- mvrnorm(100,rep(0,long),Cov)
-                     dim(bias) <- c(long,100)
-                     bias <- apply(bias,1,mean)
-                   }
-                   return(list(bias=bias,cov=Cov))
-                 })
 
 ## Likelihood
 model4.class$set("public","likelihood",
@@ -800,190 +740,3 @@ model4.class$set("public","likelihood",
                    return(-self$n/2*log(2*pi)-1/2*log(det(self$V.exp))
                           -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                  })
-
-
-## Plot function
-model4.class$set("public","plot",
-                 function(theta,thetaD,var,select.X=NULL,CI=c("GP","err"),points=FALSE)
-                 {
-                   if (length(theta)!=self$p)
-                   {stop('You have given the wrong number of parameter')}
-                   if(self$d>1 & is.null(select.X))
-                   {stop('Graphic representation is not available in dimension >1')}
-                   if(is.null(select.X))
-                   {
-                     res <- self$fun(theta,thetaD,var,self$X)
-                   } else{
-                     res <- self$fun(theta,thetaD,var,select.X)
-                     }
-                   Xplot <- self$X
-                   if(is.null(select.X)==FALSE){Xplot <- select.X}
-                   binf <- min(Xplot)
-                   bsup <- max(Xplot)
-                   funCpp <- function(theta,thetaD,var)
-                   {
-                     return(self$fun(theta,thetaD,var)$y)
-                   }
-                   if (length(CI)==1)
-                   {
-                     if (CI=="GP")
-                     {
-                       gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
-                                             lower=res$lower,upper=res$upper,type="Gaussian process",
-                                             fill="CI 90% GP")
-                       gg.data.exp <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
-                                                 lower=res$lower,
-                                                 upper=res$upper,type="Experiment",
-                                                 fill="CI 90% GP")
-                       gg.data <- rbind(gg.data,gg.data.exp)
-                       if (is.null(self$code))
-                       {
-                         if (is.null(select.X))
-                         {
-                           gg.points <- data.frame(x=self$DOEsim[,1],y=self$Ysim)
-                         } else
-                         {
-                           gg.points <- data.frame(x=self$Xplot,y=self$Ysim)
-                         }
-                       }else
-                       {
-                         if (is.null(select.X))
-                         {
-                           gg.points <- data.frame(x=self$D[,1],y=self$Yc)
-                         } else
-                         {
-                           gg.points <- data.frame(x=self$Xplot,y=self$Yc)
-                         }
-                       }
-                       p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
-                         geom_line(aes(y=y,x=x,col=type))+
-                         theme_light()+
-                         ylab("")+xlab("")+
-                         scale_fill_manual("",values=c("grey12"))+
-                         theme(legend.position=c(0.65,0.86),
-                               legend.text=element_text(size = '12'),
-                               legend.title=element_blank(),
-                               legend.key=element_rect(colour=NA),
-                               axis.text=element_text(size=20))
-                       if (points==FALSE)
-                       {
-                         return(p)
-                       } else
-                       {
-                         return(p+geom_jitter(data=gg.points,aes(x=x,y=y)))
-                       }
-                     } else {
-                       if (CI=="err")
-                         yres <- resCppD(funCpp,theta,thetaD,var)
-                         qqerr <- apply(yres,1,quantile,c(0.05,0.95))
-                         gg.data <- data.frame(y=res$y,x=seq(binf,bsup,length.out=length(res$yc)),
-                                               type="Model output")
-                         gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),
-                                                 ymin=qqerr[1,],ymax=qqerr[2,],
-                                               type="CI 90% discrepancy + noise")
-                         gg.data.exp  <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
-                                                  type="Experiments")
-                         gg.data <- rbind(gg.data,gg.data.exp)
-                         p <- ggplot(gg.data) +
-                            geom_ribbon(data = gg.data.n,aes(x=x,ymin=ymin,ymax=ymax,fill=type),alpha=0.8)+
-                            geom_line(aes(y=y,x=x,col=type)) +
-                            theme_light() + scale_fill_manual(values = "skyblue3")+
-                            ylab("")+xlab("") +
-                            theme(legend.position=c(0.65,0.86),
-                               legend.text=element_text(size = '12'),
-                               legend.title=element_blank(),
-                               legend.key=element_rect(colour=NA),
-                               axis.text=element_text(size=20))
-                       return(p)
-                     }
-                   } else {
-                     if (length(CI)==2)
-                     {
-                       if ((CI[1]=="GP" & CI[2]=="err") | (CI[2]=="GP" & CI[1]=="err"))
-                       {
-                         yres <- resCppD(funCpp,theta,thetaD,var)
-                         qqerr <- apply(yres,1,quantile,c(0.05,0.95))
-                         gg.data <- data.frame(y=res$yc,x=seq(binf,bsup,length.out=length(res$yc)),
-                                               lower=res$lower,upper=res$upper,type="Gaussian process",
-                                               fill="CI 90% GP")
-                         gg.data.exp <- data.frame(y=self$Yexp,x=seq(binf,bsup,length.out=length(res$yc)),
-                                                   lower=res$lower,
-                                                   upper=res$upper,type="Experiment",
-                                                   fill="CI 90% GP")
-                         gg.data.n <- data.frame(x=seq(binf,bsup,length.out=length(res$yc)),
-                                                 ymin=qqerr[1,],ymax=qqerr[2,],
-                                                 type="CI 90% discrepancy + noise")
-                         gg.data <- rbind(gg.data,gg.data.exp)
-                         if (is.null(self$code))
-                         {
-                           if (is.null(select.X))
-                           {
-                             gg.points <- data.frame(x=self$DOEsim[,1],y=self$Ysim)
-                           } else
-                           {
-                             gg.points <- data.frame(x=self$Xplot,y=self$Ysim)
-                           }
-                         }else
-                         {
-                           if (is.null(select.X))
-                           {
-                             gg.points <- data.frame(x=self$D[,1],y=self$Yc)
-                           } else
-                           {
-                             gg.points <- data.frame(x=self$Xplot,y=self$Yc)
-                           }
-                         }
-                         p <- ggplot(gg.data)+ geom_ribbon(aes(ymin=lower,ymax=upper,x=x,fill=fill),alpha=0.3)+
-                           geom_ribbon(data = gg.data.n,aes(x=x,ymin=ymin,ymax=ymax,fill=type),
-                                       alpha=0.8,show.legend = FALSE)+
-                           geom_line(aes(y=y,x=x,col=type))+
-                           theme_light()+
-                           ylab("")+xlab("")+
-                           scale_fill_manual(name = NULL,values = adjustcolor(c("skyblue3", "grey12"),
-                                                                              alpha.f = 0.3))+
-                           guides(fill = guide_legend(override.aes = list(alpha = c(0.8,0.3)))) +
-                           theme(legend.position=c(0.65,0.86),
-                                 legend.text=element_text(size = '12'),
-                                 legend.title=element_blank(),
-                                 legend.key=element_rect(colour=NA),
-                                 axis.text=element_text(size=20))
-                         if (points==FALSE)
-                         {
-                           return(p)
-                         } else
-                         {
-                           return(p+geom_jitter(data=gg.points,aes(x=x,y=y)))
-                         }
-                       } else
-                       {print("Enter the right value for the CI option")}
-                     } else
-                     {print("The length of the CI option is too long")}
-                   }
-                 })
-
-## Print function
-model4.class$set("public","print",
-                 function()
-                 {
-                   if (is.null(self$theta) | is.null(self$thetaD) | is.null(self$var)){} else
-                   {
-                     self$disc  <- self$discrepancy(self$theta,self$thetaD,self$var,self$X)
-                     bias       <- summary(self$disc$bias)
-                   }
-                   cat("Call:\n")
-                   print(self$model)
-                   cat("\n")
-                   cat("With the function:\n")
-                   print(self$code)
-                   cat("\n")
-                   cat("A surrogate had been set up:")
-                   print(self$GP)
-                   cat("\n")
-                   cat("Summary of the bias mean:\n")
-                   print(bias)
-                   cat("Chosen kernel:", self$opt.disc$kernel.type)
-                   cat(paste("\nCovariance of the bias:",round(mean(self$disc$cov),3),"\n\n",sep=" "))
-                   cat(paste("Kernel chossen: ",self$opt.disc$kernel.type,sep=""))
-                 }
-)
-
