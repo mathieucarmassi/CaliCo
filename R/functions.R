@@ -49,20 +49,12 @@
 #' @examples
 #' \dontrun{
 #' ###### The code to calibrate
-#' X <- cbind(seq(0,1,length.out=100),seq(0,1,length.out=100))
+#' X <- cbind(seq(0,1,length.out=5),seq(0,1,length.out=5))
 #' code <- function(X,theta)
 #' {
 #'   return((6*X[,1]*theta[2]-2)^2*theta[1]*sin(theta[3]*X[,2]-4))
 #' }
-#' Yexp <- code(X,c(1,1,11))+rnorm(100,0,0.1)
-#'
-#' #### Second code to test
-#' X2 <- seq(0,100,length.out=100)
-#' code2 <- function(X,theta)
-#' {
-#' return((X-2)*sin(theta*X-50))
-#' }
-#' Yexp2 <- code2(X2,0.1)+rnorm(100,0,0.1)
+#' Yexp <- code(X,c(1,1,11))+rnorm(5,0,0.1)
 #'
 #' ###### For the first model
 #' ### Generate the model
@@ -73,36 +65,33 @@
 #'
 #' ### Summury of the foo class generated
 #' print(model1)
-#'
-#' ### Test on the second function
-#' model12 <- model(code2,X2,Yexp2,"model1")
-#' model12 %+% list(theta=0.1,var=10)
-#' plot(model12,X2)
-#'
-#'
+#'#'
 #' ###### For the second model
 #' ### code function is available, no DOE generated upstream
 #' binf <- c(0.9,0.9,10.5)
 #' bsup <- c(1.1,1.1,11.5)
 #' opt.gp <- list(type="matern5_2", DOE=NULL)
 #' opt.emul <- list(p=3,n.emul=150,binf=binf,bsup=bsup,type="maximinLHS")
-#' model2 <- model(code,X,Yexp,"model2",opt.gp,opt.emul)
+#' model2 <- model(code,X,Yexp,"model2",
+#'                 opt.gp=opt.gp,
+#'                 opt.emul=opt.emul)
 #' model2 %+% list(theta=c(1,1,11),var=0.1)
 #' ### Plot the model
 #' plot(model2,X[,1])
 #'
 #' ### code function is available and use a specific DOE
-#' DOE <- DiceDesign::lhsDesign(100,5)$design
+#' DOE <- DiceDesign::lhsDesign(20,5)$design
 #' DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
 #'
 #' opt.gp <- list(type="matern5_2", DOE=DOE)
-#' model2 <- model(code,X,Yexp,"model2",opt.gp)
+#' model2 <- model(code,X,Yexp,"model2",
+#'                 opt.gp=opt.gp)
 #' model2 %+% list(theta=c(1,1,11),var=0.1)
 #' plot(model2,X[,1])
 #'
 #' ### no code function but DOE and code output available
-#' Ysim <- matrix(nr=100,nc=1)
-#' for (i in 1:100)
+#' Ysim <- matrix(nr=20,nc=1)
+#' for (i in 1:20)
 #' {
 #'   covariates <- as.matrix(DOE[i,1:2])
 #'   dim(covariates) <- c(1,2)
@@ -111,23 +100,18 @@
 #'
 #' opt.sim <- list(Ysim=Ysim,DOEsim=DOE)
 #' opt.gp <- list(type="matern5_2", DOE=NULL)
-#' model2 <- model(code=NULL,X,Yexp,"model2",opt.gp,opt.sim)
+#' model2 <- model(code=NULL,X,Yexp,"model2",
+#'                 opt.gp=opt.gp,
+#'                 opt.sim=opt.sim)
 #' model2 %+% list(theta=c(1,1,11),var=0.1)
 #' plot(model2,X[,1])
 #'
 #' ###### For the third model
 #' model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
 #' model3 %+% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
-#' plot(model3,X[,1],CI="err2")
+#' plot(model3,X[,1],CI="err")
 #' print(model3)
 #'
-#'
-#' ###### For the fourth model
-#' opt.disc <- list(kernel.type="gauss")
-#' model4 <- model(code=NULL,X,Yexp,"model4",opt.disc,opt.gp,opt.sim)
-#' model4 %+% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
-#' print(model4)
-#' plot(model4,X[,1])
 #'}
 #'
 #' @export
@@ -264,7 +248,7 @@ prior <- function(type.prior,opt.prior,log=TRUE)
 #' Metropolis within Gibbs}
 #' \item{Nmh}{ Number of iteration of the Metropolis Hastings algorithm}
 #' \item{thetaInit}{ Initial point}
-#' \item{k}{ Tuning parameter for the covariance matrix sig}
+#' \item{r}{ regulation percentage in the modification of the k in the Metropolis Hastings}
 #' \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}
 #' \item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which
 #'  is a coda object)}
@@ -629,5 +613,4 @@ multivariate <- function (n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISP
     stop("Not a model.class",call. = FALSE)
   }
 }
-
 

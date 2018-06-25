@@ -225,6 +225,7 @@ calibrate.class$set("private","quantiles",
                         {
                           Dist[i,] <- res[[i]]
                         }
+                        browser()
                         qq <- apply(Dist,2,quantile,probs=c(0.05,0.95))
                         return(list(q05=qq[1,],q95=qq[2,]))
                       } else

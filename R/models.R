@@ -34,18 +34,19 @@
 #' @export
 model.class <- R6Class(classname = "model.class",
                  public = list(
-                   code      = NULL, ## code variable
-                   X         = NULL, ## forced variables
-                   Yexp      = NULL, ## experiments
-                   n         = NULL, ## length of the experiements
-                   d         = NULL, ## number of forced variables
-                   model     = NULL, ## statistical model elected
-                   theta     = NULL, ## parameter vector
-                   var       = NULL, ## variance of the measurement error
-                   thetaD    = NULL, ## discrepancy parameter vector
-                   n.cores   = NULL, ## number of computer cores
-                   m.exp     = NULL, ## Mean for the likelihood
-                   V.exp     = NULL, ## Variance for the likelihood
+                   code        = NULL, ## code variable
+                   X           = NULL, ## forced variables
+                   Yexp        = NULL, ## experiments
+                   n           = NULL, ## length of the experiements
+                   d           = NULL, ## number of forced variables
+                   model       = NULL, ## statistical model elected
+                   theta       = NULL, ## parameter vector
+                   var         = NULL, ## variance of the measurement error
+                   thetaD      = NULL, ## discrepancy parameter vector
+                   n.cores     = NULL, ## number of computer cores
+                   m.exp       = NULL, ## Mean for the likelihood
+                   V.exp       = NULL, ## Variance for the likelihood
+                   f.variables = NULL, ## variable indicating the presence
                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA)
                    {
                      self$code    <- code
@@ -58,6 +59,7 @@ model.class <- R6Class(classname = "model.class",
                      private$checkModels()
                      private$checkCode()
                      private$checkOptions()
+                     private$testOnForcingVar()
                    },
                    active = list(
                      theta  = function(value) {return(value)},
@@ -121,6 +123,16 @@ model.class$set("private","checkCode",
                   {
                     stop("The code cannot be NULL if you chose model1 or model3",call. = FALSE)
                   }
+                })
+
+## Test of presence of frocing variables
+model.class$set("private","testOnForcingVar",
+                function()
+                {
+                  if (ncol(self$X) == 1 & nrow(self$X) == 1)
+                  {
+                    if (self$X == 0) self$f.variables <- 0 else self$f.variables <- 1
+                  } else self$f.variables <- 1
                 })
 
 ## Plot function for the models
@@ -219,15 +231,24 @@ model.class$set("public","plot",
                         }
                         df     <- rbind(df.n,df2.n)
                         df2    <- rbind(df.gp,df2.gp)
+                        if (self$model == "model4")
+                        {
+                          col <- c("skyblue3","grey12")
+                          Alpha <- c(0.8,0.3)
+                        }else
+                        {
+                          col <- c("grey12","skyblue3")
+                          Alpha <- c(0.3,0.8)
+                        }
                         p <- ggplot(df)+
                           geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),
                                       alpha=0.8)+
                           geom_ribbon(data=df2,mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),
                                       alpha=0.3,show.legend = FALSE)+
                           geom_line(mapping = aes(x=x,y=y, color=type))+
-                          scale_fill_manual(name = NULL,values = adjustcolor(c("skyblue3", "grey12"),
+                          scale_fill_manual(name = NULL,values = adjustcolor(col,
                                                                              alpha.f = 0.3))+
-                          guides(fill = guide_legend(override.aes = list(alpha = c(0.8,0.3))))+
+                          guides(fill = guide_legend(override.aes = list(alpha = Alpha)))+
                           scale_color_manual(values=c("red", "#000000"))+
                           xlab("")+ylab("")+theme_light()+self$gglegend()
                       }
@@ -286,7 +307,19 @@ model.class$set("public","print",
                   } else
                   {
                     cat("A surrogate had been set up:")
-                    print(self$GP)
+                    if (self$f.variables == 0)
+                    {
+                      if (self$lenCode > 1)
+                      {
+                        print("In time series modeling, a Gaussian process is available for each time step. You can access each one of them by yourmodel$GP")
+                      } else
+                      {
+                        print(self$GP)
+                      }
+                    } else
+                    {
+                      print(self$GP)
+                    }
                     cat("\n")
                     if (self$model == "model2")
                     {
@@ -505,6 +538,7 @@ model2.class <- R6Class(classname = "model2.class",
                           z        = NULL, ## output of the code for the DOE
                           GP       = NULL, ## current Gaussian process emulated
                           p        = NULL, ## number of parameters
+                          lenCode  = NULL, ## length of code output
                         initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.gp=NULL,opt.emul=NULL,
                                               opt.sim=NULL,...)
                         {
@@ -539,9 +573,26 @@ model2.class <- R6Class(classname = "model2.class",
                             D  <- cbind(X,matrix(rep(theta,rep(nrow(X),self$p)),
                                               nr=nrow(X),nc=self$p))
                           }
-                          pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
-                                        cov.compute=TRUE,interval="confidence",checkNames=FALSE)
-                          nugget <- mvrnorm(n=100,pr$mean,diag(var,self$n))
+                          if (self$f.variables == 0)
+                          {
+                            D <- D[,-1]
+                            if (self$lenCode>1)
+                            {
+                              pr <- list()
+                              for (i in 1:length(self$GP))
+                              {
+                                prTemp <- predict(self$GP[[i]],newdata=as.data.frame(t(D)),type="UK",
+                                                   cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                                pr$mean[i] <- prTemp$mean
+                                pr$lower95[i] <- prTemp$lower95
+                                pr$upper95[i] <- prTemp$upper95
+                                pr$cov[i] <- prTemp$cov
+                              }
+                            } else pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
+                                          cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                          } else pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
+                                               cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                          nugget <- mvrnorm(n=100,pr$mean,diag(var,length(pr$mean)))
                           if (is.null(CI))
                           {
                             qq <- apply(nugget,2,mean)
@@ -572,62 +623,109 @@ model2.class <- R6Class(classname = "model2.class",
                         })
                         )
 
-
 model2.class$set("public","surrogate",
                  function()
                  {
-                   if (self$case == "1")
+                   if (self$case == "1" | self$case =="2")
                    {
-                     ## Dim is the dimension of H*Theta
-                     Dim       <- self$opt.emul$p+self$d
-                     ## Creation of the maximin LHS
-                     doe       <- lhsDesign(self$opt.emul$n.emul,Dim)$design
-                     doe       <- maximinSA_LHS(doe)$design
-                     ## Get the boundaries of X
-                     binf.X    <- apply(self$X,2,min)
-                     bsup.X    <- apply(self$X,2,max)
-                     ## Going back to the original space H and Theta
-                     doe.X     <- unscale(doe[,c(1:self$d)],binf.X,bsup.X)
-                     doe.theta <- unscale(doe[,c((self$d+1):Dim)],self$opt.emul$binf,
-                                            self$opt.emul$bsup)
-                     ## Generate the doe
-                     self$doe  <- cbind(doe.X,doe.theta)
+                     if (self$case == "1")
+                     {
+                       ## Dim is the dimension of H*Theta
+                       if (self$f.variables == 0)
+                       {
+                         Dim <- self$opt.emul$p
+                         ## Creation of the maximin LHS
+                         doe <- lhsDesign(self$opt.emul$n.emul,Dim)$design
+                         doe <- maximinSA_LHS(doe)$design
+                         ## Going back to the original space of Theta
+                         doe.theta <- unscale(doe,self$opt.emul$binf,
+                                              self$opt.emul$bsup)
+                         ## Generate the doe
+                         self$doe  <- doe.theta
+                       } else
+                       {
+                         Dim <- self$opt.emul$p+self$d
+                         ## Creation of the maximin LHS
+                         doe <- lhsDesign(self$opt.emul$n.emul,Dim)$design
+                         doe <- maximinSA_LHS(doe)$design
+                         ## Get the boundaries of X
+                         binf.X <- apply(self$X,2,min)
+                         bsup.X <- apply(self$X,2,max)
+                         ## Going back to the original space H and Theta
+                         doe.X <- unscale(doe[,c(1:self$d)],binf.X,bsup.X)
+                         doe.theta <- unscale(doe[,c((self$d+1):Dim)],self$opt.emul$binf,
+                                              self$opt.emul$bsup)
+                         ## Generate the doe
+                         self$doe  <- cbind(doe.X,doe.theta)
+                         self$p <- self$opt.emul$p
+                       }
+                     } else
+                     {
+                       ###
+                       self$doe <- self$opt.gp$DOE
+                       Dim <- ncol(self$doe)
+                       if (self$f.variables == 0){self$p <- Dim}
+                       else {self$p <- Dim - self$d}
+                     }
                      ## Compute the output of the code for the doe
                      self$z <- NULL
-                     for (i in 1:self$opt.emul$n.emul)
+                     if (self$f.variables == 0)
                      {
-                       covariates <- as.matrix(self$doe[i,1:(Dim-self$opt.emul$p)])
-                       if (self$d == 1) {} else dim(covariates) <- c(1,self$d)
-                       self$z <- c(self$z,self$code(covariates,self$doe[i,(Dim-self$opt.emul$p+1):Dim]))
-                     }
-                     ## Create the Gaussian Process corresponding
-                     GP <- km(formula =~1, design=self$doe, response = self$z,covtype = self$opt.gp$type)
-                     return(GP)
-
-                   } else if (self$case == "2")
-                   {
-                     self$doe <- self$opt.gp$DOE
-                     Dim <- ncol(self$doe)
-                     self$p <- Dim - self$d
-                     ### Generating the response
-                     self$z <- NULL
-                     for (i in 1:nrow(self$doe))
+                       if (is.matrix(self$doe))
+                       {
+                         self$lenCode <- length(self$code(0,self$doe[1,]))
+                         if (self$lenCode>1) self$z <- matrix(nr=nrow(self$doe),nc=self$lenCode)
+                         l <- nrow(self$doe)
+                       } else
+                       {
+                         self$lenCode <- length(self$code(0,self$doe))
+                         if (self$lenCode>1) self$z <- matrix(nr=length(self$doe),nc=self$lenCode)
+                         l <- length(self$doe)
+                       }
+                     } else
                      {
-                       covariates <- as.matrix(self$doe[i,1:(self$d)])
-                       if (self$d == 1) {} else dim(covariates) <- c(1,self$d)
-                       self$z <- c(self$z,self$code(covariates,self$doe[i,(Dim-self$p+1):Dim]))
+                       l <- nrow(self$doe)
                      }
-                     ## Create the Gaussian Process corresponding
-                     GP <- km(formula =~1, design=self$doe, response = self$z,covtype = self$opt.gp$type)
-                     return(GP)
-                   } else if (self$case == "3")
+                     for (i in 1:l)
+                     {
+                       if (!self$f.variables == 0)
+                       {
+                         covariates <- as.matrix(self$doe[i,1:(Dim-self$p)])
+                         if (self$d == 1) {} else dim(covariates) <- c(1,self$d)
+                         self$z <- c(self$z,self$code(covariates,self$doe[i,(Dim-self$p+1):Dim]))
+                       } else if (self$lenCode >1)
+                       {
+                         if (is.matrix(self$doe)) self$z[i,] <- self$code(0,self$doe[i,]) else
+                           self$z[i,] <- self$code(0,self$doe[i])
+                       } else
+                       {
+                         self$z <- c(self$z,self$code(0,self$doe[i,]))
+                       }
+                     }
+                   } else if (self$case =="3")
                    {
-                     self$p <- ncol(self$opt.sim$DOEsim)-self$d
-                     ## GP from design of expiriments and code outputs
-                     GP <- km(formula =~1, design=as.data.frame(self$opt.sim$DOEsim),
-                              response = self$opt.sim$Ysim,covtype = self$opt.gp$type)
-                     return(GP)
+                      if (self$f.variables == 0){self$p <- ncol(self$opt.sim$DOEsim)}
+                      else {self$p <- ncol(self$opt.sim$DOEsim)-self$d}
+                      self$doe <- self$opt.sim$DOEsim
+                      self$z <- self$opt.sim$Ysim
+                      if (is.matrix(self$z)) self$lenCode <- ncol(self$z)
                    }
+                   ## Create the Gaussian Process corresponding
+                   if (!self$f.variables == 0)
+                   {
+                      GP <- km(formula =~1, design=self$doe, response = self$z,covtype = self$opt.gp$type)
+                   } else if (self$lenCode > 1)
+                   {
+                      GP <- list()
+                      for (i in 1:self$lenCode){
+                          GP[[i]] <- km(formula =~1, design=as.data.frame(self$doe), response = self$z[,i],
+                                        covtype = self$opt.gp$type)
+                   }
+                   } else
+                   {
+                      GP <- km(formula =~1, design=self$doe, response = self$z,covtype = self$opt.gp$type)
+                   }
+                   return(GP)
                  })
 
 
