@@ -15,7 +15,7 @@ calibrate(md, pr, opt.estim, opt.valid = NULL, onlyCV = FALSE)
 Metropolis within Gibbs}
 \item{Nmh}{ Number of iteration of the Metropolis Hastings algorithm}
 \item{thetaInit}{ Initial point}
-\item{k}{ Tuning parameter for the covariance matrix sig}
+\item{r}{ regulation percentage in the modification of the k in the Metropolis Hastings}
 \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}
 \item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which
  is a coda object)}

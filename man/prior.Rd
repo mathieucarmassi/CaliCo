@@ -45,7 +45,7 @@ are the two hyperparameters. The vector \eqn{c(a,b)} is the one looked for in op
 \dontrun{
 #### Only one prior is wanted
 ## For a Gaussian Prior
-gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
+gaussian <- prior(type.prior="gauss",opt.prior=list(c(0.5,0.001)))
 plot(gaussian)
 
 #### For several priors

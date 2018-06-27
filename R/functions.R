@@ -114,7 +114,7 @@
 #'
 #'}
 #'
-#' @export
+#'@export
 model <- function(code,X,Yexp,model="model1",...)
 {
   switch(model,
@@ -173,7 +173,7 @@ model <- function(code,X,Yexp,model="model1",...)
 #' \dontrun{
 #' #### Only one prior is wanted
 #' ## For a Gaussian Prior
-#' gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
+#' gaussian <- prior(type.prior="gauss",opt.prior=list(c(0.5,0.001)))
 #' plot(gaussian)
 #'
 #' #### For several priors
@@ -181,57 +181,66 @@ model <- function(code,X,Yexp,model="model1",...)
 #' plot(priors$Prior1)
 #' plot(priors$Prior2)
 #'}
-#' @export
-prior <- function(type.prior,opt.prior,log=TRUE)
+#'@export
+prior <- function(type.prior,...)
 {
-  n <- length(type.prior)
-  if (n == 1)
-  {
-    switch(type.prior,
-           gaussian = {
-             obj = gaussian.class$new(type.prior,opt.prior,log)
-             return(obj)
-           },
-           gamma={
-             obj = gamma.class$new(type.prior,opt.prior,log)
-             return(obj)
-           },
-           invGamma={
-             obj = invGamma.class$new(type.prior,opt.prior,log)
-             return(obj)
-           },
-           unif={
-             obj = unif.class$new(type.prior,opt.prior,log)
-             return(obj)
-           }
-    )
-  } else
-  {
-    NAmes <- c("Prior1")
-    res <- list()
-    for (i in 1:n)
-    {
-      if (i>1){NAmes <- cbind(NAmes,paste("Prior",i,sep=""))}
-      switch(type.prior[i],
-             gaussian = {
-               obj = gaussian.class$new(type.prior[i],opt.prior[[i]],log)
-             },
-             gamma={
-               obj = gamma.class$new(type.prior[i],opt.prior[[i]],log)
-             },
-             invGamma={
-               obj = invGamma.class$new(type.prior[i],opt.prior[[i]],log)
-             },
-             unif={
-               obj = unif.class$new(type.prior[i],opt.prior[[i]],log)
-             }
-      )
-      res[[i]] <- obj
-      names(res) <- NAmes
-    }
-    return(res)
-  }
+  pr <- prior.class$new(type.prior,...)
+  return(pr)
 }
+
+
+#
+#
+# prior <- function(type.prior,opt.prior,log=TRUE)
+# {
+#   n <- length(type.prior)
+#   if (n == 1)
+#   {
+#     switch(type.prior,
+#            gaussian = {
+#              obj = gaussian.class$new(type.prior,opt.prior,log)
+#              return(obj)
+#            },
+#            gamma={
+#              obj = gamma.class$new(type.prior,opt.prior,log)
+#              return(obj)
+#            },
+#            invGamma={
+#              obj = invGamma.class$new(type.prior,opt.prior,log)
+#              return(obj)
+#            },
+#            unif={
+#              obj = unif.class$new(type.prior,opt.prior,log)
+#              return(obj)
+#            }
+#     )
+#   } else
+#   {
+#     NAmes <- c("Prior1")
+#     res <- list()
+#     for (i in 1:n)
+#     {
+#       if (i>1){NAmes <- cbind(NAmes,paste("Prior",i,sep=""))}
+#       switch(type.prior[i],
+#              gaussian = {
+#                obj = gaussian.class$new(type.prior[i],opt.prior[[i]],log)
+#              },
+#              gamma={
+#                obj = gamma.class$new(type.prior[i],opt.prior[[i]],log)
+#              },
+#              invGamma={
+#                obj = invGamma.class$new(type.prior[i],opt.prior[[i]],log)
+#              },
+#              unif={
+#                obj = unif.class$new(type.prior[i],opt.prior[[i]],log)
+#              }
+#       )
+#       res[[i]] <- obj
+#       names(res) <- NAmes
+#     }
+#     return(res)
+#   }
+# }
 
 
 #' Generates \code{\link{calibrate.class}} objects
