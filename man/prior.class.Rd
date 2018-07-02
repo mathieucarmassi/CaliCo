@@ -23,8 +23,6 @@ during the estimation process.
 \item{\code{type.prior}}{of the selected prior}
 
 \item{\code{opt.prior}}{the charasteristics of the selected prior}
-
-\item{\code{log}}{if we want the log result or not}
 }}
 
 \keyword{datasets}

@@ -173,7 +173,7 @@ model <- function(code,X,Yexp,model="model1",...)
 #' \dontrun{
 #' #### Only one prior is wanted
 #' ## For a Gaussian Prior
-#' gaussian <- prior(type.prior="gauss",opt.prior=list(c(0.5,0.001)))
+#' gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
 #' plot(gaussian)
 #'
 #' #### For several priors
@@ -182,65 +182,56 @@ model <- function(code,X,Yexp,model="model1",...)
 #' plot(priors$Prior2)
 #'}
 #'@export
-prior <- function(type.prior,...)
+prior <- function(type.prior,opt.prior)
 {
-  pr <- prior.class$new(type.prior,...)
-  return(pr)
+  n <- length(type.prior)
+  if (n == 1)
+  {
+    switch(type.prior,
+           gaussian = {
+             obj = gaussian.class$new(type.prior,opt.prior)
+             return(obj)
+           },
+           gamma={
+             obj = gamma.class$new(type.prior,opt.prior)
+             return(obj)
+           },
+           invGamma={
+             obj = invGamma.class$new(type.prior,opt.prior)
+             return(obj)
+           },
+           unif={
+             obj = unif.class$new(type.prior,opt.prior)
+             return(obj)
+           }
+    )
+  } else
+  {
+    NAmes <- c("Prior1")
+    res <- list()
+    for (i in 1:n)
+    {
+      if (i>1){NAmes <- cbind(NAmes,paste("Prior",i,sep=""))}
+      switch(type.prior[i],
+             gaussian = {
+               obj = gaussian.class$new(type.prior[i],opt.prior[[i]])
+             },
+             gamma={
+               obj = gamma.class$new(type.prior[i],opt.prior[[i]])
+             },
+             invGamma={
+               obj = invGamma.class$new(type.prior[i],opt.prior[[i]])
+             },
+             unif={
+               obj = unif.class$new(type.prior[i],opt.prior[[i]])
+             }
+      )
+      res[[i]] <- obj
+      names(res) <- NAmes
+    }
+    return(res)
+  }
 }
-
-
-#
-#
-# prior <- function(type.prior,opt.prior,log=TRUE)
-# {
-#   n <- length(type.prior)
-#   if (n == 1)
-#   {
-#     switch(type.prior,
-#            gaussian = {
-#              obj = gaussian.class$new(type.prior,opt.prior,log)
-#              return(obj)
-#            },
-#            gamma={
-#              obj = gamma.class$new(type.prior,opt.prior,log)
-#              return(obj)
-#            },
-#            invGamma={
-#              obj = invGamma.class$new(type.prior,opt.prior,log)
-#              return(obj)
-#            },
-#            unif={
-#              obj = unif.class$new(type.prior,opt.prior,log)
-#              return(obj)
-#            }
-#     )
-#   } else
-#   {
-#     NAmes <- c("Prior1")
-#     res <- list()
-#     for (i in 1:n)
-#     {
-#       if (i>1){NAmes <- cbind(NAmes,paste("Prior",i,sep=""))}
-#       switch(type.prior[i],
-#              gaussian = {
-#                obj = gaussian.class$new(type.prior[i],opt.prior[[i]],log)
-#              },
-#              gamma={
-#                obj = gamma.class$new(type.prior[i],opt.prior[[i]],log)
-#              },
-#              invGamma={
-#                obj = invGamma.class$new(type.prior[i],opt.prior[[i]],log)
-#              },
-#              unif={
-#                obj = unif.class$new(type.prior[i],opt.prior[[i]],log)
-#              }
-#       )
-#       res[[i]] <- obj
-#       names(res) <- NAmes
-#     }
-#     return(res)
-#   }
-# }
 
 
 #' Generates \code{\link{calibrate.class}} objects
@@ -621,5 +612,14 @@ multivariate <- function (n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISP
   {
     stop("Not a model.class",call. = FALSE)
   }
+}
+
+sequentialDesign <- function(md)
+{
+  if (!md$model %in% c("model2","model4"))
+  {
+    stop("The sequential design is available only for mode 2 and 4", call. = FALSE)
+  }
+  #### Sequential design sur md
 }
 

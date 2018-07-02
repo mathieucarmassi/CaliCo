@@ -4,7 +4,7 @@
 \alias{prior}
 \title{Generates \code{\link{prior.class}} objects.}
 \usage{
-prior(type.prior, opt.prior, log = TRUE)
+prior(type.prior, opt.prior)
 }
 \arguments{
 \item{type.prior}{the vector of the prior types selected. For example type.prior=c("gaussian","gamma")}
@@ -45,7 +45,7 @@ are the two hyperparameters. The vector \eqn{c(a,b)} is the one looked for in op
 \dontrun{
 #### Only one prior is wanted
 ## For a Gaussian Prior
-gaussian <- prior(type.prior="gauss",opt.prior=list(c(0.5,0.001)))
+gaussian <- prior(type.prior="gaussian",opt.prior=list(c(0.5,0.001)))
 plot(gaussian)
 
 #### For several priors

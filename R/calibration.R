@@ -217,7 +217,7 @@ calibrate.class$set("private","quantiles",
                       {
                         parFun <- function(i)
                         {
-                          D  <- self$md$fun(chain[i,1:(dim-1)],chain[i,dim],self$md$X)$y
+                          D  <- self$md$model.fun(chain[i,1:(dim-1)],chain[i,dim],self$md$X)$y
                           return(D)
                         }
                         res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
@@ -225,14 +225,13 @@ calibrate.class$set("private","quantiles",
                         {
                           Dist[i,] <- res[[i]]
                         }
-                        browser()
                         qq <- apply(Dist,2,quantile,probs=c(0.05,0.95))
                         return(list(q05=qq[1,],q95=qq[2,]))
                       } else
                       {
                         parFun <- function(i)
                         {
-                          D  <- self$md$fun(chain[i,1:(dim-3)],chain[i,(dim-2):(dim-1)],chain[i,dim],self$md$X)$y
+                          D  <- self$md$model.fun(chain[i,1:(dim-3)],chain[i,(dim-2):(dim-1)],chain[i,dim],self$md$X)$y
                           return(D)
                         }
                         res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
@@ -297,24 +296,6 @@ calibrate.class$set("private","MAPestimator",
                       {
                         chain <- out$THETA[-c(1:self$opt.estim$burnIn),]
                         dens <- apply(chain,2,density)
-                        # if (chain[nrow(chain),1]==chain[1,1] & chain[nrow(chain),2]==chain[1,2])
-                        # {
-                        #   cat("\n")
-                        #   cat("Call:\n")
-                        #   print(self$md$model)
-                        #   cat("\n")
-                        #   cat("With the function:\n")
-                        #   print(self$md$code)
-                        #   cat("\n")
-                        #   cat("Acceptation rate of the Metropolis within Gibbs algorithm:\n")
-                        #   print(paste(round(out$AcceptationRatioWg/self$opt.estim$Ngibbs*100,2),
-                        #               "%",sep = ""))
-                        #   cat("\n")
-                        #   cat("Acceptation rate of the Metropolis Hastings algorithm:\n")
-                        #   print(paste(out$AcceptationRatio/self$opt.estim$Nmh*100,"%",sep = ""))
-                        #   cat("\n")
-                        #   stop('the MCMC chain did not move, please try to launch again with different values of k')
-                        # }
                         map <- function(dens)
                         {
                           dens$x[which(dens$y==max(dens$y))]
@@ -323,61 +304,75 @@ calibrate.class$set("private","MAPestimator",
                     })
 
 
+
 calibrate.class$set("public","plot",
-                    function(graph=c("acf","chains","densities","output"),select.X=NULL)
+                    function(x,graph="all",...)
                     {
-                      if (self$onlyCV==TRUE)
+                      p <- ncol(self$output$out$THETA)-1
+                      p1 <- p2 <- p3 <- P <- L <- corrplot <- list()
+                      inc = 1
+                      for (i in 1:(p+1))
                       {
-                        stop("You only had requested the cross validation, the plot method is desabled")
-                      }
-                      if (self$opt.estim$Nchains>1)
-                      {
-                        warning("You have selected several chains. The plot is from coda package and the coda object
-                                mcmc")
-                        plot(self$mcmc)
-                        stop("")
-                      }
-                      n   <- length(self$pr)
-                      gg  <- list()
-                      a   <- list()
-                      m   <- list()
-                      p   <- list()
-                      if ("acf" %in% graph)
-                      {
-                        for (i in 1:n)
+                        if (i == (p+1)) NameParam <- expression(sigma[err]^2)
+                        else if (self$md$model %in% c("model3","model4") & i == p) NameParam <- expression(Psi[d])
+                        else if (self$md$model %in% c("model3","model4") & i == (p-1)) NameParam <- expression(sigma[d]^2)
+                        else NameParam <- substitute(theta[i])
+                        p1[[i]] <- self$acf(i)+xlab("Lag")+ylab("ACF")
+                        p2[[i]] <- self$mcmcChains(i) + xlab("iterations") + ylab(NameParam)
+                        dplot2  <- data.frame(data=self$output$out$THETA[-c(1:self$opt.estim$burnIn),i],
+                                              type="posterior")
+                        p3[[i]] <- self$pr[[i]]$plot()+geom_density(data=dplot2,kernel="gaussian",adjust=3,alpha=0.1)+
+                          xlab(NameParam)+theme(legend.text=element_text(size = '12'),
+                                                axis.text=element_text(size=12))+ylab("density")
+                        if (i < (p+1))
                         {
-                          a[[i]] <- self$acf(i)
+                          for (j in 1:p)
+                          {
+                            if (j != i)
+                            {
+                              corrplot[[inc]] <- self$corrPlot(i,j)+ xlab(substitute(theta[i])) + ylab(substitute(theta[j]))
+                              L[[j]] <- corrplot[[inc]]
+                              inc <- inc+1
+                            } else
+                            {
+                              L[[j]] <- p3[[i]]
+                            }
+                          }
+                          temp <- do.call(arrangeGrob,L)
+                          P[[i]] <- temp
                         }
-                        # do.call(grid.arrange,a)
-                        gg$acf <- a
                       }
-                      if ("chains" %in% graph)
+                      output <- self$outputPlot(select.X=x)+ xlab("x") +ylab("y")
+                      if (!is.null(graph))
                       {
-                        for (i in 1:n)
+                        if (graph == "chains")
                         {
-                          m[[i]] <- self$mcmcChains(i)
-                        }
-                        # do.call(grid.arrange,m)
-                        gg$mcmc <- m
-                      }
-                      if ("densities" %in% graph)
-                      {
-                        for (i in 1:n)
+                          grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
+                          grid.arrange(do.call(grid.arrange2,p1),do.call(grid.arrange2,p2),do.call(grid.arrange2,p3),nrow=3)
+                        } else if (graph == "corr")
                         {
-                          dplot2  <- data.frame(data=self$output$out$THETA[-c(1:self$opt.estim$burnIn),i],
-                                                type="posterior")
-                          p[[i]] <- self$pr[[i]]$plot()+geom_density(data=dplot2,kernel="gaussian",adjust=3,alpha=0.1)
+                          do.call(grid.arrange2,P)
+                        } else if (graph == "result")
+                        {
+                          print(output)
+                        } else if (graph == "all")
+                        {
+                          grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
+                          grid.arrange(do.call(grid.arrange2,p1),do.call(grid.arrange2,p2),do.call(grid.arrange2,p3),nrow=3)
+                          do.call(grid.arrange2,P)
+                          print(output)
+                        } else
+                        {
+                          warning("The graph value is not correct all graphs are displayed",call. = FALSE)
+                          grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
+                          grid.arrange(do.call(grid.arrange2,p1),do.call(grid.arrange2,p2),do.call(grid.arrange2,p3),nrow=3)
+                          do.call(grid.arrange2,P)
+                          print(output)
                         }
-                        # do.call(grid.arrange,p)
-                        gg$dens <- p
+                      } else {
+                        warning('Nothing is plot since the graph option is NULL')
                       }
-                      if ("output" %in% graph)
-                      {
-                        o <- self$outputPlot(select.X)
-                        # print(o)
-                        gg$output <- o
-                      }
-                      return(gg)
+                      invisible(list(ACF=p1,MCMC=p2,dens=p3,corrplot=corrplot,out=output))
                     })
 
 
@@ -392,6 +387,19 @@ calibrate.class$set("public","acf",
                         xlab("")+ylab("")+theme_light()
                       return(p)
                       })
+
+
+calibrate.class$set("public","corrPlot",
+                    function(i,j)
+                    {
+                      chain1 <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),i]
+                      chain2 <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),j]
+                      df     <- data.frame(x=chain1,y=chain2)
+                      p      <- ggplot(data = df, mapping = aes(x=x, y=y))+
+                        geom_jitter() + xlab(expression(theta_1))+
+                        ylab(expression(theta_1))+theme_light()
+                      return(p)
+                    })
 
 calibrate.class$set("public","mcmcChains",
                     function(i)
@@ -425,7 +433,7 @@ calibrate.class$set("public","outputPlot",
                       {
                         parFun <- function(i)
                         {
-                          D  <- self$md$fun(m[i,1:(dim-1)],m[i,dim])$y
+                          D  <- self$md$model.fun(m[i,1:(dim-1)],m[i,dim])$y
                           return(D)
                         }
                         res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
@@ -438,8 +446,8 @@ calibrate.class$set("public","outputPlot",
                         print('The computational time might be long to get the output plot')
                         parFun <- function(i)
                         {
-                          D  <- self$md$fun(m[i,1:(dim-3)],m[i,(dim-2):(dim-1)],m[i,dim])$y
-                          D2 <- self$md$fun(self$output$MAP[1:(dim-3)],m[i,(dim-2):(dim-1)],
+                          D  <- self$md$model.fun(m[i,1:(dim-3)],m[i,(dim-2):(dim-1)],m[i,dim])$y
+                          D2 <- self$md$model.fun(self$output$MAP[1:(dim-3)],m[i,(dim-2):(dim-1)],
                                                    self$output$MAP[dim])$y
                           return(list(D=D,D2=D2))
                         }
@@ -458,12 +466,12 @@ calibrate.class$set("public","outputPlot",
                       {
                         MAP <- self$output$MAP
                         p <- length(MAP)-1
-                        Ys <- self$md$fun(MAP[1:p],MAP[p+1])$y
+                        Ys <- self$md$model.fun(MAP[1:p],MAP[p+1])$y
                       }else
                       {
                         MAP <- self$output$MAP
                         p <- length(MAP)-3
-                        Ys <- self$md$fun(MAP[1:p],MAP[(p+1):(p+2)],MAP[p+3])$y
+                        Ys <- self$md$model.fun(MAP[1:p],MAP[(p+1):(p+2)],MAP[p+3])$y
                       }
                       ggdata <- data.frame(y=Ys,x=X,upper=qq[2,],lower=qq[1,],type="calibrated",
                                            fill="90% credibility interval a posteriori")
@@ -477,11 +485,10 @@ calibrate.class$set("public","outputPlot",
                         geom_ribbon(aes(ymin=lower, ymax=upper, x=x,fill=fill), alpha = 0.3) +
                         scale_fill_manual("",values=c("blue4","black")) +
                         theme_light() + xlab("") + ylab("") +
-                        theme(legend.position=c(0.65,0.86),
-                              legend.text=element_text(size = '15'),
-                              legend.title=element_blank(),
-                              legend.key=element_rect(colour=NA),
-                              axis.text=element_text(size=20))
+                        theme(legend.title = element_blank(),
+                              legend.position = c(0.2,0.8),
+                              legend.background = element_rect(
+                                linetype="solid", colour ="grey"))
                      return(p)
                     })
 
