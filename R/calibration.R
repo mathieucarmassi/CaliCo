@@ -330,7 +330,7 @@ calibrate.class$set("public","plot",
                         dplot2  <- data.frame(data=self$output$out$THETA[-c(1:self$opt.estim$burnIn),i],
                                               type="posterior")
                         p3[[i]] <- self$pr[[i]]$plot()+geom_density(data=dplot2,kernel="gaussian",adjust=3,alpha=0.1)+
-                          xlab(NameParam)+theme(legend.text=element_text(size = '12'),
+                          xlab(NameParam)+theme(legend.text=element_text(size = '5'),
                                                 axis.text=element_text(size=12))+ylab("density")
                         if (i < (p+1))
                         {
