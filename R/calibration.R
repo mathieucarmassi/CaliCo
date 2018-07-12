@@ -90,6 +90,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                {
                                  cat(paste("\nThe cross validation is currently running on your ",
                                              self$n.cores," cores available....\n",sep=""))
+                                 self$CV(1)
                                  Results <- mclapply(c(1:opt.valid$nCV),
                                                      self$CV,mc.cores = self$n.cores)
                                  self$coverRate <- 0
@@ -150,16 +151,20 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                  }
                                  Ycal        <- self$md$Yexp[-inc]
                                  Yval        <- self$md$Yexp[inc]
-                                 mdTempCal   <- model(code=self$md$code,dataCal,Ycal,self$md$model,self$md$opt.emul)
+                                 mdTempCal   <- model(code = self$md$code, X = dataCal, Yexp = Ycal,
+                                                      model = self$md$model,
+                                                      opt.gp = self$md$opt.gp,
+                                                      opt.emul = self$md$opt.emul,
+                                                      opt.sim = self$md$opt.sim)
                                  mdTempfit   <- self$calibrationCV(mdTempCal,Ycal)
                                  thetaMAP    <- mdTempfit$MAP
                                  if (mdTempCal$model=="model1" | mdTempCal$model=="model2")
                                  {
-                                    Predict  <- mdTempCal$pred(thetaMAP[1:(Dim-1)],thetaMAP[Dim],dataVal)$y
+                                    Predict  <- mdTempCal$model.fun(thetaMAP[1:(Dim-1)],thetaMAP[Dim],dataVal)$y
                                     if (is.na(Predict)){Predict <- Yval}
                                  } else
                                  {
-                                    Predict  <- mdTempCal$pred(thetaMAP[1:(Dim-3)],thetaMAP[(Dim-2):(Dim-1)],
+                                    Predict  <- mdTempCal$model.fun(thetaMAP[1:(Dim-3)],thetaMAP[(Dim-2):(Dim-1)],
                                                                thetaMAP[Dim],dataVal)$y
                                     if (is.na(Predict)){Predict <- Yval}
                                  }
@@ -231,7 +236,8 @@ calibrate.class$set("private","quantiles",
                       {
                         parFun <- function(i)
                         {
-                          D  <- self$md$model.fun(chain[i,1:(dim-3)],chain[i,(dim-2):(dim-1)],chain[i,dim],self$md$X)$y
+                          D  <- self$md$model.fun(chain[i,1:(dim-3)],chain[i,(dim-2):(dim-1)],chain[i,dim],
+                                                  self$md$X,CI=NULL)$y
                           return(D)
                         }
                         res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
@@ -306,8 +312,9 @@ calibrate.class$set("private","MAPestimator",
 
 
 calibrate.class$set("public","plot",
-                    function(x,graph="all",...)
+                    function(x,graph="all",label=NULL,...)
                     {
+                      if (missing(x)) stop("No x-axis selected, no graph is displayed",call. = FALSE)
                       p <- ncol(self$output$out$THETA)-1
                       p1 <- p2 <- p3 <- P <- L <- corrplot <- list()
                       inc = 1
@@ -316,6 +323,7 @@ calibrate.class$set("public","plot",
                         if (i == (p+1)) NameParam <- expression(sigma[err]^2)
                         else if (self$md$model %in% c("model3","model4") & i == p) NameParam <- expression(Psi[d])
                         else if (self$md$model %in% c("model3","model4") & i == (p-1)) NameParam <- expression(sigma[d]^2)
+                        else if (!is.null(label)) NameParam <- label[i]
                         else NameParam <- substitute(theta[i])
                         p1[[i]] <- self$acf(i)+xlab("Lag")+ylab("ACF")
                         p2[[i]] <- self$mcmcChains(i) + xlab("iterations") + ylab(NameParam)
@@ -338,39 +346,66 @@ calibrate.class$set("public","plot",
                               L[[j]] <- p3[[i]]
                             }
                           }
-                          temp <- do.call(arrangeGrob,L)
-                          P[[i]] <- temp
+                          arrangeGrob2 <- function(...) return(arrangeGrob(...,ncol = 1))
+                          if (p != 1) P[[i]] <- do.call(arrangeGrob2,L)
                         }
                       }
                       output <- self$outputPlot(select.X=x)+ xlab("x") +ylab("y")
+                      grid.arrange2 <- function(...) return(arrangeGrob(...,nrow=1))
+                      chainPlotLayout <- function()
+                      {
+                        if (self$md$model %in% c("model1","model2")) N <- p+1 else N <- p+3
+                        t  <- N%/%3
+                        tr <- N%%3
+                        inc <- 0
+                        if (t == 0)
+                        {
+                          grid.arrange(do.call(grid.arrange2,p1),do.call(grid.arrange2,p2),do.call(grid.arrange2,p3))
+                        } else
+                        {
+                          for (j in 1:t)
+                          {
+                            inc <- inc + 1
+                            if (inc > N) break
+                            grid.arrange(do.call(grid.arrange2,p1[(3*(j-1)+1):(3*j)]),
+                                         do.call(grid.arrange2,p2[(3*(j-1)+1):(3*j)]),
+                                         do.call(grid.arrange2,p3[(3*(j-1)+1):(3*j)]))
+                          }
+                        }
+                      }
+                      corrPlotLayout <- function()
+                      {
+                        if (p == 1) {warning("No correlation plot available",call. = FALSE)}
+                        else
+                        {
+                           plot(do.call(grid.arrange2,P))
+                        }
+                      }
                       if (!is.null(graph))
                       {
-                        if (graph == "chains")
+                        if ("chains" %in% graph)
                         {
-                          grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
-                          grid.arrange(do.call(grid.arrange2,p1),do.call(grid.arrange2,p2),do.call(grid.arrange2,p3),nrow=3)
-                        } else if (graph == "corr")
+                          chainPlotLayout()
+                        } else if ("corr" %in% graph)
                         {
-                          do.call(grid.arrange2,P)
-                        } else if (graph == "result")
+                          corrPlotLayout()
+                        } else if ("result" %in% graph)
                         {
                           print(output)
                         } else if (graph == "all")
                         {
-                          grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
-                          grid.arrange(do.call(grid.arrange2,p1),do.call(grid.arrange2,p2),do.call(grid.arrange2,p3),nrow=3)
-                          do.call(grid.arrange2,P)
+                          chainPlotLayout()
+                          corrPlotLayout()
                           print(output)
                         } else
                         {
                           warning("The graph value is not correct all graphs are displayed",call. = FALSE)
-                          grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
-                          grid.arrange(do.call(grid.arrange2,p1),do.call(grid.arrange2,p2),do.call(grid.arrange2,p3),nrow=3)
-                          do.call(grid.arrange2,P)
+                          chainPlotLayout()
+                          corrPlotLayout()
                           print(output)
                         }
                       } else {
-                        warning('Nothing is plot since the graph option is NULL')
+                        #warning('Nothing is plot since the graph option is NULL',call. = FALSE)
                       }
                       invisible(list(ACF=p1,MCMC=p2,dens=p3,corrplot=corrplot,out=output))
                     })

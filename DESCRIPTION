@@ -27,6 +27,7 @@ Collate:
     'CaliCo-package.R'
     'Kernel.R'
     'calibration.R'
+    'sequentialDesign.R'
 LinkingTo:
     Rcpp,
     RcppArmadillo,

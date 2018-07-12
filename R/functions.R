@@ -577,7 +577,7 @@ multivariate <- function (n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISP
 #' Operator to define active bindings variables
 #'
 #' @export
-"%+%" <- function (md,param)
+"%<%" <- function (md,param)
 {
   if ("model.class" %in% class(md))
   {
@@ -614,12 +614,15 @@ multivariate <- function (n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISP
   }
 }
 
-sequentialDesign <- function(md)
+
+#' Sequential design function
+#'
+#' @export
+sequentialDesign <- function(md,pr,opt.estim,k,...)
 {
-  if (!md$model %in% c("model2","model4"))
-  {
-    stop("The sequential design is available only for mode 2 and 4", call. = FALSE)
-  }
-  #### Sequential design sur md
+  obj <- seqDesign.class$new(md,pr,opt.estim,k,...)
+  return(obj)
 }
+
+
 

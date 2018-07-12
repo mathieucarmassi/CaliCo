@@ -1,4 +1,4 @@
-#' A Reference Class to generates differents \code{\link{prior.class}} objects
+#' A Reference Class to generate differents \code{\link{prior.class}} objects
 #'
 #'
 #' @description See the function \code{\link{prior}} which produces an instance of this class

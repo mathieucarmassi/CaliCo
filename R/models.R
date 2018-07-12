@@ -70,8 +70,10 @@ model.class <- R6Class(classname = "model.class",
                    {
                      return(theme(legend.title = element_blank(),
                                   legend.position = c(0.2,0.8),
-                                  legend.background = element_rect(
-                                    linetype="solid", colour ="grey")))
+                                  legend.background = element_rect(linetype="solid", colour ="grey"),
+                                  axis.title=element_text(size=30,family = "Helvetica",face = "italic"),
+                                  axis.text = element_text(size=20),
+                                  legend.text = element_text(size=20)))
                    }
                  ))
 
@@ -139,6 +141,7 @@ model.class$set("private","testOnForcingVar",
 model.class$set("public","plot",
                 function(x,CI="all",...)
                 {
+                  if (missing(x)) stop("No x-axis selected, no graph is displayed",call. = FALSE)
                   if (is.matrix(x)){stop("please enter a correct x to plot your model",call. = FALSE)}
                   if (length(x)!= self$n){stop(paste("please enter a correct vector x of size",
                                                      self$n,sep=" "),call. = FALSE)}
@@ -175,14 +178,15 @@ model.class$set("public","plot",
                     {
                       if (self$model %in% c("model3","model4"))
                       {
-                        df <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% discrepancy + noise")
+                        df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% discrepancy + noise")
                       } else
                       {
-                        df <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% noise")
+                        df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% noise")
                       }
                       df2 <- df2[,names(df)]
                       df <- rbind(df,df2)
-                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),alpha=0.4)+
+                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
+                                                   colour="skyblue3",size=0.5)+
                         geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
                         scale_fill_manual(values = adjustcolor("skyblue3"))+
                         scale_color_manual(values=c("red", "#000000"))+self$gglegend()
@@ -192,23 +196,25 @@ model.class$set("public","plot",
                       {
                         stop("No Gaussian process used for the model1 and model2, no ggplot produced",call. = FALSE)
                       }
-                      df <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% GP")
+                      df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
                       df <- rbind(df,df2)
-                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),alpha=0.4)+
+                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
+                                                   colour="grey70",size=0.5)+
                         geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
-                        scale_fill_manual(values = adjustcolor("grey12"))+
+                        scale_fill_manual(values = adjustcolor("grey70"))+
                         scale_color_manual(values=c("red", "#000000"))+ self$gglegend()
                     } else if (CI == "all")
                     {
                       if (self$model %in% c("model1","model3"))
                       {
-                        if (self$model == "model1"){df <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% noise")}
+                        if (self$model == "model1"){df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% noise")}
                         if (self$model == "model3")
                         {
-                          df <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% discrepancy + noise")
+                          df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% discrepancy + noise")
                         }
                         df <- rbind(df,df2)
-                        p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),alpha=0.4)+
+                        p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
+                                                     colour="skyblue3",size=0.5)+
                           geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
                           scale_fill_manual(values = adjustcolor("skyblue3"))+
                           scale_color_manual(values=c("red", "#000000"))+self$gglegend()
@@ -216,39 +222,39 @@ model.class$set("public","plot",
                       {
                         if (self$model == "model2")
                         {
-                          df.gp  <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% GP")
-                          df.n   <- cbind(df,q05=df2$q05n,q95=df2$q95n,fill="CI 90% noise")
-                          df2.gp <- data.frame(y=df2$y,type=df2$type,x=x,q05=df2$q05,q95=df2$q95,fill="CI 90% GP")
-                          df2.n  <- data.frame(y=df2$y,type=df2$type,x=x,q05=df2$q05n,q95=df2$q95n,
-                                               fill="CI 90% noise")
+                          df.gp  <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
+                          df.n   <- cbind(df,q025=df2$q025n,q975=df2$q975n,fill="CI 95% noise")
+                          df2.gp <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
+                          df2.n  <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025n,q975=df2$q975n,
+                                               fill="CI 95% noise")
                         } else
                         {
-                          df.gp  <- cbind(df,q05=df2$q05,q95=df2$q95,fill="CI 90% GP")
-                          df.n   <- cbind(df,q05=df2$q05n,q95=df2$q95n,fill="CI 90% discrepancy + noise")
-                          df2.gp <- data.frame(y=df2$y,type=df2$type,x=x,q05=df2$q05,q95=df2$q95,fill="CI 90% GP")
-                          df2.n  <- data.frame(y=df2$y,type=df2$type,x=x,q05=df2$q05n,q95=df2$q95n,
-                                               fill="CI 90% discrepancy + noise")
+                          df.gp  <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
+                          df.n   <- cbind(df,q025=df2$q025n,q975=df2$q975n,fill="CI 95% discrepancy + noise")
+                          df2.gp <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
+                          df2.n  <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025n,q975=df2$q975n,
+                                               fill="CI 95% discrepancy + noise")
                         }
                         df     <- rbind(df.n,df2.n)
                         df2    <- rbind(df.gp,df2.gp)
                         if (self$model == "model4")
                         {
-                          col <- c("skyblue3","grey12")
+                          col <- c("skyblue3","grey70")
                           Alpha <- c(0.8,0.3)
                         }else
                         {
-                          col <- c("grey12","skyblue3")
+                          col <- c("grey70","skyblue3")
                           Alpha <- c(0.3,0.8)
                         }
                         p <- ggplot(df)+
-                          geom_ribbon(mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),
-                                      alpha=0.8)+
-                          geom_ribbon(data=df2,mapping = aes(x=x,ymin=q05,ymax=q95,fill=fill),
-                                      alpha=0.3,show.legend = FALSE)+
+                          geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
+                                      alpha=0.8,linetype="twodash",colour="#999999",size=0.7)+
+                          geom_ribbon(data=df2,mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
+                                      alpha=0.3,linetype="dotted",colour="#999999",size=0.7)+
                           geom_line(mapping = aes(x=x,y=y, color=type))+
-                          scale_fill_manual(name = NULL,values = adjustcolor(col,
-                                                                             alpha.f = 0.3))+
-                          guides(fill = guide_legend(override.aes = list(alpha = Alpha)))+
+                          scale_fill_manual(name = NULL,values = adjustcolor(col,alpha.f = 0.3))+
+                          guides(fill = guide_legend(override.aes = list(alpha = Alpha)),
+                                 colour= guide_legend(override.aes = list(colour = col)))+
                           scale_color_manual(values=c("red", "#000000"))+
                           xlab("")+ylab("")+theme_light()+self$gglegend()
                       }
@@ -300,7 +306,6 @@ model.class$set("public","print",
                       print(bias)
                       cat("Chosen kernel:", self$opt.disc$kernel.type)
                       cat(paste("\nCovariance of the bias:",round(mean(self$disc$cov),3),"\n\n",sep=" "))
-                      cat(paste("Kernel chossen: ",self$opt.disc$kernel.type,sep=""))
                     } else {
                       cat("No discrepancy is added")
                     }
@@ -335,7 +340,6 @@ model.class$set("public","print",
                         print(bias)
                         cat("Chosen kernel:", self$opt.disc$kernel.type)
                         cat(paste("\nCovariance of the bias:",round(mean(self$disc$cov),3),"\n\n",sep=" "))
-                        cat(paste("Kernel chossen: ",self$opt.disc$kernel.type,sep=""))
                       }
                     }
                   }
@@ -360,7 +364,7 @@ model.class$set("public","discrepancy",
                     e <- eigen(Cov)$values
                     if (all(e>0)){} else
                     {
-                      e[which(e<0)] <- 1e-4
+                      e[which(e<0)] <- .Machine$double.eps
                     }
                     d <- diag(e)
                     if (nrow(p) == 1 & ncol(p) == 1)
@@ -368,7 +372,7 @@ model.class$set("public","discrepancy",
                       Cov <- as.numeric(p)^2*d
                     } else
                     {
-                      Cov <- t(p)%*%d%*%p
+                      Cov <- p%*%d%*%t(p)
                     }
                   }
                   if (is.vector(X)){long <- length(X)}else{
@@ -384,11 +388,14 @@ model.class$set("public","discrepancy",
                     }
                   } else
                   {
-                    bias <- mvrnorm(100,rep(0,long),Cov)
-                    dim(bias) <- c(long,100)
-                    bias <- apply(bias,1,mean)
+                    bias <- mvrnorm(10000,rep(0,long),Cov)
+                    dim(bias) <- c(long,10000)
+                    qq <- apply(bias,1,quantile,c(0.025,0.5,0.975))
+                    bias <- qq[2,]
+                    lower <- qq[1,]
+                    upper <- qq[3,]
                   }
-                  return(list(bias=bias,cov=Cov))
+                  return(list(bias=bias,cov=Cov,lower=lower,upper=upper))
                 })
 
 
@@ -409,16 +416,16 @@ model1.class <- R6Class(classname = "model1.class",
                           # for(i in 1:100){y[i,] <- self$code(X,theta)+rnorm(self$n,0,sqrt(var))}
                           # qq <- apply(y,2,quantile,c(0.05,0.5,0.95))
                           y <- self$code(X,theta)
-                          qq05 <- y - 2*sqrt(var)
-                          qq95 <- y + 2*sqrt(var)
+                          qq025 <- y - 2*sqrt(var)
+                          qq975 <- y + 2*sqrt(var)
                           if (is.null(CI))
                           {
                             # df <- data.frame(y=qq[2,],type="model output")
                             df <- data.frame(y=y,type="model output")
                           } else if (CI=="err" | CI == "all")
                           {
-                            # df <- data.frame(y=qq[2,],type="model output",q05=qq[1,],q95=qq[3,],fill="CI 90% noise")
-                            df <- data.frame(y=y,type="model output",q05=qq05,q95=qq95,fill="CI 90% noise")
+                            # df <- data.frame(y=qq[2,],type="model output",q025=qq[1,],q975=qq[3,],fill="CI 95% noise")
+                            df <- data.frame(y=y,type="model output",q025=qq025,q975=qq975,fill="CI 95% noise")
                           } else
                           {
                             warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
@@ -478,36 +485,23 @@ model3.class <- R6Class(classname = "model3.class",
                             self$model1.fun        <- super$model.fun
                             self$model1.prediction <- super$prediction.fun
                           },
-                          ## Parallel computation for the discrepancy
-                          disc.par = function(i)
-                          {
-                            return(self$model1.fun(self$theta,self$var,self$X,CI=NULL)$y+
-                                     self$discrepancy(self$theta,self$thetaD,self$var,self$X)$bias)
-                          },
                           model.fun = function(theta,thetaD,var,X=self$X,CI="err")
                           {
                             res.model1 <- self$model1.fun(theta,var,X,CI=CI)
                             self$disc  <- self$discrepancy(theta,thetaD,var,X)
                             if (is.null(CI))
                             {
-                              # disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores))
-                              # qq <- apply(disc.temp,2,mean)
-                              # df <- data.frame(y=res.model1$y+qq,type="model output")
                               df <- data.frame(y=res.model1$y,type="model output")
                             } else if (CI=="err" | CI == "all")
                             {
-                              disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores))
-                              # qq <- apply(disc.temp,2,quantile,c(0.05,0.5,0.95))
-                              # df <- data.frame(y=qq[2,],type="model output",q05=qq[1,],q95=qq[3,],
-                              #                  fill="CI 90% discrepancy + noise")
-                              qq <- apply(disc.temp,2,quantile,c(0.05,0.95))
-                              qq[1,] <- qq[1,] - 2*sqrt(var)
-                              qq[2,] <- qq[2,] + 2*sqrt(var)
-                              df <- data.frame(y=res.model1$y,type="model output",q05=qq[1,],q95=qq[2,],
-                                               fill="CI 90% discrepancy + noise")
+                              # qq025 <- self$disc$lower + res.model1$q025
+                              # qq975 <- self$disc$upper + res.model1$q975
+                              qq025 <- res.model1$y - 2*sqrt(self$thetaD[1] + self$var)
+                              qq975 <- res.model1$y + 2*sqrt(self$thetaD[1] + self$var)
+                              df <- data.frame(y=res.model1$y,type="model output",q025=qq025,q975=qq975,
+                                               fill="CI 95% discrepancy + noise")
                             } else
                             {
-                              warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
                               df <- 0
                             }
                             return(df)
@@ -554,9 +548,11 @@ model2.class <- R6Class(classname = "model2.class",
                         initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.gp=NULL,opt.emul=NULL,
                                               opt.sim=NULL,...)
                         {
-                          if (missing(opt.sim)) self$case <- 1
-                          if (missing(opt.emul) & missing(opt.sim)) self$case <- 2
-                          if (missing(opt.emul) & !missing(opt.sim)) self$case <- 3
+                          if (missing(opt.sim) | is.null(opt.sim)) self$case <- 1
+                          if ((missing(opt.emul) | is.null(opt.emul)) & (missing(opt.sim) | is.null(opt.sim)))
+                            self$case <- 2
+                          if ((missing(opt.emul) | is.null(opt.emul)) & !(missing(opt.sim) | is.null(opt.sim)))
+                            self$case <- 3
                           self$opt.gp   <- opt.gp
                           self$opt.emul <- opt.emul
                           self$opt.sim  <- opt.sim
@@ -605,8 +601,8 @@ model2.class <- R6Class(classname = "model2.class",
                           } else pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
                                                cov.compute=TRUE,interval="confidence",checkNames=FALSE)
                           # nugget <- mvrnorm(n=100,pr$mean,diag(var,length(pr$mean)))
-                          qq05 <- pr$mean -2*sqrt(var)
-                          qq95 <- pr$mean +2*sqrt(var)
+                          qq025 <- pr$mean -2*sqrt(var)
+                          qq975 <- pr$mean +2*sqrt(var)
                           if (is.null(CI))
                           {
                             # qq <- apply(nugget,2,mean)
@@ -617,24 +613,24 @@ model2.class <- R6Class(classname = "model2.class",
                             # qq <- apply(nugget,2,quantile,c(0.05,0.5,0.95))
                             if (CI == "all")
                             {
-                              # df  <- data.frame(y=qq[2,],type="model output",q05n=qq[1,],q95n=qq[3,],
-                              #                   q05=pr$lower95,q95=pr$upper95)
-                              df  <- data.frame(y=pr$mean,type="model output",q05n=qq05,q95n=qq95,
-                                                q05=pr$lower95,q95=pr$upper95)
+                              # df  <- data.frame(y=qq[2,],type="model output",q025n=qq[1,],q975n=qq[3,],
+                              #                   q025=pr$lower95,q975=pr$upper95)
+                              df  <- data.frame(y=pr$mean,type="model output",q025n=qq025,q975n=qq975,
+                                                q025=pr$lower95,q975=pr$upper95)
                             } else
                             {
-                              # df  <- data.frame(y=qq[2,],type="model output",q05=qq[1,],q95=qq[3,],
-                              #                   fill="CI 90% noise")
-                              df  <- data.frame(y=pr$mean,type="model output",q05=qq05,q95=qq95,
-                                                fill="CI 90% noise")
+                              # df  <- data.frame(y=qq[2,],type="model output",q025=qq[1,],q975=qq[3,],
+                              #                   fill="CI 95% noise")
+                              df  <- data.frame(y=pr$mean,type="model output",q025=qq025,q975=qq975,
+                                                fill="CI 95% noise")
                             }
                           } else if (CI == "GP")
                           {
                             # qq <- apply(nugget,2,quantile,c(0.05,0.5,0.95))
-                            # df  <- data.frame(y=qq[2,],type="model output",q05=pr$lower95,
-                            #                   q95=pr$upper95, fill="CI 90% GP")
-                            df  <- data.frame(y=pr$mean,type="model output",q05=pr$lower95,
-                                              q95=pr$upper95, fill="CI 90% GP")
+                            # df  <- data.frame(y=qq[2,],type="model output",q025=pr$lower95,
+                            #                   q975=pr$upper95, fill="CI 95% GP")
+                            df  <- data.frame(y=pr$mean,type="model output",q025=pr$lower95,
+                                              q975=pr$upper95, fill="CI 95% GP")
                           } else
                           {
                             warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
@@ -798,55 +794,30 @@ model4.class <- R6Class(classname = "model4.class",
                             }
                             self$model2.fun <- super$model.fun
                           },
-                          disc.par = function(i,theta=theta,thetaD=thetaD,var=var)
-                          {
-                            return(self$discrepancy(theta,thetaD,var,self$X)$bias)
-                          },
                           model.fun = function(theta,thetaD,var,X=self$X,CI="all")
                           {
                             res.model2 <- self$model2.fun(theta,var)
                             self$disc <- self$discrepancy(theta,thetaD,var,X)
                             if (is.null(CI))
                             {
-                              # disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores,
-                              #                                     theta=theta,thetaD=thetaD,var=var))
-                              # qq        <- apply(disc.temp,2,mean)
-                              # df <- data.frame(y=res.model2$y+qq,
-                              #                  type="model output")
                               df <- data.frame(y=res.model2$y,type="model output")
                             } else if (CI == "err")
                             {
-                              disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores,
-                                                                  theta=theta,thetaD=thetaD,var=var))
-                              # qq        <- apply(disc.temp,2,quantile,c(0.05,0.5,0.95))
-                              # df        <- data.frame(y=res.model2$y+qq[2,],type="model output",
-                              #                  q05=qq[1,]+res.model2$q05n,q95=qq[3,]+res.model2$q95n,
-                              #                  fill="CI 90% discrepancy + noise")
-                              qq        <- apply(disc.temp,2,quantile,c(0.05,0.95))
-                              df        <- data.frame(y=res.model2$y,type="model output",
-                                                      q05=qq[1,]+res.model2$q05n,q95=qq[2,]+res.model2$q95n,
-                                                      fill="CI 90% discrepancy + noise")
+                              qq025 <- res.model2$y - 2*sqrt(self$thetaD[1] + self$var)
+                              qq975 <- res.model2$y + 2*sqrt(self$thetaD[1] + self$var)
+                              df    <- data.frame(y=res.model2$y,type="model output",q025=qq025,q975=qq975,
+                                               fill="CI 95% discrepancy + noise")
                             } else if (CI == "GP")
                             {
-                              # disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores,
-                              #                                     theta=theta,thetaD=thetaD,var=var))
-                              # qq        <- apply(disc.temp,2,mean)
-                              # df        <- data.frame(y=res.model2$y+qq,type="model ouput",q05=res.model2$q05,
-                              #                  q95 = res.model2$q95,fill="CI 90% GP")
-                              df        <- data.frame(y=res.model2$y,type="model ouput",q05=res.model2$q05,
-                                                      q95 = res.model2$q95,fill="CI 90% GP")
+                              df    <- data.frame(y=res.model2$y,type="model ouput",q025=res.model2$q025,
+                                                      q975 = res.model2$q975,fill="CI 95% GP")
                             } else if (CI == "all")
                             {
-                              disc.temp <- do.call(rbind,mclapply(c(1:100),self$disc.par,mc.cores = self$n.cores,
-                                                                  theta=theta,thetaD=thetaD,var=var))
-                              # qq        <- apply(disc.temp,2,quantile,c(0.05,0.5,0.95))
-                              # df        <- data.frame(y=res.model2$y+qq[2,],type="model ouput",q05=res.model2$q05,
-                              #                  q95 = res.model2$q95,fill="CI 90% GP",q05n=res.model2$q05n+qq[1,],
-                              #                  q95n=res.model2$q95n+qq[3,])
-                              qq        <- apply(disc.temp,2,quantile,c(0.05,0.95))
-                              df        <- data.frame(y=res.model2$y,type="model ouput",q05=res.model2$q05,
-                                                      q95 = res.model2$q95,fill="CI 90% GP",q05n=res.model2$q05n+qq[1,],
-                                                      q95n=res.model2$q95n+qq[2,])
+                              qq025 <- res.model2$y - 2*sqrt(self$thetaD[1] + self$var)
+                              qq975 <- res.model2$y + 2*sqrt(self$thetaD[1] + self$var)
+                              df    <- data.frame(y=res.model2$y,type="model ouput",q025=res.model2$q025,
+                                                      q975 = res.model2$q975,fill="CI 95% GP",q025n=qq025,
+                                                      q975n=qq975)
                             } else
                             {
                               warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)

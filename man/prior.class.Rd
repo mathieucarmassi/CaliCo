@@ -3,7 +3,7 @@
 \docType{data}
 \name{prior.class}
 \alias{prior.class}
-\title{A Reference Class to generates differents \code{\link{prior.class}} objects}
+\title{A Reference Class to generate differents \code{\link{prior.class}} objects}
 \format{An object of class \code{R6ClassGenerator} of length 24.}
 \usage{
 prior.class
