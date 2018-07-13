@@ -21,7 +21,7 @@ RoxygenNote: 6.0.1
 Collate:
     'functions.R'
     'models.R'
-    'prediction.R'
+    'forecast.R'
     'prior.R'
     'RcppExports.R'
     'CaliCo-package.R'

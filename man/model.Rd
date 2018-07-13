@@ -14,7 +14,7 @@ model(code, X, Yexp, model = "model1", ...)
 \item{Yexp}{the vector of the experiments}
 
 \item{model}{string of the model chosen ("model1","model2","model3","model4")
-by default "model1" is choosen. See details for precisions.}
+by default "model1" is chosen. See details for precisions.}
 
 \item{opt.gp}{is an option list containing the parameters to establish the surrogate. \itemize{
 \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
@@ -39,10 +39,10 @@ generated with the \strong{opt.emul} option.}}
 \value{
 \code{model} returns a \code{model.class} object. This class contains two main methods:
 \itemize{
-\item{plot(mdfit,\eqn{\Theta},var, points=FALSE)}{ this metod generates the plot for a new
-\eqn{\Theta}, \eqn{\sigma^2} and a new set of data. The option points allows to vizualize the points from
-the Design Of Experiments (DOE) used for establishing the surrogate.}
-\item{print()}{ this method presents the main information about the model.}
+\item{plot(mdfit,x)}{ this metod generates the plot for a new \eqn{\Theta}, \eqn{\Theta_D} (for model3 and model4),
+ \eqn{\sigma^2}. The parameter values need to be added to the model with the pipe \code{\%<\%}. The argument \code{x}
+ represents the x-axis and have to be specified to produce a plot.}
+\item{print(mdfit)}{ this method presents the main information about the model.}
 }
 }
 \description{
@@ -76,12 +76,12 @@ Yexp <- code(X,c(1,1,11))+rnorm(5,0,0.1)
 ### Generate the model
 model1 <- model(code,X,Yexp,"model1")
 ### Plot the results with the first column of X
-model1 \%+\% list(theta=c(1,1,11),var=0.01)
+model1 \%<\% list(theta=c(1,1,11),var=0.01)
 plot(model1,X[,1],CI="err")
 
 ### Summury of the foo class generated
 print(model1)
-#'
+
 ###### For the second model
 ### code function is available, no DOE generated upstream
 binf <- c(0.9,0.9,10.5)
@@ -91,7 +91,7 @@ opt.emul <- list(p=3,n.emul=150,binf=binf,bsup=bsup,type="maximinLHS")
 model2 <- model(code,X,Yexp,"model2",
                 opt.gp=opt.gp,
                 opt.emul=opt.emul)
-model2 \%+\% list(theta=c(1,1,11),var=0.1)
+model2 \%<\% list(theta=c(1,1,11),var=0.1)
 ### Plot the model
 plot(model2,X[,1])
 
@@ -102,7 +102,7 @@ DOE[,3:5] <- unscale(DOE[,3:5],binf,bsup)
 opt.gp <- list(type="matern5_2", DOE=DOE)
 model2 <- model(code,X,Yexp,"model2",
                 opt.gp=opt.gp)
-model2 \%+\% list(theta=c(1,1,11),var=0.1)
+model2 \%<\% list(theta=c(1,1,11),var=0.1)
 plot(model2,X[,1])
 
 ### no code function but DOE and code output available
@@ -119,12 +119,12 @@ opt.gp <- list(type="matern5_2", DOE=NULL)
 model2 <- model(code=NULL,X,Yexp,"model2",
                 opt.gp=opt.gp,
                 opt.sim=opt.sim)
-model2 \%+\% list(theta=c(1,1,11),var=0.1)
+model2 \%<\% list(theta=c(1,1,11),var=0.1)
 plot(model2,X[,1])
 
 ###### For the third model
 model3 <- model(code,X,Yexp,"model3",opt.disc=list(kernel.type="gauss"))
-model3 \%+\% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
+model3 \%<\% list(theta=c(1,1,11),thetaD=c(20,0.5),var=0.1)
 plot(model3,X[,1],CI="err")
 print(model3)
 
@@ -132,7 +132,7 @@ print(model3)
 
 }
 \seealso{
-\code{\link{prior}},\code{\link{calibrate}},\code{\link{prediction}}, \code{\link{kernel.fun}}
+\code{\link{prior}}, \code{\link{calibrate}}, \code{\link{forecast}}, \code{\link{sequentialDesign}}
 }
 \author{
 M. Carmassi

@@ -1,7 +1,8 @@
 #' Bayesian calibration for computational codes
 #'
-#' The CaliCo package provides three categories of important functions:
-#' \code{\link{model}}, \code{\link{prior}}, \code{\link{calibrate}} and \code{\link{prediction}}.
+#' The CaliCo package provides five main functions:
+#' \code{\link{model}}, \code{\link{prior}}, \code{\link{calibrate}}, \code{\link{forecast}} and
+#'  \code{\link{sequentialDesign}}.
 #'
 #' @useDynLib CaliCo
 #' @importFrom R6 R6Class

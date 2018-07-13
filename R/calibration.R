@@ -330,7 +330,7 @@ calibrate.class$set("public","plot",
                         dplot2  <- data.frame(data=self$output$out$THETA[-c(1:self$opt.estim$burnIn),i],
                                               type="posterior")
                         p3[[i]] <- self$pr[[i]]$plot()+geom_density(data=dplot2,kernel="gaussian",adjust=3,alpha=0.1)+
-                          xlab(NameParam)+theme(legend.text=element_text(size = '5'),
+                          xlab(NameParam)+theme(legend.text=element_text(size = '12'),
                                                 axis.text=element_text(size=12))+ylab("density")
                         if (i < (p+1))
                         {
@@ -564,7 +564,7 @@ calibrate.class$set("public","print",
                             print(paste(round(self$coverRate*100,2),"%",sep = ""))
                           } else
                           {
-                            cat("\nTo activate the cover rate, please desable the otion onlyCV")
+                            cat("\nTo activate the coverage rate, please desable the otion onlyCV")
                           }
 
                         }
