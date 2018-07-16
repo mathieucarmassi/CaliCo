@@ -362,17 +362,21 @@ forecast <-function(modelfit,x.new)
     md.new <- model(code = md$code, X = X, Yexp = md$Yexp, model = md$model, opt.gp= md$opt.gp,
                     opt.emul = md$opt.emul, opt.sim = md$opt.sim)
   }
-  l <- length(mdfit$output$MAP)
+  l <- length(modelfit$output$MAP)
   options(warn=-1)
   if (md$model %in% c("model1","model2"))
   {
-    md.new %<% list(theta=mdfit$output$MAP[-l],var=mdfit$output$MAP[l])
+    options(warn = -1)
+    md.new %<% list(theta=modelfit$output$MAP[-l],var=modelfit$output$MAP[l])
+    options(warn = 0)
   } else
   {
-    md.new %<% list(theta=mdfit$output$MAP[-((l-3):l)],thetaD=mdfit$output$MAP[((l-3):(l-2))],
-                    var=mdfit$output$MAP[l])
+    options(warn = -1)
+    md.new %<% list(theta=modelfit$output$MAP[-((l-3):l)],thetaD=modelfit$output$MAP[((l-3):(l-2))],
+                    var=modelfit$output$MAP[l])
+    options(warn = 0)
   }
-  fr <- forecast.class$new(modelfit,md.new,X.new)
+  fr <- forecast.class$new(modelfit,md.new,x.new)
   return(fr)
 }
 
