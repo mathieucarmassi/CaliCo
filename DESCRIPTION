@@ -16,7 +16,8 @@ Imports:
     MASS,
     coda,
     parallel,
-    testthat
+    gridExtra,
+    gtools
 RoxygenNote: 6.0.1
 Collate:
     'functions.R'

@@ -69,17 +69,28 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                            thetaTemp      <- thetaHat
                            for (i in 1:k)
                            {
-                             thetaHatNew  <- optim(self$doe.new[nrow(self$doe.new-1),(self$md$d+1):(self$md$d+self$p)],
-                                                   self$EI,k=i,method = "L-BFGS-B",lower=binf,upper=bsup)$par
-                             if (all(thetaHatNew == thetaTemp)) break
-                             thetaTemp    <- thetaHatNew
-                             y.new        <- self$Crit(self$doe.init,thetaHatNew)
-                             self$doe.new <- rbind(self$doe.new,y.new)
-                             z.new        <- c(z.new,md$code(as.matrix(t(y.new[1:self$md$d])),
-                                                             as.matrix(t(y.new[(self$md$d+1):(self$md$d+self$p)]))))
-                             self$GP.new  <- km(formula =~1, design=self$doe.new,
-                                                response = z.new,covtype = md$opt.gp$type)
-                             self$m       <- c(self$m[1:k],min(c(self$m[1:k],self$SS(thetaHatNew))))
+                             thetaHatNew  <- try(optim(self$doe.new[nrow(self$doe.new-1),(self$md$d+1):(self$md$d+self$p)],
+                                                 self$EI,k=i,method = "L-BFGS-B",lower=binf,upper=bsup)$par,silent = TRUE)
+                             if (all(thetaHatNew == thetaTemp))
+                             {
+                               break
+                             } else
+                             {
+                               if ("try-error" %in% class(thetaHatNew))
+                               {
+                                 break
+                               } else
+                               {
+                                 thetaTemp    <- thetaHatNew
+                                 y.new        <- self$Crit(self$doe.init,thetaHatNew)
+                                 self$doe.new <- rbind(self$doe.new,y.new)
+                                 z.new        <- c(z.new,md$code(as.matrix(t(y.new[1:self$md$d])),
+                                                                 as.matrix(t(y.new[(self$md$d+1):(self$md$d+self$p)]))))
+                                 self$GP.new  <- km(formula =~1, design=self$doe.new,
+                                                    response = z.new,covtype = md$opt.gp$type)
+                                 self$m       <- c(self$m[1:k],min(c(self$m[1:k],self$SS(thetaHatNew))))
+                               }
+                             }
                            }
                            cat("\n")
                            cat("======================================\n")

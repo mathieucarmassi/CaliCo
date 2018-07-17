@@ -60,8 +60,8 @@ list(c(1,0.01),c(1,0.01),c(11,3),c(2,0.1)))
 opt.estim=list(Ngibbs=200,Nmh=400,thetaInit=c(1,1,11,0.1),r=c(0.3,0.3),
 sig=diag(4),Nchains=1,burnIn=100)
 ###### Run the sequential calibration
-mdfit <- sequentialDesign(model2,pr,opt.estim,10)
-plot(mdfit,X[,1])
+mdfit <- sequentialDesign(model2,pr,opt.estim,2)
+#plot(mdfit,X[,1])
 }
 }
 \references{

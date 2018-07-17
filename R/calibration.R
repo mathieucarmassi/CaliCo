@@ -40,7 +40,6 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                              bsup       = NULL,
                              initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL,onlyCV)
                              {
-                               #library(parallel)
                                self$onlyCV <- onlyCV
                                self$md         <- md
                                self$pr         <- pr
@@ -71,6 +70,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                    self$q95     <- qq$q95
                                  } else
                                  {
+                                   cat("\nMultichain calibration is parallelized...\n\n")
                                    n            <- c(1:opt.estim$Nchains)
                                    self$output  <- mclapply(n,self$calibration,mc.cores = self$n.cores)
                                    self$mcmc    <- list()
@@ -83,6 +83,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                    qq             <- private$quantiles(chain)
                                    self$q05       <- qq$q05
                                    self$q95       <- qq$q95
+                                   self$mcmc      <- as.mcmc.list(self$mcmc)
                                  }
                                  cat("\nEnd of the regular calibration\n\n")
                                }
@@ -330,8 +331,9 @@ calibrate.class$set("public","plot",
                         dplot2  <- data.frame(data=self$output$out$THETA[-c(1:self$opt.estim$burnIn),i],
                                               type="posterior")
                         p3[[i]] <- self$pr[[i]]$plot()+geom_density(data=dplot2,kernel="gaussian",adjust=3,alpha=0.1)+
-                          xlab(NameParam)+theme(legend.text=element_text(size = '12'),
-                                                axis.text=element_text(size=12))+ylab("density")
+                          xlab(NameParam)+theme(legend.text=element_text(size = 10),
+                                                axis.text=element_text(size=20), axis.title = element_text(size=20))+
+                          ylab("density")
                         if (i < (p+1))
                         {
                           for (j in 1:p)

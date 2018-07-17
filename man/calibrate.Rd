@@ -4,7 +4,7 @@
 \alias{calibrate}
 \title{Generates \code{\link{calibrate.class}} objects}
 \usage{
-calibrate(md, pr, opt.estim, opt.valid = NULL, onlyCV = FALSE)
+calibrate(md, pr, opt.estim, opt.valid = NULL)
 }
 \arguments{
 \item{md}{a \code{\link{model.class}} object}
@@ -22,7 +22,7 @@ Metropolis within Gibbs}
 \item{burnIn}{ Number of iteration to withdraw}
 }}
 
-\item{opt.valid}{list of cross validation options (default value opt.valid=FALSE)\itemize{
+\item{opt.valid}{list of cross validation options (default value opt.valid=NULL)\itemize{
 \item{nCV}{ Number of iterations for the cross validation}
 \item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method
  emplemented so far.}
@@ -31,13 +31,14 @@ Metropolis within Gibbs}
 \value{
 \code{calibrate} returns a \code{\link{calibrate.class}} object. Two main methods are available:
 \itemize{\item{plot(mdfit, x, graph)}{ displays a series of graphs (ACF, MCMC, density a priori vs a posteriori
-, correlation between parameter, results on the quantify of interest) or return a list with all the graphs:}
+, correlation between parameters, results on the quantify of interest, etc..) or return a list with all
+the graphs:}
 \itemize{
 \item {mdfit}{ The calibrated model (a \code{\link{calibrate.class}} object)}
 \item {x}{ The x-axis}
-\item {graph}{ Allows to select the wanted display. By default all the serie of graphs are displayed and
-\code{graph="all"}. If \code{graph="chains"}, only the table of the autocorrelation, chains points and densities
- a priori and a posteriori is produced. If \code{graph="corr"}, only the table of the correlation graph between
+\item {graph}{ Allows to select the wanted display. By default all the layout pannel graphs are displayed and
+\code{graph="all"}. If \code{graph="chains"}, only the layout of the autocorrelation, chains points and densities
+ a priori and a posteriori is produced. If \code{graph="corr"}, only the layout of the correlation graph between
   each parameter is displayed. If \code{graph="result"}, only the result on the quantity of interest is given.
   If \code{graph=NULL}, no graphs are produced automatically.}}
 \item{print(mdfit)}{ returns the main information concerning the \code{\link{estim.class}} object}}

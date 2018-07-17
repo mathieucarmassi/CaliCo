@@ -16,33 +16,37 @@ model(code, X, Yexp, model = "model1", ...)
 \item{model}{string of the model chosen ("model1","model2","model3","model4")
 by default "model1" is chosen. See details for precisions.}
 
-\item{opt.gp}{is an option list containing the parameters to establish the surrogate. \itemize{
+\item{opt.gp}{is an option list containing the parameters to establish the surrogate (only for model2 and model4).
+\itemize{
 \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
 \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
 generated with the \strong{opt.emul} option.}}
 }}
 
-\item{opt.emul}{is an option list containing characteristics about emulation option. \itemize{
+\item{opt.emul}{is an option list containing characteristics about emulation option (only for model2 and model4).
+\itemize{
 \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
 \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
 \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
 \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}}}
 
-\item{opt.sim}{is an option list containing the design and corresponding outputs of the code \itemize{
+\item{opt.sim}{is an option list containing the design and corresponding outputs of the code, in the case
+where no numerical code is available (only for model2 and model4).\itemize{
 \item{\strong{Ysim}}{ Output of the code}
 \item{\strong{DOEsim}}{ DOE corresponding to the output of the code}}}
 
-\item{opt.disc}{is an option list containing characteristics on the discrepancy \itemize{
+\item{opt.disc}{is an option list containing characteristics on the discrepancy (only for model3 and model4)
+\itemize{
 \item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
 }}
 }
 \value{
 \code{model} returns a \code{model.class} object. This class contains two main methods:
 \itemize{
-\item{plot(mdfit,x)}{ this metod generates the plot for a new \eqn{\Theta}, \eqn{\Theta_D} (for model3 and model4),
+\item{plot(model,x)}{ this metod generates the plot for a new \eqn{\Theta}, \eqn{\Theta_D} (for model3 and model4),
  \eqn{\sigma^2}. The parameter values need to be added to the model with the pipe \code{\%<\%}. The argument \code{x}
  represents the x-axis and have to be specified to produce a plot.}
-\item{print(mdfit)}{ this method presents the main information about the model.}
+\item{print(model)}{ this method presents several pieces of information about the model.}
 }
 }
 \description{
@@ -130,6 +134,10 @@ print(model3)
 
 }
 
+}
+\references{
+[1] CARMASSI, Mathieu, BARBILLON, Pierre, KELLER, Merlin, et al. Bayesian calibration of
+ a numerical code for prediction. arXiv preprint arXiv:1801.01810, 2018.
 }
 \seealso{
 \code{\link{prior}}, \code{\link{calibrate}}, \code{\link{forecast}}, \code{\link{sequentialDesign}}

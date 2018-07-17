@@ -71,9 +71,9 @@ model.class <- R6Class(classname = "model.class",
                      return(theme(legend.title = element_blank(),
                                   legend.position = c(0.2,0.8),
                                   legend.background = element_rect(linetype="solid", colour ="grey"),
-                                  axis.title=element_text(size=30,family = "Helvetica",face = "italic"),
+                                  axis.title=element_text(size=20,family = "Helvetica",face = "italic"),
                                   axis.text = element_text(size=20),
-                                  legend.text = element_text(size=20)))
+                                  legend.text = element_text(size=10)))
                    }
                  ))
 

@@ -21,31 +21,37 @@
 #' @param Yexp the vector of the experiments
 #' @param model string of the model chosen ("model1","model2","model3","model4")
 #' by default "model1" is chosen. See details for precisions.
-#' @param opt.gp is an option list containing the parameters to establish the surrogate. \itemize{
+#' @param opt.gp is an option list containing the parameters to establish the surrogate (only for model2 and model4).
+#' \itemize{
 #' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
 #' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
 #' generated with the \strong{opt.emul} option.}}
 #' }
-#' @param opt.emul is an option list containing characteristics about emulation option. \itemize{
+#' @param opt.emul is an option list containing characteristics about emulation option (only for model2 and model4).
+#' \itemize{
 #' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
 #' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
 #' \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
 #' \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}}
-#' @param opt.sim is an option list containing the design and corresponding outputs of the code \itemize{
+#' @param opt.sim is an option list containing the design and corresponding outputs of the code, in the case
+#' where no numerical code is available (only for model2 and model4).\itemize{
 #' \item{\strong{Ysim}}{ Output of the code}
 #' \item{\strong{DOEsim}}{ DOE corresponding to the output of the code}}
-#' @param opt.disc is an option list containing characteristics on the discrepancy \itemize{
+#' @param opt.disc is an option list containing characteristics on the discrepancy (only for model3 and model4)
+#' \itemize{
 #' \item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
 #' }
 #' @return \code{model} returns a \code{model.class} object. This class contains two main methods:
 #' \itemize{
-#' \item{plot(mdfit,x)}{ this metod generates the plot for a new \eqn{\Theta}, \eqn{\Theta_D} (for model3 and model4),
+#' \item{plot(model,x)}{ this metod generates the plot for a new \eqn{\Theta}, \eqn{\Theta_D} (for model3 and model4),
 #'  \eqn{\sigma^2}. The parameter values need to be added to the model with the pipe \code{\%<\%}. The argument \code{x}
 #'  represents the x-axis and have to be specified to produce a plot.}
-#' \item{print(mdfit)}{ this method presents the main information about the model.}
+#' \item{print(model)}{ this method presents several pieces of information about the model.}
 #' }
 #' @author M. Carmassi
 #' @seealso \code{\link{prior}}, \code{\link{calibrate}}, \code{\link{forecast}}, \code{\link{sequentialDesign}}
+#' @references [1] CARMASSI, Mathieu, BARBILLON, Pierre, KELLER, Merlin, et al. Bayesian calibration of
+#'  a numerical code for prediction. arXiv preprint arXiv:1801.01810, 2018.
 #' @examples
 #' \dontrun{
 #' ###### The code to calibrate
@@ -163,7 +169,6 @@ model <- function(code,X,Yexp,model="model1",...)
 #' @param  type.prior the vector of the prior types selected. For example type.prior=c("gaussian","gamma")
 #' @param opt.prior list of the hyperparameters relatives to the prior selected. If the first prior selected is
 #' Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.
-#' @param log (default=TRUE) if the log value is wanted or not.
 #' @return \code{prior} returns a \code{\link{prior.class}} object. Two main methods are available:
 #' \itemize{\item{plot()}{ display the probability density of the prior}
 #' \item{print()}{ returns the main information concerning the prior distribution}}
@@ -196,10 +201,6 @@ prior <- function(type.prior,opt.prior)
              obj = gamma.class$new(type.prior,opt.prior)
              return(obj)
            },
-           invGamma={
-             obj = invGamma.class$new(type.prior,opt.prior)
-             return(obj)
-           },
            unif={
              obj = unif.class$new(type.prior,opt.prior)
              return(obj)
@@ -218,9 +219,6 @@ prior <- function(type.prior,opt.prior)
              },
              gamma={
                obj = gamma.class$new(type.prior[i],opt.prior[[i]])
-             },
-             invGamma={
-               obj = invGamma.class$new(type.prior[i],opt.prior[[i]])
              },
              unif={
                obj = unif.class$new(type.prior[i],opt.prior[[i]])
@@ -254,20 +252,21 @@ prior <- function(type.prior,opt.prior)
 #'  is a \code{\link{coda}} object)}
 #' \item{burnIn}{ Number of iteration to withdraw}
 #' }
-#' @param opt.valid list of cross validation options (default value opt.valid=FALSE)\itemize{
+#' @param opt.valid list of cross validation options (default value opt.valid=NULL)\itemize{
 #' \item{nCV}{ Number of iterations for the cross validation}
 #' \item{type.valid}{ Type of cross validation selected. "loo" (leave one out) is the only method
 #'  emplemented so far.}
 #' }
 #' @return \code{calibrate} returns a \code{\link{calibrate.class}} object. Two main methods are available:
 #' \itemize{\item{plot(mdfit, x, graph)}{ displays a series of graphs (ACF, MCMC, density a priori vs a posteriori
-#' , correlation between parameter, results on the quantify of interest) or return a list with all the graphs:}
+#' , correlation between parameters, results on the quantify of interest, etc..) or return a list with all
+#' the graphs:}
 #' \itemize{
 #' \item {mdfit}{ The calibrated model (a \code{\link{calibrate.class}} object)}
 #' \item {x}{ The x-axis}
-#' \item {graph}{ Allows to select the wanted display. By default all the serie of graphs are displayed and
-#' \code{graph="all"}. If \code{graph="chains"}, only the table of the autocorrelation, chains points and densities
-#'  a priori and a posteriori is produced. If \code{graph="corr"}, only the table of the correlation graph between
+#' \item {graph}{ Allows to select the wanted display. By default all the layout pannel graphs are displayed and
+#' \code{graph="all"}. If \code{graph="chains"}, only the layout of the autocorrelation, chains points and densities
+#'  a priori and a posteriori is produced. If \code{graph="corr"}, only the layout of the correlation graph between
 #'   each parameter is displayed. If \code{graph="result"}, only the result on the quantity of interest is given.
 #'   If \code{graph=NULL}, no graphs are produced automatically.}}
 #' \item{print(mdfit)}{ returns the main information concerning the \code{\link{estim.class}} object}}
@@ -300,9 +299,9 @@ prior <- function(type.prior,opt.prior)
 #' print(mdfit)
 #'}
 #' @export
-calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
+calibrate <-function(md,pr,opt.estim,opt.valid=NULL)
 {
-  res <- calibrate.class$new(md,pr,opt.estim,opt.valid,onlyCV)
+  res <- calibrate.class$new(md,pr,opt.estim,opt.valid,onlyCV=FALSE)
   return(res)
 }
 
@@ -311,7 +310,7 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' \code{forecast} is a function that allows to generate a new \code{\link{model.class}} in which the prediction is
 #' done with the Maximum A Posteriori
 #'
-#' Note that all the method for a \code{\link{model.class}} object are availble. Be careful with the \code{x} in the
+#' Note that all the methods for a \code{\link{model.class}} object are availble. Be careful with the \code{x} in the
 #'  plot function. It needs to be the x-axis of calibrated data and predicted data.
 #'
 #' @useDynLib CaliCo
@@ -351,19 +350,23 @@ calibrate <-function(md,pr,opt.estim,opt.valid=NULL,onlyCV=FALSE)
 #' @export
 forecast <-function(modelfit,x.new)
 {
-  md <- modelfit$md
+  if ("seqDesign.class" %in% class(modelfit))
+  {
+   md <- modelfit$md.new
+   modelfit <- modelfit$mdfit.new
+  } else md <- modelfit$md
+
   if (is.matrix(x.new)) X <- rbind(md$X,x.new)
   else X <- c(md$X,x.new)
   if (md$model %in% c("model1", "model3"))
   {
-    md.new <- model(code = md$code, X = X, Yexp = md$Yexp, model = md$model)
+    md.new <- model(code = md$code, X = X, Yexp = md$Yexp, model = md$model,opt.disc=md$opt.disc)
   } else
   {
-    md.new <- model(code = md$code, X = X, Yexp = md$Yexp, model = md$model, opt.gp= md$opt.gp,
+    md.new <- model(code = md$code, X = X, Yexp = md$Yexp, model = md$model,opt.disc=md$opt.dis, opt.gp= md$opt.gp,
                     opt.emul = md$opt.emul, opt.sim = md$opt.sim)
   }
   l <- length(modelfit$output$MAP)
-  options(warn=-1)
   if (md$model %in% c("model1","model2"))
   {
     options(warn = -1)
@@ -372,7 +375,7 @@ forecast <-function(modelfit,x.new)
   } else
   {
     options(warn = -1)
-    md.new %<% list(theta=modelfit$output$MAP[-((l-3):l)],thetaD=modelfit$output$MAP[((l-3):(l-2))],
+    md.new %<% list(theta=modelfit$output$MAP[-((l-2):l)],thetaD=modelfit$output$MAP[((l-2):(l-1))],
                     var=modelfit$output$MAP[l])
     options(warn = 0)
   }
@@ -430,8 +433,8 @@ forecast <-function(modelfit,x.new)
 #' opt.estim=list(Ngibbs=200,Nmh=400,thetaInit=c(1,1,11,0.1),r=c(0.3,0.3),
 #' sig=diag(4),Nchains=1,burnIn=100)
 #' ###### Run the sequential calibration
-#' mdfit <- sequentialDesign(model2,pr,opt.estim,10)
-#' plot(mdfit,X[,1])
+#' mdfit <- sequentialDesign(model2,pr,opt.estim,2)
+#' #plot(mdfit,X[,1])
 #' }
 #' @references DAMBLIN, Guillaume, BARBILLON, Pierre, KELLER, Merlin, et al. Adaptive numerical designs for the
 #'  calibration of computer codes. SIAM/ASA Journal on Uncertainty Quantification, 2018, vol. 6, no 1, p. 151-179.
@@ -495,7 +498,9 @@ estimators <-function(modelfit)
 #' @useDynLib CaliCo
 #'
 #' @param modelfit a \code{\link{calibrate.class}} object
-#' @return return a \code{data.frame} of the MCMC chain generated
+#' @param coda if TRUE returns a \code{\link{coda}} object (if Nchains in opt.estim is higher than 1 a \code{\link{coda}} object
+#'  is automatically retuned)
+#' @return return a \code{data.frame} or a \code{\link{coda}} object of the MCMC chain(s) generated.
 #' @author M. Carmassi
 #' @seealso \code{\link{model}}, \code{\link{prior}}, \code{\link{calibrate}}, \code{\link{sequentialDesign}}
 #' @examples
@@ -520,26 +525,49 @@ estimators <-function(modelfit)
 #' ###### Run the calibration
 #' mdfit <- calibrate(md,pr,opt.estim)
 #'
-#' samplePost <- chain(mdfit)
-#' head(samplePost)
+#' mcmc <- chain(mdfit)
+#' ### Check coda object
+#' is.mcmc(mcmc)
+#' ### get all the chain
+#' mcmc <- chain(mdfit,coda=FALSE)
+#' head(mcmc)
+#'
+#' ### Multi chains
+#' opt.estim=list(Ngibbs=200,Nmh=600,thetaInit=c(1,1,11,0.1),r=c(0.3,0.3),
+#' sig=diag(4),Nchains=2,burnIn=100)
+#' ###### Run the calibration
+#' mdfit2 <- calibrate(md,pr,opt.estim)
+#'
+#' mcmc <- chain(mdfit2)
+#' is.mcmc.list(mcmc)
 #' }
 #' @export
-chain <-function(modelfit)
+chain <-function(modelfit,coda=TRUE)
 {
-  cc <- modelfit$output$out$THETA[-c(1:modelfit$opt.estim$burnIn),]
-  L <- ncol(cc)
-  if (modelfit$md$model %in% c("model1", "model2")){
-    p <- L-1
-    Names <- NULL
-    for (i in 1:p) Names <- c(Names,paste("theta",i,sep="_"))
-    Names <- c(Names,"Var")
-  } else {
-    p <- L-3
-    for (i in 1:p) Names <- c(Names,paste("theta",i,sep="_"))
-    Names <- c(Names,"sigD","psiD","Var")
+  if (modelfit$opt.estim$Nchain == 1)
+  {
+    if (coda == TRUE) return(modelfit$mcmc)
+    else
+    {
+      cc <- modelfit$output$out$THETA[-c(1:modelfit$opt.estim$burnIn),]
+      L <- ncol(cc)
+      if (modelfit$md$model %in% c("model1", "model2")){
+        p <- L-1
+        Names <- NULL
+        for (i in 1:p) Names <- c(Names,paste("theta",i,sep="_"))
+        Names <- c(Names,"Var")
+      } else {
+        p <- L-3
+        for (i in 1:p) Names <- c(Names,paste("theta",i,sep="_"))
+        Names <- c(Names,"sigD","psiD","Var")
+      }
+      colnames(cc) <- Names
+      return(as.data.frame(cc))
+    }
+  } else
+  {
+    return(modelfit$mcmc)
   }
-  colnames(cc) <- Names
-  return(as.data.frame(cc))
 }
 
 

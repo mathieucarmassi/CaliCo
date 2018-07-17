@@ -4,13 +4,16 @@
 \alias{chain}
 \title{Return the MCMC chain in a \code{data.frame}}
 \usage{
-chain(modelfit)
+chain(modelfit, coda = TRUE)
 }
 \arguments{
 \item{modelfit}{a \code{\link{calibrate.class}} object}
+
+\item{coda}{if TRUE returns a \code{\link{coda}} object (if Nchains in opt.estim is higher than 1 a \code{\link{coda}} object
+is automatically retuned)}
 }
 \value{
-return a \code{data.frame} of the MCMC chain generated
+return a \code{data.frame} or a \code{\link{coda}} object of the MCMC chain(s) generated.
 }
 \description{
 \code{chain} is a function that returns a \code{data.frame} of calibration run without the burn-in
@@ -37,8 +40,21 @@ sig=diag(4),Nchains=1,burnIn=100)
 ###### Run the calibration
 mdfit <- calibrate(md,pr,opt.estim)
 
-samplePost <- chain(mdfit)
-head(samplePost)
+mcmc <- chain(mdfit)
+### Check coda object
+is.mcmc(mcmc)
+### get all the chain
+mcmc <- chain(mdfit,coda=FALSE)
+head(mcmc)
+
+### Multi chains
+opt.estim=list(Ngibbs=200,Nmh=600,thetaInit=c(1,1,11,0.1),r=c(0.3,0.3),
+sig=diag(4),Nchains=2,burnIn=100)
+###### Run the calibration
+mdfit2 <- calibrate(md,pr,opt.estim)
+
+mcmc <- chain(mdfit2)
+is.mcmc.list(mcmc)
 }
 }
 \seealso{

@@ -43,6 +43,8 @@ forecast.class <- R6Class(classname = "forecast.class",
                                   df  <- self$md.new$model.fun(self$md.new$theta,self$md.new$thetaD,
                                                                self$md.new$var)
                                }
+                               if (missing(x)) stop("x is missing, no graph is displayed",call. = FALSE)
+                               else df$x <- x
                                df1      <- df[1:(nrow(df)-l),]
                                df2      <- df[(nrow(df)-l+1):nrow(df),]
                                df1$type <- "calibrated code"
@@ -51,28 +53,38 @@ forecast.class <- R6Class(classname = "forecast.class",
                                for (i in 1:l) Names <- c(Names,paste(i+nrow(df)-l))
                                rownames(df2) <- Names
                                df       <- rbind(df1,df2)
-                               if (missing(x)) stop("x is missing, no graph is displayed",call. = FALSE)
-                               else df$x <- x
-                               if (self$md.new$model %in% c("model1","model2"))
+                               if (self$md.new$model %in% c("model1","model3"))
                                {
                                  p <- ggplot(df, aes(x=x,y=y,color=type))+ theme_light() + xlab("") + ylab("")+
                                  self$md.new$gglegend() + geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
                                                                       alpha=0.4,linetype=1,
                                                                       colour="skyblue3",size=0.5)+
-                                   scale_fill_manual(values = adjustcolor("skyblue3")) + geom_line()
+                                   scale_fill_manual(values = adjustcolor("skyblue3")) + geom_line()+
+                                   scale_color_manual(values=c("red", "blue"))
                                } else
                                {
-                                 p <- ggplot(df, aes(x=x,y=y,color=type))+ theme_light() + xlab("") + ylab("")+
-                                   geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
+                                 df$fillGP <- "CI 95% GP"
+                                 if (self$md.new$model == "model4")
+                                 {
+                                   col <- c("skyblue3","grey70")
+                                   Alpha <- c(0.8,0.3)
+                                   df$fillE <- "CI 95% discrepancy + noise"
+                                 }else
+                                 {
+                                   col <- c("grey70","skyblue3")
+                                   Alpha <- c(0.3,0.8)
+                                   df$fillE <- "CI 95% noise"
+                                 }
+                                 p <- ggplot(df, aes(x=x,y=y))+
+                                   geom_ribbon(mapping = aes(x=x,ymin=q025n,ymax=q975n,fill=fillE),
                                                alpha=0.8,linetype="twodash",colour="#999999",size=0.7)+
-                                   geom_ribbon(data=df2,mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
+                                   geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fillGP),
                                                alpha=0.3,linetype="dotted",colour="#999999",size=0.7)+
-                                   geom_line(mapping = aes(x=x,y=y, color=type))+
+                                   geom_line(mapping = aes(color=type))+
                                    scale_fill_manual(name = NULL,values = adjustcolor(col,alpha.f = 0.3))+
-                                   guides(fill = guide_legend(override.aes = list(alpha = Alpha)),
-                                          colour= guide_legend(override.aes = list(colour = col)))+
-                                   scale_color_manual(values=c("red", "#000000"))
-                               }
+                                   guides(fill = guide_legend(override.aes = list(alpha = Alpha)))+
+                                   self$md.new$gglegend()+scale_color_manual(values=c("red", "blue"))
+                                 }
                                return(p)
                              }
                             ))

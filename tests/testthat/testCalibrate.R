@@ -4,14 +4,14 @@ Yexp <- code(x,1)
 md1 <- model(code = code, X=x,Yexp = Yexp,model = "model1")
 binf <- 0.5
 bsup <- 1.5
-opt.emul <- list(p=1,n.emul=10,type="matern5_2",binf=binf,bsup=bsup,DOE=NULL)
-md2 <- model(code = code, X=x,Yexp = Yexp,model = "model2",opt.emul = opt.emul)
+opt.gp=list(type="matern5_2", DOE=NULL)
+opt.emul=list(p=1,n.emul=10,binf=binf,bsup=bsup,type="maximinLHS")
+md2 <- model(code,X,Yexp,"model2",opt.gp=opt.gp,opt.emul=opt.emul)
 opt.disc=list(kernel.type="matern5_2")
 md3 <- model(code = code, X=x,Yexp = Yexp,model = "model3",opt.disc = opt.disc)
-md4 <- model(code = code, X=x,Yexp = Yexp,model = "model3",opt.disc = opt.disc,opt.emul = opt.emul)
+md4 <- model(code = code, X=x,Yexp = Yexp,model = "model4",opt.disc = opt.disc,opt.gp = opt.gp,opt.emul = opt.emul)
 pr1 <- prior(type.prior=c("gaussian","gamma"),opt.prior=list(c(1,0.01),c(1,0.01)))
 pr2 <- prior(type.prior=c("gaussian","unif","gamma","gamma"),opt.prior=list(c(1,0.01),c(0,1),c(2,0.1),c(1,0.01)))
-
 #calibrate testing
 opt.estim1=list(Ngibbs=200,Nmh=600,thetaInit=c(1,0.01),r=c(0.1,0.1),sig=diag(2),Nchains=1,burnIn=300)
 opt.estim2=list(Ngibbs=200,Nmh=600,thetaInit=c(1,0.5,0.01,0.01),r=c(0.1,0.1),sig=diag(4),Nchains=1,burnIn=300)

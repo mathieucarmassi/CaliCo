@@ -19,7 +19,7 @@ return a \code{\link{model.class}} (see \code{\link{model.class}} for more detai
 done with the Maximum A Posteriori
 }
 \details{
-Note that all the method for a \code{\link{model.class}} object are availble. Be careful with the \code{x} in the
+Note that all the methods for a \code{\link{model.class}} object are availble. Be careful with the \code{x} in the
  plot function. It needs to be the x-axis of calibrated data and predicted data.
 }
 \examples{
