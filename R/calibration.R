@@ -496,7 +496,7 @@ calibrate.class$set("public","outputPlot",
                         }
                         qqd <- apply(Dist2,2,quantile,probs=c(0.05,0.95))
                         ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qqd[2,],lower=qqd[1,],type="experiments",
-                                            fill="90% credibility interval for the discrepancy")
+                                            fill="95% credibility interval for the discrepancy")
                       }
                       qq <- apply(Dist,2,quantile,probs=c(0.05,0.95))
                       if (self$md$model=="model1"||self$md$model=="model2")
@@ -511,11 +511,11 @@ calibrate.class$set("public","outputPlot",
                         Ys <- self$md$model.fun(MAP[1:p],MAP[(p+1):(p+2)],MAP[p+3])$y
                       }
                       ggdata <- data.frame(y=Ys,x=X,upper=qq[2,],lower=qq[1,],type="calibrated",
-                                           fill="90% credibility interval a posteriori")
+                                           fill="95% credibility interval a posteriori")
                       if (self$md$model == "model1" || self$md$model == "model2")
                       {
                         ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qq[2,],lower=qq[1,],type="experiments",
-                                              fill="90% credibility interval a posteriori")
+                                              fill="95% credibility interval a posteriori")
                       }
                       ggdata <- rbind(ggdata,ggdata2)
                       p <- ggplot(ggdata) + geom_line(aes(x=x,y=y,color=type))+

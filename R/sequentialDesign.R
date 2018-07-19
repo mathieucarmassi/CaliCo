@@ -156,40 +156,89 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                        ))
 
 seqDesign.class$set("public","plot",
-                    function(x,...)
+                    function(x,graph="all",...)
                     {
-                      if (self$p != 1)
+                      res <- list()
+                      if (graph == FALSE)
                       {
-                        n        <- combinations(n=self$p,r=2,repeats=FALSE)
-                        p        <- list()
-                        for (i in 1:nrow(n))
+                        if (self$p != 1)
                         {
-                          label1 <- n[i,1]
-                          label2 <- n[i,2]
-                          ind1   <- n[i,1]+self$md$d
-                          ind2   <- n[i,2]+self$md$d
-                          df     <- data.frame(x=self$doe.init[,ind1],y=self$doe.init[,ind2],col="Initial DOE")
-                          df2    <- data.frame(x=self$doe.new[-c(1:nrow(self$doe.init)),ind1],
-                                            y=self$doe.new[-c(1:nrow(self$doe.init)),ind2],col="Additional points")
-                          df     <- rbind(df,df2)
-                          p[[i]] <- ggplot(df, aes(x = x,y = y, color=col)) + geom_point(shape=3) + theme_light() +
-                            xlab(substitute(theta[label1])) + ylab(substitute(theta[label2])) +
-                            theme(legend.title = element_blank(),legend.position = c(0.2,0.8),
-                                  legend.background = element_rect(linetype="solid", colour ="grey"))
+                          n        <- combinations(n=self$p,r=2,repeats=FALSE)
+                          p        <- list()
+                          for (i in 1:nrow(n))
+                          {
+                            label1 <- n[i,1]
+                            label2 <- n[i,2]
+                            ind1   <- n[i,1]+self$md$d
+                            ind2   <- n[i,2]+self$md$d
+                            df     <- data.frame(x=self$doe.init[,ind1],y=self$doe.init[,ind2],col="Initial DOE")
+                            df2    <- data.frame(x=self$doe.new[-c(1:nrow(self$doe.init)),ind1],
+                                                 y=self$doe.new[-c(1:nrow(self$doe.init)),ind2],col="Additional points")
+                            df     <- rbind(df,df2)
+                            p[[i]] <- ggplot(df, aes(x = x,y = y, color=col)) + geom_point(shape=3) + theme_light() +
+                              xlab(substitute(theta[label1])) + ylab(substitute(theta[label2])) +
+                              theme(legend.title = element_blank(),legend.position = c(0.2,0.8),
+                                    legend.background = element_rect(linetype="solid", colour ="grey"))
+                          }
+                          res$doe <- p
+                          t1     <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
+                          t2     <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
+                          res$res <- list(t1,t2)
+                        } else
+                        {
+                          t1       <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
+                          t2       <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
+                          res$res <- list(t1,t2)
                         }
-                        grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
-                        do.call(grid.arrange2,p)
-                        t1     <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
-                        t2     <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
-                        grid.arrange2(t1,t2)
-                        invisible(p)
                       } else
                       {
-                        grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
-                        t1       <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
-                        t2       <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
-                        grid.arrange2(t1,t2)
+                        if (graph == "all") graph = c("doe","results")
+                        if (self$p != 1)
+                        {
+                          if ("doe" %in% graph)
+                          {
+                            n        <- combinations(n=self$p,r=2,repeats=FALSE)
+                            p        <- list()
+                            for (i in 1:nrow(n))
+                            {
+                              label1 <- n[i,1]
+                              label2 <- n[i,2]
+                              ind1   <- n[i,1]+self$md$d
+                              ind2   <- n[i,2]+self$md$d
+                              df     <- data.frame(x=self$doe.init[,ind1],y=self$doe.init[,ind2],col="Initial DOE")
+                              df2    <- data.frame(x=self$doe.new[-c(1:nrow(self$doe.init)),ind1],
+                                                   y=self$doe.new[-c(1:nrow(self$doe.init)),ind2],col="Additional points")
+                              df     <- rbind(df,df2)
+                              p[[i]] <- ggplot(df, aes(x = x,y = y, color=col)) + geom_point(shape=3) + theme_light() +
+                                xlab(substitute(theta[label1])) + ylab(substitute(theta[label2])) +
+                                theme(legend.title = element_blank(),legend.position = c(0.2,0.8),
+                                      legend.background = element_rect(linetype="solid", colour ="grey"))
+                            }
+                            grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
+                            do.call(grid.arrange2,p)
+                            res$doe <- p
+                          }
+                          if ("results" %in% graph)
+                          {
+                            grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
+                            t1     <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
+                            t2     <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
+                            grid.arrange2(t1,t2)
+                            res$res <- list(t1,t2)
+                          }
+                        } else
+                        {
+                          if ("results" %in% graph)
+                          {
+                            grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
+                            t1       <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
+                            t2       <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
+                            grid.arrange2(t1,t2)
+                            res$res <- list(t1,t2)
+                          }
+                        }
                       }
+                      invisible(res)
                     }
 )
 
