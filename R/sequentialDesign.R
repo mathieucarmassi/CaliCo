@@ -32,6 +32,7 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                          md.new    = NULL,
                          mdfit     = NULL,
                          mdfit.new = NULL,
+                         optimGrid = NULL,
                          X         = NULL,
                          m         = NULL,
                          initialize = function(md = NA,pr = NA,opt.estim = NA,k = NA)
@@ -54,9 +55,10 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                            binf           <- apply(self$doe.init,2,min)[(self$md$d+1):(self$md$d+self$p)]
                            bsup           <- apply(self$doe.init,2,max)[(self$md$d+1):(self$md$d+self$p)]
                            self$mdfit     <- calibrate(md,pr,opt.estim)
-                           thetaHat       <- apply(self$mdfit$output$out$THETA[-c(1:opt.estim$burnIn),],2,mean)[1:self$p]
+                           ### get the maximum a posteriori
+                           thetaHat       <- estimators(self$mdfit)$MAP[1:self$p]
                            ### find the x* from Crit function
-                           y.new          <- self$Crit(self$doe.init,thetaHat)
+                           y.new          <- self$Crit(thetaHat)
                            self$doe.new   <- rbind(self$doe.init,y.new)
                            ## Update the new DOE GP with the new doe
                            z.new          <- c(md$z,md$code(as.matrix(t(y.new[1:self$md$d])),
@@ -69,27 +71,27 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                            thetaTemp      <- thetaHat
                            for (i in 1:k)
                            {
-                             thetaHatNew  <- try(optim(self$doe.new[nrow(self$doe.new-1),(self$md$d+1):(self$md$d+self$p)],
-                                                 self$EI,k=i,method = "L-BFGS-B",lower=binf,upper=bsup)$par,silent = TRUE)
+                             self$optimGrid <- unscale(maximinSA_LHS(lhsDesign(100*self$p,self$p)$design)$design,binf,bsup)
+                             EIparallel <- function(i)
+                             {
+                               return(self$EI(self$optimGrid[i,]))
+                             }
+                             EIvector  <- unlist(mclapply(c(1:(100*self$p)),EIparallel,mc.cores = detectCores()))
+                             if (all(EIvector == 0)) break
+                             thetaHatNew  <- self$optimGrid[which(EIvector==max(EIvector)),]
                              if (all(thetaHatNew == thetaTemp))
                              {
                                break
                              } else
                              {
-                               if ("try-error" %in% class(thetaHatNew))
-                               {
-                                 break
-                               } else
-                               {
-                                 thetaTemp    <- thetaHatNew
-                                 y.new        <- self$Crit(self$doe.init,thetaHatNew)
-                                 self$doe.new <- rbind(self$doe.new,y.new)
-                                 z.new        <- c(z.new,md$code(as.matrix(t(y.new[1:self$md$d])),
-                                                                 as.matrix(t(y.new[(self$md$d+1):(self$md$d+self$p)]))))
-                                 self$GP.new  <- km(formula =~1, design=self$doe.new,
-                                                    response = z.new,covtype = md$opt.gp$type)
-                                 self$m       <- c(self$m[1:k],min(c(self$m[1:k],self$SS(thetaHatNew))))
-                               }
+                               thetaTemp    <- thetaHatNew
+                               y.new        <- self$Crit(thetaHatNew)
+                               self$doe.new <- rbind(self$doe.new,y.new)
+                               z.new        <- c(z.new,md$code(as.matrix(t(y.new[1:self$md$d])),
+                                                               as.matrix(t(y.new[(self$md$d+1):(self$md$d+self$p)]))))
+                               self$GP.new  <- km(formula =~1, design=self$doe.new,
+                                                  response = z.new,covtype = md$opt.gp$type)
+                               self$m       <- c(self$m[1:k],min(c(self$m[1:k],self$SS(thetaHatNew))))
                              }
                            }
                            cat("\n")
@@ -110,17 +112,17 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                            self$mdfit.new <- calibrate(md = self$md.new,pr=pr, opt.estim = opt.estim)
                            invisible(list(md=self$md.new,mdfit=self$mdfit.new))
                          },
-                         Crit = function(x,theta)
+                         Crit = function(theta)
                          {
-                           cov <- NULL
-                           for (i in 1:nrow(self$doe.init))
+                           cov <- numeric(nrow(self$md$X))
+                           for (i in 1:nrow(self$md$X))
                            {
-                             newD <- c(x[i,1:self$md$d],theta)
+                             newD <- c(self$md$X[i,],theta)
                              pr   <- predict(self$GP.init,newdata=as.data.frame(t(newD)),type="UK",
-                                           cov.compute=TRUE,interval="confidence",checkNames=FALSE)
-                             cov  <- rbind(cov,pr$cov)
+                                             interval="confidence",checkNames=FALSE)
+                             cov[i]  <- pr$sd
                            }
-                           return(c(self$doe.init[which(cov==max(cov)),1:self$md$d],theta))
+                           return(c(self$md$X[which(cov==max(cov)),],theta))
                          },
                          fun.new = function(X,theta)
                          {
@@ -135,44 +137,44 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                              new.design <- cbind(X,t(replicate(nrow(X),theta)))
                            }
                            pr           <- predict(self$GP.new, newdata=new.design,type="UK",
-                                                 checkNames=FALSE,cov.compute=TRUE)
+                                                   checkNames=FALSE,cov.compute=TRUE)
                            return(pr)
                          },
                          SS = function(theta)
                          {
-                           y <- self$fun.new(X,theta)$mean
-                           return(sqrt(abs(self$md$Yexp-y)^2))
+                           y <- self$fun.new(self$md$X,theta)$mean
+                           return(sum((self$md$Yexp-y)^2))
                          },
                          EI = function(theta, k=1)
                          {
-                           pr   <- self$fun.new(X,theta)
-                           mean <- pr$mean
-                           var  <- abs(pr$cov)
-                           S    <- rnorm(10000,mean,var)
-                           ind  <- which(S>self$m[k])
-                           S    <- S[ind]
-                           SSk  <- sum(S)/10000
-                           return(-(self$m[k]-SSk))
+                           pr   <- self$fun.new(self$md$X,theta)
+                           S    <- mvrnorm(10000,pr$mean,pr$cov)
+                           y    <- matrix(self$md$Yexp,nrow=10000,ncol = length(self$md$Yexp),byrow = TRUE)
+                           SSsim <- rowSums((y-S)^2)
+                           return(mean(apply(cbind(self$m[k]-SSsim,0),1,max)))
                          }
                        ))
 
 seqDesign.class$set("public","plot",
                     function(x,...)
                     {
+                      browser()
                       if (self$p != 1)
                       {
                         n        <- combinations(n=self$p,r=2,repeats=FALSE)
                         p        <- list()
                         for (i in 1:nrow(n))
                         {
-                          ind1   <- n[i,1]
-                          ind2   <- n[i,2]
+                          label1 <- n[i,1]
+                          label2 <- n[i,2]
+                          ind1   <- n[i,1]+self$md$d
+                          ind2   <- n[i,2]+self$md$d
                           df     <- data.frame(x=self$doe.init[,ind1],y=self$doe.init[,ind2],col="Initial DOE")
                           df2    <- data.frame(x=self$doe.new[-c(1:nrow(self$doe.init)),ind1],
                                             y=self$doe.new[-c(1:nrow(self$doe.init)),ind2],col="Additional points")
                           df     <- rbind(df,df2)
                           p[[i]] <- ggplot(df, aes(x = x,y = y, color=col)) + geom_jitter() + theme_light() +
-                            xlab(substitute(theta[ind1])) + ylab(substitute(theta[ind2])) +
+                            xlab(substitute(theta[label1])) + ylab(substitute(theta[label2])) +
                             theme(legend.title = element_blank(),legend.position = c(0.2,0.8),
                                   legend.background = element_rect(linetype="solid", colour ="grey"))
                           grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))

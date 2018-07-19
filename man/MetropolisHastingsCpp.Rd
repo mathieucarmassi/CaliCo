@@ -14,6 +14,8 @@ MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup,
 
 \item{theta_init}{the starting point}
 
+\item{r}{regulation percentage in the modification of the k in the Metropolis Hastings}
+
 \item{SIGMA}{the covaraince of the proposition distribution}
 
 \item{Yf}{the vector of recorded data}
@@ -25,8 +27,6 @@ MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup,
 \item{LogTest}{the log posterior density disbution}
 
 \item{stream}{(default=1) if stream=0 the progress bar is desabled}
-
-\item{k}{the tuning vector of the step in the proposition distribution}
 }
 \value{
 list of outputs: \itemize{

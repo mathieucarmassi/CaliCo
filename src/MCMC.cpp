@@ -17,7 +17,7 @@ using namespace arma;
 //' @param Ngibbs the number of iteration in the Metropolis within Gibbs
 //' @param Nmh the number of iteration in the Metropolis Hastings
 //' @param theta_init the starting point
-//' @param k the tuning vector of the step in the proposition distribution
+//' @param r regulation percentage in the modification of the k in the Metropolis Hastings
 //' @param SIGMA the covaraince of the proposition distribution
 //' @param Yf the vector of recorded data
 //' @param binf the lower bound of the parameters to calibrate
@@ -254,7 +254,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
 //' @param Ngibbs the number of iteration in the Metropolis within Gibbs
 //' @param Nmh the number of iteration in the Metropolis Hastings
 //' @param theta_init the starting point
-//' @param k the tuning vector of the step in the proposition distribution
+//' @param r regulation percentage in the modification of the k
 //' @param SIGMA the covaraince of the proposition distribution
 //' @param Yf the vector of recorded data
 //' @param binf the lower bound of the parameters to calibrate

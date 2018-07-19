@@ -18,7 +18,7 @@ Metropolis within Gibbs}
 \item{r}{ regulation percentage in the modification of the k in the Metropolis Hastings}
 \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}
 \item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which
- is a \code{\link{coda}} object)}
+ is a coda object \code{\link{codamenu}})}
 \item{burnIn}{ Number of iteration to withdraw}
 }}
 
@@ -41,7 +41,7 @@ the graphs:}
  a priori and a posteriori is produced. If \code{graph="corr"}, only the layout of the correlation graph between
   each parameter is displayed. If \code{graph="result"}, only the result on the quantity of interest is given.
   If \code{graph=NULL}, no graphs are produced automatically.}}
-\item{print(mdfit)}{ returns the main information concerning the \code{\link{estim.class}} object}}
+\item{print(mdfit)}{ returns the main information concerning the \code{\link{calibrate.class}} object}}
 }
 \description{
 \code{calibrate} is a function that allows to generate a \code{\link{calibrate.class}}

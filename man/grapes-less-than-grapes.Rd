@@ -6,6 +6,14 @@
 \usage{
 md \%<\% param
 }
+\arguments{
+\item{md}{a statistical model defined by the functino \code{\link{model}}}
+
+\item{param}{a \code{list} of parameter values}
+}
+\value{
+a \code{\link{model.class}} parametrized.
+}
 \description{
 Operator to define active bindings variables
 }

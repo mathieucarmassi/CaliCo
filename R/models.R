@@ -50,7 +50,8 @@ model.class <- R6Class(classname = "model.class",
                    initialize = function(code=NA,X=NA,Yexp=NA,model=NA)
                    {
                      self$code    <- code
-                     self$X       <- as.matrix(X)
+                     if (is.vector(X)) self$X <- matrix(X,ncol=1)
+                     else self$X  <- as.matrix(X)
                      self$Yexp    <- Yexp
                      self$n       <- length(Yexp)
                      self$model   <- model

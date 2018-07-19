@@ -9,11 +9,11 @@ chain(modelfit, coda = TRUE)
 \arguments{
 \item{modelfit}{a \code{\link{calibrate.class}} object}
 
-\item{coda}{if TRUE returns a \code{\link{coda}} object (if Nchains in opt.estim is higher than 1 a \code{\link{coda}} object
-is automatically retuned)}
+\item{coda}{if TRUE returns a coda object (if Nchains in opt.estim is higher than 1 a coda object
+is automatically retuned see \code{\link{codamenu}})}
 }
 \value{
-return a \code{data.frame} or a \code{\link{coda}} object of the MCMC chain(s) generated.
+return a \code{data.frame} or a coda object of the MCMC chain(s) generated.
 }
 \description{
 \code{chain} is a function that returns a \code{data.frame} of calibration run without the burn-in

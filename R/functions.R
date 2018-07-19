@@ -249,7 +249,7 @@ prior <- function(type.prior,opt.prior)
 #' \item{r}{ regulation percentage in the modification of the k in the Metropolis Hastings}
 #' \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}
 #' \item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which
-#'  is a \code{\link{coda}} object)}
+#'  is a coda object \code{\link{codamenu}})}
 #' \item{burnIn}{ Number of iteration to withdraw}
 #' }
 #' @param opt.valid list of cross validation options (default value opt.valid=NULL)\itemize{
@@ -269,7 +269,7 @@ prior <- function(type.prior,opt.prior)
 #'  a priori and a posteriori is produced. If \code{graph="corr"}, only the layout of the correlation graph between
 #'   each parameter is displayed. If \code{graph="result"}, only the result on the quantity of interest is given.
 #'   If \code{graph=NULL}, no graphs are produced automatically.}}
-#' \item{print(mdfit)}{ returns the main information concerning the \code{\link{estim.class}} object}}
+#' \item{print(mdfit)}{ returns the main information concerning the \code{\link{calibrate.class}} object}}
 #' @author M. Carmassi
 #' @seealso \code{\link{prior}}, \code{\link{calibrate}}, \code{\link{forecast}}, \code{\link{sequentialDesign}}
 #' @examples
@@ -400,7 +400,7 @@ forecast <-function(modelfit,x.new)
 #' \item{r}{ regulation percentage in the modification of the k in the Metropolis Hastings}
 #' \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}
 #' \item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which
-#'  is a coda object)}
+#'  is a coda object \code{\link{codamenu}})}
 #' \item{burnIn}{ Number of iteration to withdraw}
 #' }
 #' @param k number of iteration in the algorithm
@@ -498,9 +498,9 @@ estimators <-function(modelfit)
 #' @useDynLib CaliCo
 #'
 #' @param modelfit a \code{\link{calibrate.class}} object
-#' @param coda if TRUE returns a \code{\link{coda}} object (if Nchains in opt.estim is higher than 1 a \code{\link{coda}} object
-#'  is automatically retuned)
-#' @return return a \code{data.frame} or a \code{\link{coda}} object of the MCMC chain(s) generated.
+#' @param coda if TRUE returns a coda object (if Nchains in opt.estim is higher than 1 a coda object
+#'  is automatically retuned see \code{\link{codamenu}})
+#' @return return a \code{data.frame} or a coda object of the MCMC chain(s) generated.
 #' @author M. Carmassi
 #' @seealso \code{\link{model}}, \code{\link{prior}}, \code{\link{calibrate}}, \code{\link{sequentialDesign}}
 #' @examples
@@ -791,7 +791,9 @@ multivariate <- function (n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISP
 
 
 #' Operator to define active bindings variables
-#'
+#' @param md a statistical model defined by the functino \code{\link{model}}
+#' @param param a \code{list} of parameter values
+#' @return a \code{\link{model.class}} parametrized.
 #' @export
 "%<%" <- function (md,param)
 {

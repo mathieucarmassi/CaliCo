@@ -18,7 +18,7 @@ Metropolis within Gibbs}
 \item{r}{ regulation percentage in the modification of the k in the Metropolis Hastings}
 \item{sig}{ Covariance matrix for the proposition distribution (\eqn{k*sig})}
 \item{Nchains}{ Number of MCMC chains to run (if Nchain>1 an output is created called mcmc which
- is a coda object)}
+ is a coda object \code{\link{codamenu}})}
 \item{burnIn}{ Number of iteration to withdraw}
 }}
 

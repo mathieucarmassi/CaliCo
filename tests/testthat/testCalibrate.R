@@ -6,7 +6,7 @@ binf <- 0.5
 bsup <- 1.5
 opt.gp=list(type="matern5_2", DOE=NULL)
 opt.emul=list(p=1,n.emul=10,binf=binf,bsup=bsup,type="maximinLHS")
-md2 <- model(code,X,Yexp,"model2",opt.gp=opt.gp,opt.emul=opt.emul)
+md2 <- model(code,x,Yexp,"model2",opt.gp=opt.gp,opt.emul=opt.emul)
 opt.disc=list(kernel.type="matern5_2")
 md3 <- model(code = code, X=x,Yexp = Yexp,model = "model3",opt.disc = opt.disc)
 md4 <- model(code = code, X=x,Yexp = Yexp,model = "model4",opt.disc = opt.disc,opt.gp = opt.gp,opt.emul = opt.emul)
