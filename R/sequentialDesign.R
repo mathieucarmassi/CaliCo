@@ -158,7 +158,6 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
 seqDesign.class$set("public","plot",
                     function(x,...)
                     {
-                      browser()
                       if (self$p != 1)
                       {
                         n        <- combinations(n=self$p,r=2,repeats=FALSE)
@@ -173,17 +172,17 @@ seqDesign.class$set("public","plot",
                           df2    <- data.frame(x=self$doe.new[-c(1:nrow(self$doe.init)),ind1],
                                             y=self$doe.new[-c(1:nrow(self$doe.init)),ind2],col="Additional points")
                           df     <- rbind(df,df2)
-                          p[[i]] <- ggplot(df, aes(x = x,y = y, color=col)) + geom_jitter() + theme_light() +
+                          p[[i]] <- ggplot(df, aes(x = x,y = y, color=col)) + geom_point(shape=3) + theme_light() +
                             xlab(substitute(theta[label1])) + ylab(substitute(theta[label2])) +
                             theme(legend.title = element_blank(),legend.position = c(0.2,0.8),
                                   legend.background = element_rect(linetype="solid", colour ="grey"))
-                          grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
-                          do.call(grid.arrange2,p)
-                          t1     <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
-                          t2     <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
-                          grid.arrange2(t1,t2)
-                          invisible(p)
                         }
+                        grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
+                        do.call(grid.arrange2,p)
+                        t1     <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
+                        t2     <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
+                        grid.arrange2(t1,t2)
+                        invisible(p)
                       } else
                       {
                         grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
