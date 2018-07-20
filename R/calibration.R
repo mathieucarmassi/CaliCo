@@ -52,7 +52,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                  self$n.cores    <- 1
                                } else
                                {
-                                 self$n.cores    <- detectCores()
+                                 self$n.cores    <- 2
                                }
                                if (self$opt.estim$burnIn > self$opt.estim$Nmh)
                                {
@@ -72,7 +72,13 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                  {
                                    cat("\nMultichain calibration is parallelized...\n\n")
                                    n            <- c(1:opt.estim$Nchains)
-                                   self$output  <- mclapply(n,self$calibration,mc.cores = self$n.cores)
+                                   if (Sys.info()[['sysname']]=="Windows")
+                                   {
+                                     self$output  <- lapply(n,self$calibration,mc.cores = self$n.cores)
+                                   } else
+                                   {
+                                     self$output  <- mclapply(n,self$calibration,mc.cores = self$n.cores)
+                                   }
                                    self$mcmc    <- list()
                                    for (i in 1:opt.estim$Nchains)
                                    {
@@ -91,9 +97,15 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                {
                                  cat(paste("\nThe cross validation is currently running on your ",
                                              self$n.cores," cores available....\n",sep=""))
-                                 self$CV(1)
-                                 Results <- mclapply(c(1:opt.valid$nCV),
-                                                     self$CV,mc.cores = self$n.cores)
+                                 if (Sys.info()[[1]]=="Windows")
+                                 {
+                                   Results <- lapply(c(1:opt.valid$nCV),
+                                                       self$CV,mc.cores = self$n.cores)
+                                 } else
+                                 {
+                                   Results <- mclapply(c(1:opt.valid$nCV),
+                                                       self$CV,mc.cores = self$n.cores)
+                                 }
                                  self$coverRate <- 0
                                  for (i in 1:self$opt.valid$nCV)
                                  {
@@ -226,7 +238,13 @@ calibrate.class$set("private","quantiles",
                           D  <- self$md$model.fun(chain[i,1:(dim-1)],chain[i,dim],self$md$X)$y
                           return(D)
                         }
-                        res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
+                        if (Sys.info()[['sysname']]=="Windows")
+                        {
+                          res <- lapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
+                        } else
+                        {
+                          res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
+                        }
                         for (i in 1:nrow(chain))
                         {
                           Dist[i,] <- res[[i]]
@@ -241,7 +259,13 @@ calibrate.class$set("private","quantiles",
                                                   self$md$X,CI=NULL)$y
                           return(D)
                         }
-                        res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
+                        if (Sys.info()[['sysname']]=="Windows")
+                        {
+                          res <- lapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
+                        } else
+                        {
+                          res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
+                        }
                         for (i in 1:nrow(chain))
                         {
                           Dist[i,]  <- res[[i]]
@@ -473,7 +497,13 @@ calibrate.class$set("public","outputPlot",
                           D  <- self$md$model.fun(m[i,1:(dim-1)],m[i,dim])$y
                           return(D)
                         }
-                        res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        if (Sys.info()[['sysname']]=="Windows")
+                        {
+                          res <- lapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        } else
+                        {
+                          res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        }
                         for (i in 1:nrow(m))
                         {
                           Dist[i,] <- res[[i]]
@@ -488,7 +518,13 @@ calibrate.class$set("public","outputPlot",
                                                    self$output$MAP[dim])$y
                           return(list(D=D,D2=D2))
                         }
-                        res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        if (Sys.info()[['sysname']]=="Windows")
+                        {
+                          res <- lapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        } else
+                        {
+                          res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                        }
                         for (i in 1:nrow(m))
                         {
                           Dist[i,]  <- res[[i]]$D

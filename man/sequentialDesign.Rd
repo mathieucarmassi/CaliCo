@@ -4,7 +4,7 @@
 \alias{sequentialDesign}
 \title{Calibration with a sequential design}
 \usage{
-sequentialDesign(md, pr, opt.estim, k, ...)
+sequentialDesign(md, pr, opt.estim, k)
 }
 \arguments{
 \item{md}{the model to improve (model2 or model4)}

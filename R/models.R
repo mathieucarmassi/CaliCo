@@ -484,7 +484,6 @@ model3.class <- R6Class(classname = "model3.class",
                             super$initialize(code, X, Yexp, model)
                             ## Store the model1 functions
                             self$model1.fun        <- super$model.fun
-                            self$model1.prediction <- super$prediction.fun
                           },
                           model.fun = function(theta,thetaD,var,X=self$X,CI="err")
                           {
@@ -523,10 +522,11 @@ model3.class$set("public","likelihood",
                  function(theta,thetaD,var)
                  {
                    # Log-Likelihood
+                   self$disc  <- self$discrepancy(theta,thetaD,var,X=self$X)
                    self$m.exp <- self$code(self$X,as.vector(theta))
                    self$V.exp <- var*diag(self$n) + self$disc$cov
-                   return(-self$n/2*log(2*pi)-1/2*log(det(self$V.exp))
-                          -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
+                   return(as.numeric(-self$n/2*log(2*pi)-1/2*log(det(self$V.exp))
+                          -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
                  })
 
 

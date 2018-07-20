@@ -16,29 +16,7 @@ model(code, X, Yexp, model = "model1", ...)
 \item{model}{string of the model chosen ("model1","model2","model3","model4")
 by default "model1" is chosen. See details for precisions.}
 
-\item{opt.gp}{is an option list containing the parameters to establish the surrogate (only for model2 and model4).
-\itemize{
-\item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
-\item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
-generated with the \strong{opt.emul} option.}}
-}}
-
-\item{opt.emul}{is an option list containing characteristics about emulation option (only for model2 and model4).
-\itemize{
-\item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
-\item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
-\item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
-\item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}}}
-
-\item{opt.sim}{is an option list containing the design and corresponding outputs of the code, in the case
-where no numerical code is available (only for model2 and model4).\itemize{
-\item{\strong{Ysim}}{ Output of the code}
-\item{\strong{DOEsim}}{ DOE corresponding to the output of the code}}}
-
-\item{opt.disc}{is an option list containing characteristics on the discrepancy (only for model3 and model4)
-\itemize{
-\item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
-}}
+\item{...}{additional options (see details section)}
 }
 \value{
 \code{model} returns a \code{model.class} object. This class contains two main methods:
@@ -65,6 +43,33 @@ The different statistical models are: \itemize{\item{Model1:
 where \eqn{for i in [1,\dots,n] \epsilon(x_i)~N(0,\sigma^2)}, \eqn{F(.,.)~PG(m_1(.,.),c_1{(.,.),(.,.)})}
  and \eqn{\delta(.)~PG(m_2(.),c_2(.,.))}.
 There is four kind of models in calibration. They are properly defined in [1].
+
+To establish a Gaussian process three options are available:
+\itemize{
+\item \strong{opt.gp} is an option list containing the parameters to establish the surrogate (only for model2 and model4).
+\itemize{
+\item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
+\item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
+generated with the \strong{opt.emul} option.}}
+}
+\item \strong{opt.emul} is an option list containing characteristics about emulation option (only for model2 and model4).
+\itemize{
+\item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
+\item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
+\item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
+\item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}}
+\item \strong{opt.sim} is an option list containing the design and corresponding outputs of the code, in the case
+where no numerical code is available (only for model2 and model4).\itemize{
+\item{\strong{Ysim}}{ Output of the code}
+\item{\strong{DOEsim}}{ DOE corresponding to the output of the code}}
+}
+To add a discrepancy in the model, the option opt.disc must be added:
+\itemize{
+\item \strong{opt.disc} is an option list containing characteristics on the discrepancy (only for model3 and model4)
+\itemize{
+\item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
+}
+}
 }
 \examples{
 \dontrun{

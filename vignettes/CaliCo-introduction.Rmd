@@ -10,6 +10,11 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+    options(mc.cores = 1L)
+  )
+```
 
 The package `CaliCo` allows to rule a Bayesian calibration on every kind of code ("black box" or analytic codes). The aim of the Bayesian calibration is to better asses the uncertainty on the parameters of the code. In `CaliCo`, the code to calibrate has to be defined with two kinds of inputs. The first concerns the forced variables and the second the parameters. 
 $$
@@ -369,7 +374,7 @@ The summary recalls the function used, the selected model but indicates the rate
 
 One can also have access to a visual representation of the results proposed by `CaliCo`. With the `plot` function, one can display a serie of graphs. Similarly, as the `plot` function used to display the model, the second argument is required and is the x-axis.
 
-```{r, echo=TRUE,fig.width=5,fig.height=4,fig.align='center'}
+```{r, echo=TRUE,fig.width=7,fig.height=5,fig.align='center'}
 plot(mdfit1,t)
 ```
 

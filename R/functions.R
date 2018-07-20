@@ -15,32 +15,39 @@
 #'  and \eqn{\delta(.)~PG(m_2(.),c_2(.,.))}.
 #' There is four kind of models in calibration. They are properly defined in [1].
 #'
+#' To establish a Gaussian process three options are available:
+#' \itemize{
+#' \item \strong{opt.gp} is an option list containing the parameters to establish the surrogate (only for model2 and model4).
+#' \itemize{
+#' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
+#' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
+#' generated with the \strong{opt.emul} option.}}
+#' }
+#' \item \strong{opt.emul} is an option list containing characteristics about emulation option (only for model2 and model4).
+#' \itemize{
+#' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
+#' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
+#' \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
+#' \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}}
+#' \item \strong{opt.sim} is an option list containing the design and corresponding outputs of the code, in the case
+#' where no numerical code is available (only for model2 and model4).\itemize{
+#' \item{\strong{Ysim}}{ Output of the code}
+#' \item{\strong{DOEsim}}{ DOE corresponding to the output of the code}}
+#' }
+#' To add a discrepancy in the model, the option opt.disc must be added:
+#' \itemize{
+#' \item \strong{opt.disc} is an option list containing characteristics on the discrepancy (only for model3 and model4)
+#' \itemize{
+#' \item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
+#' }
+#' }
 #'
 #' @param code the computational code (function of X and theta)
 #' @param X the matrix of the forced variables
 #' @param Yexp the vector of the experiments
 #' @param model string of the model chosen ("model1","model2","model3","model4")
 #' by default "model1" is chosen. See details for precisions.
-#' @param opt.gp is an option list containing the parameters to establish the surrogate (only for model2 and model4).
-#' \itemize{
-#' \item{\strong{type}}{ type of the chosen kernel (value by default "matern5_2") from \code{\link{km}} function}
-#' \item{\strong{DOE}{ design of experiments for the surrogate (default value NULL). If NULL the DOE is automatically
-#' generated with the \strong{opt.emul} option.}}
-#' }
-#' @param opt.emul is an option list containing characteristics about emulation option (only for model2 and model4).
-#' \itemize{
-#' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
-#' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
-#' \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
-#' \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}}
-#' @param opt.sim is an option list containing the design and corresponding outputs of the code, in the case
-#' where no numerical code is available (only for model2 and model4).\itemize{
-#' \item{\strong{Ysim}}{ Output of the code}
-#' \item{\strong{DOEsim}}{ DOE corresponding to the output of the code}}
-#' @param opt.disc is an option list containing characteristics on the discrepancy (only for model3 and model4)
-#' \itemize{
-#' \item{\strong{kernel.type}{ see \code{\link{kernel.fun}} for further details}}
-#' }
+#' @param ... additional options (see details section)
 #' @return \code{model} returns a \code{model.class} object. This class contains two main methods:
 #' \itemize{
 #' \item{plot(model,x)}{ this metod generates the plot for a new \eqn{\Theta}, \eqn{\Theta_D} (for model3 and model4),
@@ -439,9 +446,9 @@ forecast <-function(modelfit,x.new)
 #' @references DAMBLIN, Guillaume, BARBILLON, Pierre, KELLER, Merlin, et al. Adaptive numerical designs for the
 #'  calibration of computer codes. SIAM/ASA Journal on Uncertainty Quantification, 2018, vol. 6, no 1, p. 151-179.
 #' @export
-sequentialDesign <- function(md,pr,opt.estim,k,...)
+sequentialDesign <- function(md,pr,opt.estim,k)
 {
-  obj <- seqDesign.class$new(md,pr,opt.estim,k,...)
+  obj <- seqDesign.class$new(md,pr,opt.estim,k)
   return(obj)
 }
 
