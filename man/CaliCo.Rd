@@ -41,7 +41,7 @@ Statistics and Data Analysis.
 Damblin, G. (2015). Contributions statistiques au calage et à la validation des codes de calculs. PhD thesis, University
 Paris-Saclay
 
-Hastings, W. K. (1970). Mont carlo sampling methods using marlov chains and their applications. Biometrika.
+Hastings, W. K. (1970). Mont carlo sampling methods using markov chains and their applications. Biometrika.
 
 Higdon, D., Kennedy, M. C., Cavendish, J., Cafeo, J., and Ryne, R. (2004). Combining field data and computer
 simulations for calibration and prediction. SIAM Journal on Scientific Computing.

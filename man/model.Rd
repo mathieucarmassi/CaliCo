@@ -14,14 +14,14 @@ model(code, X, Yexp, model = "model1", ...)
 \item{Yexp}{the vector of the experiments}
 
 \item{model}{string of the model chosen ("model1","model2","model3","model4")
-by default "model1" is chosen. See details for precisions.}
+by default "model1" is chosen. See details for further clarifications}
 
 \item{...}{additional options (see details section)}
 }
 \value{
 \code{model} returns a \code{model.class} object. This class contains two main methods:
 \itemize{
-\item{plot(model,x)}{ this metod generates the plot for a new \eqn{\Theta}, \eqn{\Theta_D} (for model3 and model4),
+\item{plot(model,x)}{ this method generates the plot for a new \eqn{\Theta}, \eqn{\Theta_D} (for model3 and model4),
  \eqn{\sigma^2}. The parameter values need to be added to the model with the pipe \code{\%<\%}. The argument \code{x}
  represents the x-axis and have to be specified to produce a plot.}
 \item{print(model)}{ this method presents several pieces of information about the model.}
@@ -54,7 +54,7 @@ generated with the \strong{opt.emul} option.}}
 }
 \item \strong{opt.emul} is an option list containing characteristics about emulation option (only for model2 and model4).
 \itemize{
-\item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
+\item{\strong{p}}{ the number of parameter in the model (default value 1)}
 \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
 \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
 \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}}

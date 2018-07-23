@@ -22,7 +22,7 @@ during the estimation process.
 \describe{
 \item{\code{type.prior}}{of the selected prior}
 
-\item{\code{opt.prior}}{the charasteristics of the selected prior}
+\item{\code{opt.prior}}{the characteristics of the selected prior}
 }}
 
 \keyword{datasets}

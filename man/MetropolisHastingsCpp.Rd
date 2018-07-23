@@ -16,7 +16,7 @@ MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup,
 
 \item{r}{regulation percentage in the modification of the k in the Metropolis Hastings}
 
-\item{SIGMA}{the covaraince of the proposition distribution}
+\item{SIGMA}{the covariance of the proposition distribution}
 
 \item{Yf}{the vector of recorded data}
 
@@ -24,9 +24,9 @@ MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup,
 
 \item{bsup}{the upper bound of the parameters to calibrate}
 
-\item{LogTest}{the log posterior density disbution}
+\item{LogTest}{the log posterior density distribution}
 
-\item{stream}{(default=1) if stream=0 the progress bar is desabled}
+\item{stream}{(default=1) if stream=0 the progress bar is disabled}
 }
 \value{
 list of outputs: \itemize{
@@ -42,6 +42,6 @@ list of outputs: \itemize{
  }
 }
 \description{
-Run a Metropolis Hastings within Gibbs algortithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
+Run a Metropolis Hastings within Gibbs algorithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
 the sample set generated in the Metropolis within Gibbs. This algorithm is suitable only for models without discrepancy.
 }

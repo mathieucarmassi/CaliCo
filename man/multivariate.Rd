@@ -25,5 +25,5 @@ If n = 1 a vector of the same length as mu, otherwise an n by length(mu) matrix 
 }
 \description{
 The matrix decomposition is done via eigen; although a Choleski decomposition might be faster,
-the eigendecomposition is stabler.
+the eigen decomposition is stabler.
 }

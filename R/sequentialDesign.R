@@ -163,7 +163,13 @@ seqDesign.class$set("public","plot",
                       {
                         if (self$p != 1)
                         {
-                          n        <- combinations(n=self$p,r=2,repeats=FALSE)
+                          if ("model2" %in% self$md$model)
+                          {
+                            n        <- combinations(n=self$p+1,r=2,repeats=FALSE)
+                          }
+                          else{
+                            n        <- combinations(n=self$p+3,r=2,repeats=FALSE)
+                          }
                           p        <- list()
                           for (i in 1:nrow(n))
                           {
@@ -183,16 +189,20 @@ seqDesign.class$set("public","plot",
                           res$doe <- p
                           t1     <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
                           t2     <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
-                          res$res <- list(t1,t2)
+                          t3     <- plot(self$mdfit,x,graph=NULL)$dens
+                          t4     <- plot(self$mdfit.new,x,graph=NULL)$dens
+                          res$res <- list(dens=list(t3,t4),results=list(t1,t2))
                         } else
                         {
                           t1       <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
                           t2       <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
-                          res$res <- list(t1,t2)
+                          t3     <- plot(self$mdfit,x,graph=NULL)$dens
+                          t4     <- plot(self$mdfit.new,x,graph=NULL)$dens
+                          res$res <- list(dens=list(t3,t4),results=list(t1,t2))
                         }
                       } else
                       {
-                        if (graph == "all") graph = c("doe","results")
+                        if (graph == "all") graph = c("doe","densities")
                         if (self$p != 1)
                         {
                           if ("doe" %in% graph)
@@ -218,23 +228,31 @@ seqDesign.class$set("public","plot",
                             do.call(grid.arrange2,p)
                             res$doe <- p
                           }
-                          if ("results" %in% graph)
+                          if ("densities" %in% graph)
                           {
                             grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
                             t1     <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
                             t2     <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
-                            grid.arrange2(t1,t2)
-                            res$res <- list(t1,t2)
+                            t3     <- plot(self$mdfit,x,graph=NULL)$dens
+                            t4     <- plot(self$mdfit.new,x,graph=NULL)$dens
+                            arrangeGrob2 <- function(...){arrangeGrob(...,nrow=1,top="Before sequential design")}
+                            arrangeGrob3 <- function(...){arrangeGrob(...,nrow=1,top="After sequential design")}
+                            grid.arrange(do.call(arrangeGrob2,t3),do.call(arrangeGrob3,t4),ncol=1)
+                            res$res <- list(dens=list(t3,t4),results=list(t1,t2))
                           }
                         } else
                         {
-                          if ("results" %in% graph)
+                          if ("densities" %in% graph)
                           {
                             grid.arrange2 <- function(...) return(grid.arrange(...,nrow=1))
                             t1       <- plot(self$mdfit,x,graph=NULL)$out + ggtitle("Before sequential design")
                             t2       <- plot(self$mdfit.new,x,graph=NULL)$out + ggtitle("After sequential design")
-                            grid.arrange2(t1,t2)
-                            res$res <- list(t1,t2)
+                            t3     <- plot(self$mdfit,x,graph=NULL)$dens
+                            t4     <- plot(self$mdfit.new,x,graph=NULL)$dens
+                            arrangeGrob2 <- function(...){arrangeGrob(...,nrow=1,top="Before sequential design")}
+                            arrangeGrob3 <- function(...){arrangeGrob(...,nrow=1,top="After sequential design")}
+                            grid.arrange(do.call(arrangeGrob2,t3),do.call(arrangeGrob3,t4),ncol=1)
+                            res$res <- list(dens=list(t3,t4),results=list(t1,t2))
                           }
                         }
                       }

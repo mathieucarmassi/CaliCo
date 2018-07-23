@@ -52,7 +52,7 @@ during the estimation process.
 \item{\code{model}}{the model choice (see \code{\link{model}} for more specification).}
 
 \item{\code{opt.disc}}{a list of parameter for the discrepancy \itemize{
-\item{\strong{kernel.type}}{ the kernel choosen for the Gaussian process}}}
+\item{\strong{kernel.type}}{ the kernel chosen for the Gaussian process}}}
 }}
 
 \keyword{datasets}

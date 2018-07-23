@@ -10,7 +10,7 @@ chain(modelfit, coda = TRUE)
 \item{modelfit}{a \code{\link{calibrate.class}} object}
 
 \item{coda}{if TRUE returns a coda object (if Nchains in opt.estim is higher than 1 a coda object
-is automatically retuned see \code{\link{codamenu}})}
+is automatically returned see \code{\link{codamenu}})}
 }
 \value{
 return a \code{data.frame} or a coda object of the MCMC chain(s) generated.

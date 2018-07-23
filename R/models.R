@@ -29,7 +29,7 @@
 #' \item{\strong{DOEsim}}{ DOE corresponding to the output of the code}}
 #' @field model the model choice (see \code{\link{model}} for more specification).
 #' @field opt.disc a list of parameter for the discrepancy \itemize{
-#' \item{\strong{kernel.type}}{ the kernel choosen for the Gaussian process}}
+#' \item{\strong{kernel.type}}{ the kernel chosen for the Gaussian process}}
 #'
 #' @export
 model.class <- R6Class(classname = "model.class",

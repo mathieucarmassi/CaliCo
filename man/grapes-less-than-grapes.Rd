@@ -7,7 +7,7 @@
 md \%<\% param
 }
 \arguments{
-\item{md}{a statistical model defined by the functino \code{\link{model}}}
+\item{md}{a statistical model defined by the function \code{\link{model}}}
 
 \item{param}{a \code{list} of parameter values}
 }

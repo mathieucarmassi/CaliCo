@@ -11,19 +11,19 @@ using namespace arma;
 
 //' C++ implementation of the algorithm for parameter calibration (without discrepancy)
 //'
-//' Run a Metropolis Hastings within Gibbs algortithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
+//' Run a Metropolis Hastings within Gibbs algorithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
 //' the sample set generated in the Metropolis within Gibbs. This algorithm is suitable only for models without discrepancy.
 //'
 //' @param Ngibbs the number of iteration in the Metropolis within Gibbs
 //' @param Nmh the number of iteration in the Metropolis Hastings
 //' @param theta_init the starting point
 //' @param r regulation percentage in the modification of the k in the Metropolis Hastings
-//' @param SIGMA the covaraince of the proposition distribution
+//' @param SIGMA the covariance of the proposition distribution
 //' @param Yf the vector of recorded data
 //' @param binf the lower bound of the parameters to calibrate
 //' @param bsup the upper bound of the parameters to calibrate
-//' @param LogTest the log posterior density disbution
-//' @param stream (default=1) if stream=0 the progress bar is desabled
+//' @param LogTest the log posterior density distribution
+//' @param stream (default=1) if stream=0 the progress bar is disabled
 //' @return list of outputs: \itemize{
 //' \item PHIwg the points of the Metropolis within Gibbs algorithm in the transformed space
 //' \item PHI the points of the Metropolis Hastings algorithm in the transformed space
@@ -68,7 +68,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   double Verr=THETAwg(0,Dim-1);
   // Compute the first ratio alpha
   double alpha = as<double>(LogTest(theta,Verr));
-  // Loading bar (if stream==0 the bar and the prints are desabled)
+  // Loading bar (if stream==0 the bar and the prints are disabled)
   if (stream==1)
   {
     Rcout << "Begin of the Metropolis within Gibbs algorithm" << endl;
@@ -248,19 +248,19 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
 
 //' C++ implementation of the algorithm for parameter calibration (with discrepancy)
 //'
-//' Run a Metropolis Hastings within Gibbs algortithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
+//' Run a Metropolis Hastings within Gibbs algorithm and a Metropolis Hastings algorithm with the covariance matrix estimated on the
 //' the sample set generated in the Metropolis within Gibbs. This algorithm is suitable only for models with discrepancy.
 //'
 //' @param Ngibbs the number of iteration in the Metropolis within Gibbs
 //' @param Nmh the number of iteration in the Metropolis Hastings
 //' @param theta_init the starting point
 //' @param r regulation percentage in the modification of the k
-//' @param SIGMA the covaraince of the proposition distribution
+//' @param SIGMA the covariance of the proposition distribution
 //' @param Yf the vector of recorded data
 //' @param binf the lower bound of the parameters to calibrate
 //' @param bsup the upper bound of the parameters to calibrate
-//' @param LogTest the log posterior density disbution
-//' @param stream (default=1) if stream=0 the progress bar is desabled
+//' @param LogTest the log posterior density distribution
+//' @param stream (default=1) if stream=0 the progress bar is disabled
 //' @return list of outputs: \itemize{
 //' \item PHIwg the points of the Metropolis within Gibbs algorithm in the transformed space
 //' \item PHI the points of the Metropolis Hastings algorithm in the transformed space

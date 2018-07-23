@@ -10,7 +10,7 @@ prior(type.prior, opt.prior)
 \item{type.prior}{the vector of the prior types selected. For example type.prior=c("gaussian","gamma")}
 
 \item{opt.prior}{list of the hyperparameters relatives to the prior selected. If the first prior selected is
-Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.}
+Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for further clarifications.}
 }
 \value{
 \code{prior} returns a \code{\link{prior.class}} object. Two main methods are available:

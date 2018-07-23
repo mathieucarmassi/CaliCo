@@ -1,4 +1,4 @@
-#' A Reference Class to generates differents \code{calibrate.class} objects
+#' A Reference Class to generates different \code{calibrate.class} objects
 #'
 #' @description See the function \code{\link{calibrate}} which produces an instance of this class
 #' This class comes with a set of methods, some of them being useful for the user:

@@ -25,7 +25,7 @@
 #' }
 #' \item \strong{opt.emul} is an option list containing characteristics about emulation option (only for model2 and model4).
 #' \itemize{
-#' \item{\strong{p}}{ the number of parameter in the model (defaul value 1)}
+#' \item{\strong{p}}{ the number of parameter in the model (default value 1)}
 #' \item{\strong{n.emul}}{ the number of points for contituing the Design Of Experiments (DOE) (default value 100)}
 #' \item{\strong{binf}{ the lower bound of the parameter vector (default value 0)}}
 #' \item{\strong{bsup}{ the upper bound of the parameter vector (default value 1)}}}
@@ -46,11 +46,11 @@
 #' @param X the matrix of the forced variables
 #' @param Yexp the vector of the experiments
 #' @param model string of the model chosen ("model1","model2","model3","model4")
-#' by default "model1" is chosen. See details for precisions.
+#' by default "model1" is chosen. See details for further clarifications
 #' @param ... additional options (see details section)
 #' @return \code{model} returns a \code{model.class} object. This class contains two main methods:
 #' \itemize{
-#' \item{plot(model,x)}{ this metod generates the plot for a new \eqn{\Theta}, \eqn{\Theta_D} (for model3 and model4),
+#' \item{plot(model,x)}{ this method generates the plot for a new \eqn{\Theta}, \eqn{\Theta_D} (for model3 and model4),
 #'  \eqn{\sigma^2}. The parameter values need to be added to the model with the pipe \code{\%<\%}. The argument \code{x}
 #'  represents the x-axis and have to be specified to produce a plot.}
 #' \item{print(model)}{ this method presents several pieces of information about the model.}
@@ -175,7 +175,7 @@ model <- function(code,X,Yexp,model="model1",...)
 #'
 #' @param  type.prior the vector of the prior types selected. For example type.prior=c("gaussian","gamma")
 #' @param opt.prior list of the hyperparameters relatives to the prior selected. If the first prior selected is
-#' Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for precisions.
+#' Gaussian, the hyperparameters would be the mean and the standard deviation. See Details for further clarifications.
 #' @return \code{prior} returns a \code{\link{prior.class}} object. Two main methods are available:
 #' \itemize{\item{plot()}{ display the probability density of the prior}
 #' \item{print()}{ returns the main information concerning the prior distribution}}
@@ -506,7 +506,7 @@ estimators <-function(modelfit)
 #'
 #' @param modelfit a \code{\link{calibrate.class}} object
 #' @param coda if TRUE returns a coda object (if Nchains in opt.estim is higher than 1 a coda object
-#'  is automatically retuned see \code{\link{codamenu}})
+#'  is automatically returned see \code{\link{codamenu}})
 #' @return return a \code{data.frame} or a coda object of the MCMC chain(s) generated.
 #' @author M. Carmassi
 #' @seealso \code{\link{model}}, \code{\link{prior}}, \code{\link{calibrate}}, \code{\link{sequentialDesign}}
@@ -660,7 +660,7 @@ unscale.vector <- function(x,binf,bsup){
 }
 
 
-#' Funcion which unscale only the diagonal component of a matrix
+#' Function which unscale only the diagonal component of a matrix
 #'
 #' @param  M the matrix
 #' @param  binf the lower bound
@@ -693,7 +693,7 @@ unscale.matrix.diag <- function(M,binf,bsup){
 #' @param  binf the lower bound
 #' @param bsup the upper bound
 #' @param diag default value False if we want to unscale the whole matrix
-#' @param sym default value False if we do not have a symetric matrix
+#' @param sym default value False if we do not have a symmetric matrix
 #' @return the unscaled vector or matrix
 #' @examples
 #' \dontrun{
@@ -758,7 +758,7 @@ DefPos <- function(X)
 #' Simulate from a Multivariate Normal Distribution
 #'
 #' The matrix decomposition is done via eigen; although a Choleski decomposition might be faster,
-#' the eigendecomposition is stabler.
+#' the eigen decomposition is stabler.
 #'
 #' @param n the number of samples required.
 #' @param mu a vector giving the means of the variables.
@@ -798,7 +798,7 @@ multivariate <- function (n = 1, mu, Sigma, tol = 1e-06, empirical = FALSE, EISP
 
 
 #' Operator to define active bindings variables
-#' @param md a statistical model defined by the functino \code{\link{model}}
+#' @param md a statistical model defined by the function \code{\link{model}}
 #' @param param a \code{list} of parameter values
 #' @return a \code{\link{model.class}} parametrized.
 #' @export

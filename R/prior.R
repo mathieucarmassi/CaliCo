@@ -9,7 +9,7 @@
 #' Fields should not be changed or manipulated by the user as they are updated internally
 #' during the estimation process.
 #' @field type.prior of the selected prior
-#' @field opt.prior the charasteristics of the selected prior
+#' @field opt.prior the characteristics of the selected prior
 #' @export
 prior.class <- R6Class(classname = "prior.class",
                            public = list(
