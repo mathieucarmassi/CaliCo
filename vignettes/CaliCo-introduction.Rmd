@@ -12,7 +12,7 @@ vignette: >
 
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
-    options(mc.cores = 1L)
+    options(cache=TRUE, echo=TRUE)
   )
 ```
 
