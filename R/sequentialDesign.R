@@ -170,13 +170,7 @@ seqDesign.class$set("public","plot",
                       {
                         if (self$p != 1)
                         {
-                          if ("model2" %in% self$md$model)
-                          {
-                            n        <- combinations(n=self$p+1,r=2,repeats=FALSE)
-                          }
-                          else{
-                            n        <- combinations(n=self$p+3,r=2,repeats=FALSE)
-                          }
+                          n        <- combinations(n=self$p,r=2,repeats=FALSE)
                           p        <- list()
                           for (i in 1:nrow(n))
                           {
