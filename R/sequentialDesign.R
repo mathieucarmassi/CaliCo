@@ -76,7 +76,14 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                              {
                                return(self$EI(self$optimGrid[i,]))
                              }
-                             EIvector  <- unlist(mclapply(c(1:(100*self$p)),EIparallel,mc.cores = detectCores()))
+                             if (Sys.info()[['sysname']]=="Windows")
+                             {
+                               n.cores <- 1
+                             } else
+                             {
+                               n.cores <- 2
+                             }
+                             EIvector  <- unlist(mclapply(c(1:(100*self$p)),EIparallel,mc.cores = n.cores))
                              if (all(EIvector == 0)) break
                              thetaHatNew  <- self$optimGrid[which(EIvector==max(EIvector)),]
                              if (all(thetaHatNew == thetaTemp))
