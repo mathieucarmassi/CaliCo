@@ -74,7 +74,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                    n            <- c(1:opt.estim$Nchains)
                                    if (Sys.info()[['sysname']]=="Windows")
                                    {
-                                     self$output  <- lapply(n,self$calibration,mc.cores = self$n.cores)
+                                     self$output  <- lapply(n,self$calibration,mc.cores = 1)
                                    } else
                                    {
                                      self$output  <- mclapply(n,self$calibration,mc.cores = self$n.cores)
@@ -100,7 +100,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                  if (Sys.info()[[1]]=="Windows")
                                  {
                                    Results <- lapply(c(1:opt.valid$nCV),
-                                                       self$CV,mc.cores = self$n.cores)
+                                                       self$CV,mc.cores = 1)
                                  } else
                                  {
                                    Results <- mclapply(c(1:opt.valid$nCV),
@@ -240,7 +240,7 @@ calibrate.class$set("private","quantiles",
                         }
                         if (Sys.info()[['sysname']]=="Windows")
                         {
-                          res <- lapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
+                          res <- lapply(1:nrow(chain),parFun,mc.cores = 1)
                         } else
                         {
                           res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
@@ -261,7 +261,7 @@ calibrate.class$set("private","quantiles",
                         }
                         if (Sys.info()[['sysname']]=="Windows")
                         {
-                          res <- lapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
+                          res <- lapply(1:nrow(chain),parFun,mc.cores = 1)
                         } else
                         {
                           res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
@@ -499,7 +499,7 @@ calibrate.class$set("public","outputPlot",
                         }
                         if (Sys.info()[['sysname']]=="Windows")
                         {
-                          res <- lapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                          res <- lapply(1:nrow(m),parFun,mc.cores = 1)
                         } else
                         {
                           res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)
@@ -520,7 +520,7 @@ calibrate.class$set("public","outputPlot",
                         }
                         if (Sys.info()[['sysname']]=="Windows")
                         {
-                          res <- lapply(1:nrow(m),parFun,mc.cores = self$n.cores)
+                          res <- lapply(1:nrow(m),parFun,mc.cores = 1)
                         } else
                         {
                           res <- mclapply(1:nrow(m),parFun,mc.cores = self$n.cores)

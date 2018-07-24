@@ -13,6 +13,10 @@ vignette: >
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
   echo=TRUE, cache=FALSE)
+if (Sys.info()[['sysname']]=="Windows")
+{
+    windowsFonts(Times=windowsFont("TT Times New Roman"))
+}
 ```
 
 The package `CaliCo` allows to rule a Bayesian calibration on every kind of code ("black box" or analytic codes). The aim of the Bayesian calibration is to better asses the uncertainty on the parameters of the code. In `CaliCo`, the code to calibrate has to be defined with two kinds of inputs. The first concerns the forced variables and the second the parameters. 
