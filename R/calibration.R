@@ -141,6 +141,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                self$binf     <- private$boundaries()$binf
                                self$bsup     <- private$boundaries()$bsup
                                MetropolisCpp <- private$MCMC(self$md$model)
+                               browser()
                                out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
                                                               self$opt.estim$thetaInit,self$opt.estim$r,
                                                               self$opt.estim$sig,self$md$Yexp,self$binf,self$bsup,self$logPost,1)
@@ -293,7 +294,7 @@ calibrate.class$set("private","logTest",
                     {
                       if (length(self$pr) == 1)
                       {
-                        return(log(self$md$likelihood(theta,sig2))+self$pr$prior(theta))
+                        return(self$md$likelihood(theta,sig2)+self$pr$prior(theta))
                       } else
                       {
                         s <- 0
@@ -302,7 +303,7 @@ calibrate.class$set("private","logTest",
                           s <- s + self$pr[[i]]$prior(theta[i])
                         }
                         s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
-                        return(self$md$likelihood(theta,sig2) + s)
+                        return(as.numeric(self$md$likelihood(theta,sig2)) + s)
                       }
                     })
 
@@ -319,7 +320,7 @@ calibrate.class$set("private","logTestD",
                     s <- s + self$pr[[length(theta)+j]]$prior(thetaD[j])
                   }
                   s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
-                  return(self$md$likelihood(theta,thetaD,sig2) + s)
+                  return(as.numeric(self$md$likelihood(theta,thetaD,sig2)) + s)
                 })
 
 calibrate.class$set("private","MAPestimator",

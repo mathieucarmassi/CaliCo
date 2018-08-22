@@ -67,7 +67,11 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   arma::vec theta=theta_init.rows(0,Dim-2);
   double Verr=THETAwg(0,Dim-1);
   // Compute the first ratio alpha
-  double alpha = as<double>(LogTest(theta,Verr));
+  Rcout << "balise" << endl;
+  Rcout << theta << endl;
+  Rcout << Verr << endl;
+  long alpha = as<long>(LogTest(theta.t(),Verr));
+  Rcout << alpha << endl;
   // Loading bar (if stream==0 the bar and the prints are disabled)
   if (stream==1)
   {

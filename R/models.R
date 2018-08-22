@@ -453,8 +453,9 @@ model1.class$set("public","likelihood",
                   ### Log-Likelihood
                   self$m.exp <- self$code(self$X,as.vector(theta))
                   self$V.exp <- var*diag(self$n)
-                  return(-self$n/2*log(2*pi)-1/2*log(det(self$V.exp))
-                         -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
+                  V.exp.inv  <- (1/var)*diag(self$n)
+                  return(-self$n/2*log(2*pi)+1/2*self$n*log(var)
+                         -0.5*t(self$Yexp-self$m.exp)%*%V.exp.inv%*%(self$Yexp-self$m.exp))
                 })
 
 
