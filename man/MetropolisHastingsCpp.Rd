@@ -2,10 +2,10 @@
 % Please edit documentation in R/RcppExports.R
 \name{MetropolisHastingsCpp}
 \alias{MetropolisHastingsCpp}
-\title{C++ implementation of the algorithm for parameter calibration (without discrepancy)}
+\title{C++ implementation of the algorithm for parameter calibration}
 \usage{
-MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup,
-  LogTest, stream)
+MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, r, Yf, binf, bsup, LogTest,
+  disc, stream)
 }
 \arguments{
 \item{Ngibbs}{the number of iteration in the Metropolis within Gibbs}
@@ -15,8 +15,6 @@ MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup,
 \item{theta_init}{the starting point}
 
 \item{r}{regulation percentage in the modification of the k in the Metropolis Hastings}
-
-\item{SIGMA}{the covariance of the proposition distribution}
 
 \item{Yf}{the vector of recorded data}
 

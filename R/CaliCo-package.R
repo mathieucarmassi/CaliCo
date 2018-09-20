@@ -7,7 +7,7 @@
 #' @useDynLib CaliCo
 #' @importFrom R6 R6Class
 #' @importFrom stats rnorm
-#' @import ggplot2 DiceKriging DiceDesign coda parallel MASS gridExtra gtools
+#' @import ggplot2 DiceKriging DiceDesign coda parallel MASS gridExtra gtools FactoMineR
 #'
 #' @details
 #' Package: CaliCo

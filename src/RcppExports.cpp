@@ -6,29 +6,35 @@
 
 using namespace Rcpp;
 
-// MetropolisHastingsCpp
-List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec r, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
-RcppExport SEXP _CaliCo_MetropolisHastingsCpp(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP rSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
+// Phi2Theta
+arma::vec Phi2Theta(arma::vec Phi, arma::vec binf, arma::vec bsup);
+RcppExport SEXP _CaliCo_Phi2Theta(SEXP PhiSEXP, SEXP binfSEXP, SEXP bsupSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type Ngibbs(NgibbsSEXP);
-    Rcpp::traits::input_parameter< int >::type Nmh(NmhSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type theta_init(theta_initSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type r(rSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type SIGMA(SIGMASEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type Yf(YfSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type Phi(PhiSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type binf(binfSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type bsup(bsupSEXP);
-    Rcpp::traits::input_parameter< Function >::type LogTest(LogTestSEXP);
-    Rcpp::traits::input_parameter< int >::type stream(streamSEXP);
-    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream));
+    rcpp_result_gen = Rcpp::wrap(Phi2Theta(Phi, binf, bsup));
     return rcpp_result_gen;
 END_RCPP
 }
-// MetropolisHastingsCppD
-List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec r, arma::mat SIGMA, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, int stream);
-RcppExport SEXP _CaliCo_MetropolisHastingsCppD(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP rSEXP, SEXP SIGMASEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP streamSEXP) {
+// Theta2Phi
+arma::vec Theta2Phi(arma::vec Theta, arma::vec binf, arma::vec bsup);
+RcppExport SEXP _CaliCo_Theta2Phi(SEXP ThetaSEXP, SEXP binfSEXP, SEXP bsupSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type Theta(ThetaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type binf(binfSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type bsup(bsupSEXP);
+    rcpp_result_gen = Rcpp::wrap(Theta2Phi(Theta, binf, bsup));
+    return rcpp_result_gen;
+END_RCPP
+}
+// MetropolisHastingsCpp
+List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec r, arma::vec Yf, arma::vec binf, arma::vec bsup, Function LogTest, bool disc, bool stream);
+RcppExport SEXP _CaliCo_MetropolisHastingsCpp(SEXP NgibbsSEXP, SEXP NmhSEXP, SEXP theta_initSEXP, SEXP rSEXP, SEXP YfSEXP, SEXP binfSEXP, SEXP bsupSEXP, SEXP LogTestSEXP, SEXP discSEXP, SEXP streamSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -36,20 +42,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type Nmh(NmhSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type theta_init(theta_initSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type r(rSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type SIGMA(SIGMASEXP);
     Rcpp::traits::input_parameter< arma::vec >::type Yf(YfSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type binf(binfSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type bsup(bsupSEXP);
     Rcpp::traits::input_parameter< Function >::type LogTest(LogTestSEXP);
-    Rcpp::traits::input_parameter< int >::type stream(streamSEXP);
-    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCppD(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream));
+    Rcpp::traits::input_parameter< bool >::type disc(discSEXP);
+    Rcpp::traits::input_parameter< bool >::type stream(streamSEXP);
+    rcpp_result_gen = Rcpp::wrap(MetropolisHastingsCpp(Ngibbs, Nmh, theta_init, r, Yf, binf, bsup, LogTest, disc, stream));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_CaliCo_Phi2Theta", (DL_FUNC) &_CaliCo_Phi2Theta, 3},
+    {"_CaliCo_Theta2Phi", (DL_FUNC) &_CaliCo_Theta2Phi, 3},
     {"_CaliCo_MetropolisHastingsCpp", (DL_FUNC) &_CaliCo_MetropolisHastingsCpp, 10},
-    {"_CaliCo_MetropolisHastingsCppD", (DL_FUNC) &_CaliCo_MetropolisHastingsCppD, 10},
     {NULL, NULL, 0}
 };
 

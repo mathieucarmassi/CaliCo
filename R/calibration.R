@@ -47,13 +47,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                self$opt.valid  <- opt.valid
                                self$logPost    <- private$logLikelihood(self$md$model)
                                Dim             <- length(self$pr)
-                               if (Sys.info()[['sysname']]=="Windows")
-                               {
-                                 self$n.cores    <- 1
-                               } else
-                               {
-                                 self$n.cores    <- 2
-                               }
+                               self$n.cores    <- 6
                                if (self$opt.estim$burnIn > self$opt.estim$Nmh)
                                {
                                  stop("The burnIn must be inferior to Nmh")
@@ -65,9 +59,9 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                    self$output  <- self$calibration()
                                    self$mcmc    <- as.mcmc(self$output$out$THETA)
                                    chain        <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
-                                   qq           <- private$quantiles(chain)
-                                   self$q05     <- qq$q05
-                                   self$q95     <- qq$q95
+                                   #qq           <- private$quantiles(chain)
+                                   self$q05     <- rep(0,length(self$md$Yexp))
+                                   self$q95     <- rep(0,length(self$md$Yexp))
                                  } else
                                  {
                                    cat("\nMultichain calibration is parallelized...\n\n")
@@ -79,11 +73,8 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                    {
                                      self$output  <- mclapply(n,self$calibration,mc.cores = self$n.cores)
                                    }
-                                   self$mcmc    <- list()
-                                   for (i in 1:opt.estim$Nchains)
-                                   {
-                                     self$mcmc[[i]] <- as.mcmc(self$output[[i]]$out$THETA)
-                                   }
+                                   self$mcmc    <- lapply(1:opt.estim$Nchains, function(i)
+                                     as.mcmc(self$output[[i]]$out$THETA))
                                    self$output    <- self$output[[1]]
                                    chain          <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
                                    qq             <- private$quantiles(chain)
@@ -140,12 +131,12 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                              {
                                self$binf     <- private$boundaries()$binf
                                self$bsup     <- private$boundaries()$bsup
-                               MetropolisCpp <- private$MCMC(self$md$model)
-                               browser()
-                               out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
-                                                              self$opt.estim$thetaInit,self$opt.estim$r,
-                                                              self$opt.estim$sig,self$md$Yexp,self$binf,self$bsup,self$logPost,1)
-                               MAP           <- private$MAPestimator(out)
+                               disc          <- private$Activation(self$md$model)
+                               out <-MetropolisHastingsCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
+                                                    self$opt.estim$thetaInit,self$opt.estim$r,
+                                                    self$md$Yexp,self$binf,self$bsup,
+                                                    self$logPost,disc,TRUE)
+                               MAP   <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))
                              },
                              CV = function(i=NA)
@@ -192,23 +183,33 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                binf          <- private$boundaries()$binf
                                bsup          <- private$boundaries()$bsup
                                MetropolisCpp <- private$MCMC(mdTemp$model)
-                               out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
-                                                              self$opt.estim$thetaInit,self$opt.estim$r,
-                                                              self$opt.estim$sig,self$md$Yexp,binf,bsup,self$logPost,0)
-                               MAP           <- private$MAPestimator(out)
+                               if (is.na(self$md$PCA))
+                               {
+                                 out <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
+                                                      self$opt.estim$thetaInit,self$opt.estim$r,
+                                                      self$md$Yexp,
+                                                      binf,bsup,self$logPost,FALSE)
+                               } else
+                               {
+                                 out <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
+                                                      self$opt.estim$thetaInit,self$opt.estim$r,
+                                                      as.vector(self$md$Yexp%*%self$md$P) ,
+                                                      binf,bsup,self$logPost,FALSE)
+                               }
+                               MAP   <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))
                              }
                            ))
 
 
-calibrate.class$set("private","MCMC",
+calibrate.class$set("private","Activation",
                   function(model)
                   {
                     switch(model,
-                           model1={return(MetropolisHastingsCpp)},
-                           model2={return(MetropolisHastingsCpp)},
-                           model3={return(MetropolisHastingsCppD)},
-                           model4={return(MetropolisHastingsCppD)}
+                           model1={return(FALSE)},
+                           model2={return(FALSE)},
+                           model3={return(TRUE)},
+                           model4={return(TRUE)}
                     )
                   })
 
@@ -235,22 +236,19 @@ calibrate.class$set("private","quantiles",
                       if (self$md$model == "model1" || self$md$model == "model2")
                       {
                         parFun <- function(i)
-                        {
-                          D  <- self$md$model.fun(chain[i,1:(dim-1)],chain[i,dim],self$md$X)$y
-                          return(D)
-                        }
+                          return(self$md$model.fun(chain[i,1:(dim-1)],chain[i,dim],self$md$X)$y)
                         if (Sys.info()[['sysname']]=="Windows")
                         {
                           res <- lapply(1:nrow(chain),parFun)
                         } else
                         {
-                          res <- mclapply(1:nrow(chain),parFun,mc.cores = self$n.cores)
+                          res <- mclapply(1:nrow(chain),parFun,mc.cores = 8)
                         }
                         for (i in 1:nrow(chain))
                         {
                           Dist[i,] <- res[[i]]
                         }
-                        qq <- apply(Dist,2,quantile,probs=c(0.05,0.95))
+                        qq <- apply(Dist,2,quantile,probs=c(0.025,0.975))
                         return(list(q05=qq[1,],q95=qq[2,]))
                       } else
                       {
@@ -281,17 +279,18 @@ calibrate.class$set("private","logLikelihood",
                 function(model)
                 {
                   switch(model,
-                         model1={return(private$logTest)},
-                         model2={return(private$logTest)},
+                         model1={return(self$logTest)},
+                         model2={return(self$logTest)},
                          model3={return(private$logTestD)},
                          model4={return(private$logTestD)}
                   )
                 }
 )
 
-calibrate.class$set("private","logTest",
+calibrate.class$set("public","logTest",
                     function(theta,sig2)
                     {
+                      theta <- as.vector(theta)
                       if (length(self$pr) == 1)
                       {
                         return(self$md$likelihood(theta,sig2)+self$pr$prior(theta))
@@ -303,7 +302,7 @@ calibrate.class$set("private","logTest",
                           s <- s + self$pr[[i]]$prior(theta[i])
                         }
                         s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
-                        return(as.numeric(self$md$likelihood(theta,sig2)) + s)
+                        return(as.numeric(self$md$likelihood(theta,sig2) + s))
                       }
                     })
 

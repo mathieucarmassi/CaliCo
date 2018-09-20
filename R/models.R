@@ -59,7 +59,7 @@ model.class <- R6Class(classname = "model.class",
                      if (is.matrix(X)) {self$d <- ncol(X)} else{self$d <-1}
                      private$checkModels()
                      private$checkCode()
-                     private$checkOptions()
+                     #private$checkOptions()
                      private$testOnForcingVar()
                    },
                    active = list(
@@ -146,12 +146,27 @@ model.class$set("public","plot",
                   if (is.matrix(x)){stop("please enter a correct x to plot your model",call. = FALSE)}
                   if (length(x)!= self$n){stop(paste("please enter a correct vector x of size",
                                                      self$n,sep=" "),call. = FALSE)}
-                  df <- cbind(data.frame(y=self$Yexp,type="exp"),x=x)
+                  if (is.null(self$opt.PCA)==FALSE)
+                  {
+                    df <- cbind(data.frame(y=self$P%*%self$Yexp,type="exp"),x=x)
+                  } else
+                  {
+                    df <- cbind(data.frame(y=self$Yexp,type="exp"),x=x)
+                  }
                   if (self$model %in% c("model1","model2"))
                   {
                     if (!is.null(self$theta) & !is.null(self$var))
                     {
-                      df2 <- cbind(self$model.fun(self$theta,self$var,X=self$X,CI),x=x)
+                      df2 <- self$model.fun(self$theta,self$var,X=self$X,CI)
+                      if(is.null(self$opt.PCA)==FALSE)
+                      {
+                        df2 <- data.frame(y=self$P%*%df2$y, type=df2$type[1], q025n=self$P%*%df2$q025n,
+                                          q975n=self$P%*%df2$q975n,q025=self$P%*%df2$q025,
+                                          q975=self$P%*%df2$q975,x=x)
+                      } else
+                      {
+                        df2 <- cbind(df2,x=x)
+                      }
                     } else
                       {
                         warning("no theta and var has been given to the model, experiments only are plotted",call.= FALSE)
@@ -541,6 +556,8 @@ model2.class <- R6Class(classname = "model2.class",
                           opt.emul = NULL, ## DOE creation options
                           opt.sim  = NULL, ## options if the user possess the design and the output
                           opt.gp   = NULL, ## GP options
+                          opt.PCA  = NULL, ## Option for Higdon calibration
+                          P        = NULL, ## Transition matrix in the PCA
                           case     = NULL, ## case wanted by the user (depending on options)
                           doe      = NULL, ## DOE used for the surrogate
                           z        = NULL, ## output of the code for the DOE
@@ -548,13 +565,18 @@ model2.class <- R6Class(classname = "model2.class",
                           p        = NULL, ## number of parameters
                           lenCode  = NULL, ## length of code output
                         initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.gp=NULL,opt.emul=NULL,
-                                              opt.sim=NULL,...)
+                                              opt.sim=NULL,opt.PCA=NULL)
                         {
                           if (missing(opt.sim) | is.null(opt.sim)) self$case <- 1
                           if ((missing(opt.emul) | is.null(opt.emul)) & (missing(opt.sim) | is.null(opt.sim)))
                             self$case <- 2
                           if ((missing(opt.emul) | is.null(opt.emul)) & !(missing(opt.sim) | is.null(opt.sim)))
                             self$case <- 3
+                          if (is.null(opt.PCA)==FALSE)
+                          {
+                            print("Higdon method selected")
+                          }
+                          self$opt.PCA  <- opt.PCA
                           self$opt.gp   <- opt.gp
                           self$opt.emul <- opt.emul
                           self$opt.sim  <- opt.sim
@@ -567,80 +589,123 @@ model2.class <- R6Class(classname = "model2.class",
                               print("The numerical code is desabled, please fill the opt.sim option")
                             }
                           }
-                          self$GP     <- self$surrogate()
+                          if (is.null(self$opt.PCA) == FALSE)
+                          {
+                            self$code <- self$surrogate()
+                            self$Yexp <- t(self$P) %*% Yexp
+                          } else
+                          {
+                            self$GP     <- self$surrogate()
+                          }
                           print("The surrogate has been set up, you can now use the function")
                         },
                         ## model function
                         model.fun = function(theta,var,X=self$X,CI="all")
                         {
-                          X  <- as.matrix(X)
-                          self$p <- length(theta)
-                          if (ncol(X) != self$d){stop("please enter a correct X",call. = FALSE)}
-                          if (self$p == 1){
-                            D <- cbind(X,rep(theta,nrow(X)))
+                          if (is.null(self$opt.PCA) == FALSE)
+                          {
+                            pr <- self$code(theta)
+                            qq025 <- pr$mean -2*sqrt(var)
+                            qq975 <- pr$mean +2*sqrt(var)
+                            df  <- data.frame(y=pr$mean,type="model output",q025n=qq025,q975n=qq975,
+                                              q025=pr$lower95,q975=pr$upper95)
+                            return(df)
                           } else
                           {
-                            D  <- cbind(X,matrix(rep(theta,rep(nrow(X),self$p)),
-                                              nr=nrow(X),nc=self$p))
-                          }
-                          if (self$f.variables == 0)
-                          {
-                            D <- D[,-1]
-                            if (self$lenCode>1)
-                            {
-                              pr <- list()
-                              for (i in 1:length(self$GP))
-                              {
-                                prTemp <- predict(self$GP[[i]],newdata=as.data.frame(t(D)),type="UK",
-                                                   cov.compute=TRUE,interval="confidence",checkNames=FALSE)
-                                pr$mean[i] <- prTemp$mean
-                                pr$lower95[i] <- prTemp$lower95
-                                pr$upper95[i] <- prTemp$upper95
-                                pr$cov[i] <- prTemp$cov
-                              }
-                            } else pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
-                                          cov.compute=TRUE,interval="confidence",checkNames=FALSE)
-                          } else pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
-                                               cov.compute=TRUE,interval="confidence",checkNames=FALSE)
-                          # nugget <- mvrnorm(n=100,pr$mean,diag(var,length(pr$mean)))
-                          qq025 <- pr$mean -2*sqrt(var)
-                          qq975 <- pr$mean +2*sqrt(var)
-                          if (is.null(CI))
-                          {
-                            # qq <- apply(nugget,2,mean)
-                            # df <- data.frame(y=qq,type="model output")
-                            df <- data.frame(y=pr$mean,type="model output")
-                          } else if (CI == "all" | CI == "err")
-                          {
-                            # qq <- apply(nugget,2,quantile,c(0.05,0.5,0.95))
-                            if (CI == "all")
-                            {
-                              # df  <- data.frame(y=qq[2,],type="model output",q025n=qq[1,],q975n=qq[3,],
-                              #                   q025=pr$lower95,q975=pr$upper95)
-                              df  <- data.frame(y=pr$mean,type="model output",q025n=qq025,q975n=qq975,
-                                                q025=pr$lower95,q975=pr$upper95)
+                            X  <- as.matrix(X)
+                            self$p <- length(theta)
+                            if (ncol(X) != self$d){stop("please enter a correct X",call. = FALSE)}
+                            if (self$p == 1){
+                              D <- cbind(X,rep(theta,nrow(X)))
                             } else
                             {
-                              # df  <- data.frame(y=qq[2,],type="model output",q025=qq[1,],q975=qq[3,],
-                              #                   fill="CI 95% noise")
-                              df  <- data.frame(y=pr$mean,type="model output",q025=qq025,q975=qq975,
-                                                fill="CI 95% noise")
+                              D  <- cbind(X,matrix(rep(theta,rep(nrow(X),self$p)),
+                                                   nr=nrow(X),nc=self$p))
                             }
-                          } else if (CI == "GP")
-                          {
-                            # qq <- apply(nugget,2,quantile,c(0.05,0.5,0.95))
-                            # df  <- data.frame(y=qq[2,],type="model output",q025=pr$lower95,
-                            #                   q975=pr$upper95, fill="CI 95% GP")
-                            df  <- data.frame(y=pr$mean,type="model output",q025=pr$lower95,
-                                              q975=pr$upper95, fill="CI 95% GP")
-                          } else
-                          {
-                            warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
-                            df <- 0
+                            if (self$f.variables == 0)
+                            {
+                              D <- D[,-1]
+                              if (self$lenCode>1)
+                              {
+                                pr <- list()
+                                for (i in 1:length(self$GP))
+                                {
+                                  prTemp <- predict(self$GP[[i]],newdata=as.data.frame(t(D)),type="UK",
+                                                    cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                                  pr$mean[i] <- prTemp$mean
+                                  pr$lower95[i] <- prTemp$lower95
+                                  pr$upper95[i] <- prTemp$upper95
+                                  pr$cov[i] <- prTemp$cov
+                                }
+                              } else pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
+                                                   cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                            } else pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
+                                                 cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                            # nugget <- mvrnorm(n=100,pr$mean,diag(var,length(pr$mean)))
+                            qq025 <- pr$mean -2*sqrt(var)
+                            qq975 <- pr$mean +2*sqrt(var)
+                            if (is.null(CI))
+                            {
+                              # qq <- apply(nugget,2,mean)
+                              # df <- data.frame(y=qq,type="model output")
+                              df <- data.frame(y=pr$mean,type="model output")
+                            } else if (CI == "all" | CI == "err")
+                            {
+                              # qq <- apply(nugget,2,quantile,c(0.05,0.5,0.95))
+                              if (CI == "all")
+                              {
+                                # df  <- data.frame(y=qq[2,],type="model output",q025n=qq[1,],q975n=qq[3,],
+                                #                   q025=pr$lower95,q975=pr$upper95)
+                                df  <- data.frame(y=pr$mean,type="model output",q025n=qq025,q975n=qq975,
+                                                  q025=pr$lower95,q975=pr$upper95)
+                              } else
+                              {
+                                # df  <- data.frame(y=qq[2,],type="model output",q025=qq[1,],q975=qq[3,],
+                                #                   fill="CI 95% noise")
+                                df  <- data.frame(y=pr$mean,type="model output",q025=qq025,q975=qq975,
+                                                  fill="CI 95% noise")
+                              }
+                            } else if (CI == "GP")
+                            {
+                              # qq <- apply(nugget,2,quantile,c(0.05,0.5,0.95))
+                              # df  <- data.frame(y=qq[2,],type="model output",q025=pr$lower95,
+                              #                   q975=pr$upper95, fill="CI 95% GP")
+                              df  <- data.frame(y=pr$mean,type="model output",q025=pr$lower95,
+                                                q975=pr$upper95, fill="CI 95% GP")
+                            } else
+                            {
+                              warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
+                              df <- 0
+                            }
+                            return(df)
                           }
-                          return(df)
                         })
                         )
+
+model2.class$set("public","PCAhigdon",
+                 function()
+                 {
+                   myPca <- PCA(t(self$z),graph=FALSE)
+                   self$P <<- sqrt(myPca$var$contrib)/10 * sign(myPca$var$coord)
+                   resPG <- t(self$P)%*%self$z
+                   funGP <- function(i)
+                   {
+                     kmfit <- km(formula = ~1,design = self$doe,response = resPG[i,],covtype = "matern5_2")
+                     return(kmfit)
+                   }
+                   kmfit <<- lapply(1:5,funGP)
+                   codePCA <- function(theta)
+                   {
+                     pr <- lapply(1:5, function(i) predict(kmfit[[i]],data.frame(t(theta)),chekNames=FALSE,
+                                                           type='UK',cov.compute=TRUE))
+                     mm <- mapply(function(i){return(pr[[i]]$mean)},1:5)
+                     lower95 <- mapply(function(i){return(pr[[i]]$lower95)},1:5)
+                     upper95 <- mapply(function(i){return(pr[[i]]$upper95)},1:5)
+                     cov <- mapply(function(i){return(pr[[i]]$cov)},1:5)
+                     return(list(mean=mm,lower95=lower95,upper95=upper95,cov=cov))
+                   }
+                   return(codePCA)
+                 })
 
 model2.class$set("public","surrogate",
                  function()
@@ -650,17 +715,25 @@ model2.class$set("public","surrogate",
                      if (self$case == "1")
                      {
                        ## Dim is the dimension of H*Theta
+                       ## f.variables is a test on the presence of forcing variables
                        if (self$f.variables == 0)
                        {
                          Dim <- self$opt.emul$p
                          ## Creation of the maximin LHS
-                         doe <- lhsDesign(self$opt.emul$n.emul,Dim)$design
-                         doe <- maximinSA_LHS(doe)$design
-                         ## Going back to the original space of Theta
-                         doe.theta <- unscale(doe,self$opt.emul$binf,
-                                              self$opt.emul$bsup)
-                         ## Generate the doe
-                         self$doe  <- doe.theta
+                         ## If the opt.PCA is active, pick the one in opt.PCA
+                         if(is.null(self$opt.PCA$DOE))
+                         {
+                           doe <- lhsDesign(self$opt.emul$n.emul,Dim)$design
+                           doe <- maximinSA_LHS(doe)$design
+                           ## Going back to the original space of Theta
+                           doe.theta <- unscale(doe,self$opt.emul$binf,
+                                                self$opt.emul$bsup)
+                           ## Generate the doe
+                           self$doe  <- doe.theta
+                         } else
+                         {
+                           self$doe  <- self$opt.PCA$DOE
+                         }
                        } else
                        {
                          Dim <- self$opt.emul$p+self$d
@@ -692,7 +765,13 @@ model2.class$set("public","surrogate",
                      {
                        if (is.matrix(self$doe))
                        {
-                         self$lenCode <- length(self$code(0,self$doe[1,]))
+                         if (is.null(self$opt.PCA)==FALSE)
+                         {
+                           self$lenCode <- nrow(self$opt.PCA$Res)
+                         } else
+                         {
+                           self$lenCode <- length(self$code(0,self$doe[1,]))
+                         }
                          if (self$lenCode>1) self$z <- matrix(nr=nrow(self$doe),nc=self$lenCode)
                          l <- nrow(self$doe)
                        } else
@@ -705,44 +784,56 @@ model2.class$set("public","surrogate",
                      {
                        l <- nrow(self$doe)
                      }
-                     for (i in 1:l)
+                     if(is.null(self$opt.PCA$Res) == FALSE)
                      {
-                       if (!self$f.variables == 0)
+                       self$z <- self$opt.PCA$Res
+                     } else
+                     {
+                       for (i in 1:l)
                        {
-                         covariates <- as.matrix(self$doe[i,1:(Dim-self$p)])
-                         if (self$d == 1) {} else dim(covariates) <- c(1,self$d)
-                         self$z <- c(self$z,self$code(covariates,self$doe[i,(Dim-self$p+1):Dim]))
-                       } else if (self$lenCode >1)
-                       {
-                         if (is.matrix(self$doe)) self$z[i,] <- self$code(0,self$doe[i,]) else
-                           self$z[i,] <- self$code(0,self$doe[i])
-                       } else
-                       {
-                         self$z <- c(self$z,self$code(0,self$doe[i,]))
+                         if (!self$f.variables == 0)
+                         {
+                           covariates <- as.matrix(self$doe[i,1:(Dim-self$p)])
+                           if (self$d == 1) {} else dim(covariates) <- c(1,self$d)
+                           self$z <- c(self$z,self$code(covariates,self$doe[i,(Dim-self$p+1):Dim]))
+                         } else if (self$lenCode >1)
+                         {
+                           if (is.matrix(self$doe)) self$z[i,] <- self$code(0,self$doe[i,]) else
+                             self$z[i,] <- self$code(0,self$doe[i])
+                         } else
+                         {
+                           self$z <- c(self$z,self$code(0,self$doe[i,]))
+                         }
                        }
                      }
                    } else if (self$case =="3")
                    {
-                      if (self$f.variables == 0){self$p <- ncol(self$opt.sim$DOEsim)}
-                      else {self$p <- ncol(self$opt.sim$DOEsim)-self$d}
-                      self$doe <- self$opt.sim$DOEsim
-                      self$z <- self$opt.sim$Ysim
-                      if (is.matrix(self$z)) self$lenCode <- ncol(self$z)
+                     if (self$f.variables == 0){self$p <- ncol(self$opt.sim$DOEsim)}
+                     else {self$p <- ncol(self$opt.sim$DOEsim)-self$d}
+                     self$doe <- self$opt.sim$DOEsim
+                     self$z <- self$opt.sim$Ysim
+                     if (is.matrix(self$z)) self$lenCode <- ncol(self$z)
                    }
                    ## Create the Gaussian Process corresponding
                    if (!self$f.variables == 0)
                    {
-                      GP <- km(formula =~1, design=self$doe, response = self$z,covtype = self$opt.gp$type)
+                     GP <- km(formula =~1, design=self$doe, response = self$z,covtype = self$opt.gp$type)
                    } else if (self$lenCode > 1)
                    {
-                      GP <- list()
-                      for (i in 1:self$lenCode){
-                          GP[[i]] <- km(formula =~1, design=as.data.frame(self$doe), response = self$z[,i],
-                                        covtype = self$opt.gp$type)
-                   }
+                     if(is.null(self$opt.PCA)==FALSE)
+                     {
+                       return(self$PCAhigdon())
+                     } else
+                     {
+                       GP <- list()
+                       for (i in 1:self$lenCode){
+                         GP[[i]] <- km(formula =~1, design=as.data.frame(self$doe), response = self$z[,i],
+                                       covtype = self$opt.gp$type)
+                       }
+                     }
                    } else
                    {
-                      GP <- km(formula =~1, design=self$doe, response = self$z,covtype = self$opt.gp$type)
+                     GP <- km(formula =~1, design=self$doe, response = self$z,covtype = self$opt.gp$type)
                    }
                    return(GP)
                  })
@@ -752,14 +843,26 @@ model2.class$set("public","surrogate",
 model2.class$set("public","likelihood",
                  function(theta,var)
                  {
-                   D  <- cbind(self$X,matrix(rep(theta,rep(nrow(self$X),self$p)),
-                                        nr=nrow(self$X),nc=self$p))
-                   pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
-                                 cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                   if (is.null(self$opt.PCA) == FALSE)
+                   {
+                     pr <- self$code(theta)
+                     n <- length(pr$cov)
+                     self$V.exp <- var*diag(n) + diag(pr$cov)
+                   } else
+                   {
+                     D  <- cbind(self$X,matrix(rep(theta,rep(nrow(self$X),self$p)),
+                                          nr=nrow(self$X),nc=self$p))
+                     pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
+                                   cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                     Yexp <- self$Yexp
+                     n <- self$n
+                     self$V.exp <- var*diag(self$n) + pr$cov
+                   }
                    self$m.exp <- pr$mean
-                   self$V.exp <- var*diag(self$n) + pr$cov
-                   return(-self$n/2*log(2*pi)-1/2*log(det(self$V.exp))
-                          -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(Yexp-self$m.exp))
+                   # Sans calcul du déterminant qui gonfle énormément la log-likelihood
+                   # return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
+                   return(-n/2*log(2*pi)-1/2*log(det(self$V.exp))-0.5*t(self$Yexp-self$m.exp)%*%
+                            solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                  })
 
 
