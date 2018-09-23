@@ -366,6 +366,8 @@ model.class$set("public","discrepancy",
                 ## Define method that generates a discrepancy
                 function(theta,thetaD,var,X=self$X)
                 {
+                  X <- as.matrix(X)
+                  if (ncol(X) == 1) X <- t(X)
                   if (self$model=="model3")
                   {
                     y <- self$model1.fun(theta,var,X)$y
@@ -373,11 +375,11 @@ model.class$set("public","discrepancy",
                   z   <- self$Yexp - y
                   ## Compute the discrepancy covariance
                   Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
-                  if (is.vector(X) & length(X)==1)
+                  p <- eigen(Cov)$vectors
+                  e <- eigen(Cov)$values
+                  if (is.matrix(X) & nrow(X)==1)
                   {} else
                   {
-                    p <- eigen(Cov)$vectors
-                    e <- eigen(Cov)$values
                     if (all(e>0)){} else
                     {
                       e[which(e<0)] <- .Machine$double.eps
@@ -397,11 +399,15 @@ model.class$set("public","discrepancy",
                   {
                     if (nrow(p) == 1 & ncol(p) == 1)
                     {
-                      bias <- rnorm(1,0,sqrt(Cov))
+                      bias <- rnorm(10000,0,sqrt(Cov))
                     } else
                     {
                       bias <- rnorm(n=self$n,0,sqrt(Cov))
                     }
+                    qq <- quantile(bias,c(0.025,0.5,0.975))
+                    bias <- qq[2]
+                    lower <- qq[1]
+                    upper <- qq[3]
                   } else
                   {
                     bias <- mvrnorm(10000,rep(0,long),Cov)
@@ -503,6 +509,11 @@ model3.class <- R6Class(classname = "model3.class",
                           },
                           model.fun = function(theta,thetaD,var,X=self$X,CI="err")
                           {
+                            if (is.matrix(X) == FALSE)
+                            {
+                              X <- as.matrix(X)
+                              if (ncol(X)==1) X <- t(X)
+                            }
                             res.model1 <- self$model1.fun(theta,var,X,CI=CI)
                             self$disc  <- self$discrepancy(theta,thetaD,var,X)
                             if (is.null(CI))
@@ -512,9 +523,10 @@ model3.class <- R6Class(classname = "model3.class",
                             {
                               # qq025 <- self$disc$lower + res.model1$q025
                               # qq975 <- self$disc$upper + res.model1$q975
-                              qq025 <- res.model1$y - 2*sqrt(self$thetaD[1] + self$var)
-                              qq975 <- res.model1$y + 2*sqrt(self$thetaD[1] + self$var)
-                              df <- data.frame(y=res.model1$y,type="model output",q025=qq025,q975=qq975,
+                              qq025 <- res.model1$y - 2*sqrt(thetaD[1] + var)
+                              qq975 <- res.model1$y + 2*sqrt(thetaD[1] + var)
+                              df <- data.frame(y=res.model1$y,type="model output",
+                                               q025=qq025,q975=qq975,
                                                fill="CI 95% discrepancy + noise")
                             } else
                             {
