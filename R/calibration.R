@@ -52,6 +52,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                {
                                  stop("The burnIn must be inferior to Nmh")
                                }
+                               if (is.null(self$opt.valid) == FALSE) self$onlyCV=TRUE
                                if (self$onlyCV==FALSE)
                                {
                                  if (opt.estim$Nchains==1)
@@ -74,7 +75,7 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                      self$output  <- mclapply(n,self$calibration,mc.cores = self$n.cores)
                                    }
                                    self$mcmc    <- lapply(1:opt.estim$Nchains, function(i)
-                                     as.mcmc(self$output[[i]]$out$THETA))
+                                   as.mcmc(self$output[[i]]$out$THETA))
                                    self$output    <- self$output[[1]]
                                    chain          <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
                                    qq             <- private$quantiles(chain)
@@ -87,11 +88,11 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                if (is.null(self$opt.valid)==FALSE)
                                {
                                  cat(paste("\nThe cross validation is currently running on your ",
-                                             self$n.cores," cores available....\n",sep=""))
+                                           self$n.cores," cores available....\n",sep=""))
                                  if (Sys.info()[[1]]=="Windows")
                                  {
                                    Results <- lapply(c(1:opt.valid$nCV),
-                                                       self$CV)
+                                                     self$CV)
                                  } else
                                  {
                                    Results <- mclapply(c(1:opt.valid$nCV),
@@ -111,17 +112,17 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                          self$coverRate <- self$coverRate + 1
                                        }
                                      }
-                                     } else{
-                                       self$ResultsCV <- rbind(self$ResultsCV,data.frame(Predicted=TempRes$Predict,
-                                                                                         Real=TempRes$Yval,Error=TempRes$err))
-                                       if (self$onlyCV==FALSE)
+                                   } else{
+                                     self$ResultsCV <- rbind(self$ResultsCV,data.frame(Predicted=TempRes$Predict,
+                                                                                       Real=TempRes$Yval,Error=TempRes$err))
+                                     if (self$onlyCV==FALSE)
+                                     {
+                                       if (TempRes$Predict < self$q95[inc] & TempRes$Predict > self$q05[inc])
                                        {
-                                         if (TempRes$Predict < self$q95[inc] & TempRes$Predict > self$q05[inc])
-                                         {
-                                           self$coverRate <- self$coverRate + 1
-                                         }
+                                         self$coverRate <- self$coverRate + 1
                                        }
                                      }
+                                   }
                                  }
                                  self$coverRate <- self$coverRate/self$opt.valid$nCV
                                  self$errorCV <- sqrt(mean(self$ResultsCV$Error))
@@ -132,10 +133,11 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                self$binf     <- private$boundaries()$binf
                                self$bsup     <- private$boundaries()$bsup
                                disc          <- private$Activation(self$md$model)
-                               out <-MetropolisHastingsCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
-                                                    self$opt.estim$thetaInit,self$opt.estim$r,
-                                                    self$md$Yexp,self$binf,self$bsup,
-                                                    self$logPost,disc,TRUE)
+                               MetropolisCpp <- private$MCMC(self$md$model)
+                               out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
+                                                           self$opt.estim$thetaInit,self$opt.estim$r,
+                                                           self$opt.estim$sig,self$md$Yexp,self$binf,self$bsup,
+                                                           self$logPost,1)
                                MAP   <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))
                              },
@@ -156,22 +158,46 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                  }
                                  Ycal        <- self$md$Yexp[-inc]
                                  Yval        <- self$md$Yexp[inc]
-                                 mdTempCal   <- model(code = self$md$code, X = dataCal, Yexp = Ycal,
-                                                      model = self$md$model,
-                                                      opt.gp = self$md$opt.gp,
-                                                      opt.emul = self$md$opt.emul,
-                                                      opt.sim = self$md$opt.sim)
+                                 if (self$md$model %in% "model1")
+                                 {
+                                   mdTempCal   <- model(code = self$md$code, X = dataCal,
+                                                        Yexp = Ycal,
+                                                        model = self$md$model)
+                                 } else if (self$md$model %in% "model2")
+                                 {
+                                   mdTempCal   <- model(code = self$md$code, X = dataCal,
+                                                        Yexp = Ycal,
+                                                        model = self$md$model,
+                                                        opt.gp = self$md$opt.gp,
+                                                        opt.emul = self$md$opt.emul,
+                                                        opt.sim = self$md$opt.sim)
+                                 } else if (self$md$model %in% "model3")
+                                 {
+                                   mdTempCal   <- model(code = self$md$code, X = dataCal,
+                                                        Yexp = Ycal,
+                                                        model = self$md$model,
+                                                        opt.disc = self$md$opt.disc)
+                                 } else
+                                 {
+                                   mdTempCal   <- model(code = self$md$code, X = dataCal,
+                                                        Yexp = Ycal,
+                                                        model = self$md$model,
+                                                        opt.gp = self$md$opt.gp,
+                                                        opt.emul = self$md$opt.emul,
+                                                        opt.sim = self$md$opt.sim,
+                                                        opt.disc = self$md$opt.disc)
+                                 }
                                  mdTempfit   <- self$calibrationCV(mdTempCal,Ycal)
                                  thetaMAP    <- mdTempfit$MAP
                                  if (mdTempCal$model=="model1" | mdTempCal$model=="model2")
                                  {
-                                    Predict  <- mdTempCal$model.fun(thetaMAP[1:(Dim-1)],thetaMAP[Dim],dataVal)$y
-                                    if (is.na(Predict)){Predict <- Yval}
+                                   Predict  <- mdTempCal$model.fun(thetaMAP[1:(Dim-1)],thetaMAP[Dim],dataVal)$y
+                                   if (is.na(Predict)){Predict <- Yval}
                                  } else
                                  {
-                                    Predict  <- mdTempCal$model.fun(thetaMAP[1:(Dim-3)],thetaMAP[(Dim-2):(Dim-1)],
-                                                               thetaMAP[Dim],dataVal)$y
-                                    if (is.na(Predict)){Predict <- Yval}
+                                   Predict  <- mdTempCal$model.fun(thetaMAP[1:(Dim-3)],thetaMAP[(Dim-2):(Dim-1)],
+                                                                   thetaMAP[Dim],dataVal)$y
+                                   if (is.na(Predict)){Predict <- Yval}
                                  }
                                  err <- sqrt((Predict-Yval)^2)
                                  res <- list(Predict=Predict,Yval=Yval,err=err,inc=inc)
@@ -182,13 +208,13 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                              {
                                binf          <- private$boundaries()$binf
                                bsup          <- private$boundaries()$bsup
-                               MetropolisCpp <- private$MCMC(mdTemp$model)
-                               if (is.na(self$md$PCA))
+                               MetropolisCpp <- private$MCMC(self$md$model)
+                               if (is.null(self$md$PCA))
                                {
-                                 out <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
-                                                      self$opt.estim$thetaInit,self$opt.estim$r,
-                                                      self$md$Yexp,
-                                                      binf,bsup,self$logPost,FALSE)
+                                 out        <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
+                                                             self$opt.estim$thetaInit,self$opt.estim$r,
+                                                             self$opt.estim$sig,self$md$Yexp,binf,bsup,
+                                                             self$logPost,0)
                                } else
                                {
                                  out <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
@@ -201,31 +227,42 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                              }
                            ))
 
+calibrate.class$set("private","MCMC",
+                    function(model)
+                    {
+                      switch(model,
+                             model1={return(MetropolisHastingsCpp)},
+                             model2={return(MetropolisHastingsCpp)},
+                             model3={return(MetropolisHastingsCppD)},
+                             model4={return(MetropolisHastingsCppD)}
+                      )
+                    })
+
 
 calibrate.class$set("private","Activation",
-                  function(model)
-                  {
-                    switch(model,
-                           model1={return(FALSE)},
-                           model2={return(FALSE)},
-                           model3={return(TRUE)},
-                           model4={return(TRUE)}
-                    )
-                  })
+                    function(model)
+                    {
+                      switch(model,
+                             model1={return(FALSE)},
+                             model2={return(FALSE)},
+                             model3={return(TRUE)},
+                             model4={return(TRUE)}
+                      )
+                    })
 
 
 calibrate.class$set("private","boundaries",
-                function()
-                {
-                  binf <- self$pr[[1]]$binf
-                  bsup <- self$pr[[1]]$bsup
-                  for (i in 2:length(self$pr))
-                  {
-                    binf <- c(binf,self$pr[[i]]$binf)
-                    bsup <- c(bsup,self$pr[[i]]$bsup)
-                  }
-                  return(list(binf=binf,bsup=bsup))
-                })
+                    function()
+                    {
+                      binf <- self$pr[[1]]$binf
+                      bsup <- self$pr[[1]]$bsup
+                      for (i in 2:length(self$pr))
+                      {
+                        binf <- c(binf,self$pr[[i]]$binf)
+                        bsup <- c(bsup,self$pr[[i]]$bsup)
+                      }
+                      return(list(binf=binf,bsup=bsup))
+                    })
 
 
 calibrate.class$set("private","quantiles",
@@ -276,15 +313,15 @@ calibrate.class$set("private","quantiles",
 
 
 calibrate.class$set("private","logLikelihood",
-                function(model)
-                {
-                  switch(model,
-                         model1={return(self$logTest)},
-                         model2={return(self$logTest)},
-                         model3={return(private$logTestD)},
-                         model4={return(private$logTestD)}
-                  )
-                }
+                    function(model)
+                    {
+                      switch(model,
+                             model1={return(self$logTest)},
+                             model2={return(self$logTest)},
+                             model3={return(private$logTestD)},
+                             model4={return(private$logTestD)}
+                      )
+                    }
 )
 
 calibrate.class$set("public","logTest",
@@ -307,31 +344,31 @@ calibrate.class$set("public","logTest",
                     })
 
 calibrate.class$set("private","logTestD",
-                function(theta,thetaD,sig2)
-                {
-                  s <- 0
-                  for (i in 1:(length(theta)))
-                  {
-                    s <- s + self$pr[[i]]$prior(theta[i])
-                  }
-                  for (j in 1:(length(thetaD)))
-                  {
-                    s <- s + self$pr[[length(theta)+j]]$prior(thetaD[j])
-                  }
-                  s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
-                  return(as.numeric(self$md$likelihood(theta,thetaD,sig2)) + s)
-                })
+                    function(theta,thetaD,sig2)
+                    {
+                      s <- 0
+                      for (i in 1:(length(theta)))
+                      {
+                        s <- s + self$pr[[i]]$prior(theta[i])
+                      }
+                      for (j in 1:(length(thetaD)))
+                      {
+                        s <- s + self$pr[[length(theta)+j]]$prior(thetaD[j])
+                      }
+                      s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
+                      return(as.numeric(self$md$likelihood(theta,thetaD,sig2)) + s)
+                    })
 
 calibrate.class$set("private","MAPestimator",
                     function(out)
+                    {
+                      chain <- out$THETA[-c(1:self$opt.estim$burnIn),]
+                      dens <- apply(chain,2,density)
+                      map <- function(dens)
                       {
-                        chain <- out$THETA[-c(1:self$opt.estim$burnIn),]
-                        dens <- apply(chain,2,density)
-                        map <- function(dens)
-                        {
-                          dens$x[which(dens$y==max(dens$y))]
-                        }
-                        return(unlist(lapply(dens,map)))
+                        dens$x[which(dens$y==max(dens$y))]
+                      }
+                      return(unlist(lapply(dens,map)))
                     })
 
 
@@ -404,7 +441,7 @@ calibrate.class$set("public","plot",
                         if (p == 1) {warning("No correlation plot available",call. = FALSE)}
                         else
                         {
-                           plot(do.call(grid.arrange2,P))
+                          plot(do.call(grid.arrange2,P))
                         }
                       }
                       if (!is.null(graph))
@@ -447,7 +484,7 @@ calibrate.class$set("public","acf",
                         geom_segment(mapping = aes(xend = lag, yend = 0))+
                         xlab("")+ylab("")+theme_light()
                       return(p)
-                      })
+                    })
 
 
 calibrate.class$set("public","corrPlot",
@@ -471,22 +508,22 @@ calibrate.class$set("public","mcmcChains",
                         xlab("")+theme_light()
                       return(p)
                     }
-                    )
+)
 
 
 calibrate.class$set("public","outputPlot",
                     function(select.X=NULL)
                     {
                       if (is.null(select.X)==TRUE)
+                      {
+                        if (is.null(dim(self$md$X))==TRUE)
                         {
-                          if (is.null(dim(self$md$X))==TRUE)
-                          {
-                            X <- self$md$X
-                          }else
-                          {
-                            stop('The dimension of X is higher than 1, the plot cannot be provided for a dimension >1')
-                          }
-                        } else {X <- select.X}
+                          X <- self$md$X
+                        }else
+                        {
+                          stop('The dimension of X is higher than 1, the plot cannot be provided for a dimension >1')
+                        }
+                      } else {X <- select.X}
                       m <- self$output$out$THETA[-c(1:self$opt.estim$burnIn),]
                       Dist <- Dist2 <- matrix(nr=nrow(m),nc=length(self$md$Yexp))
                       dim   <- length(self$pr)
@@ -515,7 +552,7 @@ calibrate.class$set("public","outputPlot",
                         {
                           D  <- self$md$model.fun(m[i,1:(dim-3)],m[i,(dim-2):(dim-1)],m[i,dim])$y
                           D2 <- self$md$model.fun(self$output$MAP[1:(dim-3)],m[i,(dim-2):(dim-1)],
-                                                   self$output$MAP[dim])$y
+                                                  self$output$MAP[dim])$y
                           return(list(D=D,D2=D2))
                         }
                         if (Sys.info()[['sysname']]=="Windows")
@@ -532,7 +569,7 @@ calibrate.class$set("public","outputPlot",
                         }
                         qqd <- apply(Dist2,2,quantile,probs=c(0.05,0.95))
                         ggdata2 <- data.frame(y=self$md$Yexp,x=X,upper=qqd[2,],lower=qqd[1,],type="experiments",
-                                            fill="95% credibility interval for the discrepancy")
+                                              fill="95% credibility interval for the discrepancy")
                       }
                       qq <- apply(Dist,2,quantile,probs=c(0.05,0.95))
                       if (self$md$model=="model1"||self$md$model=="model2")
@@ -562,7 +599,7 @@ calibrate.class$set("public","outputPlot",
                               legend.position = c(0.2,0.8),
                               legend.background = element_rect(
                                 linetype="solid", colour ="grey"))
-                     return(p)
+                      return(p)
                     })
 
 
