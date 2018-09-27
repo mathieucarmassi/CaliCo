@@ -59,7 +59,7 @@ MetropolisHastingsCpp <- function(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, b
 #' \item Likeli the likelihood computed at each iteration of the Metropolis Hastings algorithm
 #'  }
 #' @export
-MetropolisHastingsCppD <- function(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream) {
-    .Call('_CaliCo_MetropolisHastingsCppD', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream)
+MetropolisHastingsCppD <- function(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream, tt) {
+    .Call('_CaliCo_MetropolisHastingsCppD', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream, tt)
 }
 

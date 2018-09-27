@@ -366,56 +366,65 @@ model.class$set("public","discrepancy",
                 ## Define method that generates a discrepancy
                 function(theta,thetaD,var,X=self$X)
                 {
-                  X <- as.matrix(X)
-                  if (ncol(X) == 1) X <- t(X)
-                  if (self$model=="model3")
+                  if (is.null(self$opt.PCA)==FALSE)
                   {
-                    y <- self$model1.fun(theta,var,X)$y
-                  } else y <- self$model2.fun(theta,var,X)$y
-                  z   <- self$Yexp - y
-                  ## Compute the discrepancy covariance
-                  Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
-                  p <- eigen(Cov)$vectors
-                  e <- eigen(Cov)$values
-                  if (is.matrix(X) & nrow(X)==1)
-                  {} else
-                  {
-                    if (all(e>0)){} else
-                    {
-                      e[which(e<0)] <- .Machine$double.eps
-                    }
-                    d <- diag(e)
-                    if (nrow(p) == 1 & ncol(p) == 1)
-                    {
-                      Cov <- as.numeric(p)^2*d
-                    } else
-                    {
-                      Cov <- p%*%d%*%t(p)
-                    }
-                  }
-                  if (is.vector(X)){long <- length(X)}else{
-                    long <- nrow(X)}
-                  if (long==1)
-                  {
-                    if (nrow(p) == 1 & ncol(p) == 1)
-                    {
-                      bias <- rnorm(10000,0,sqrt(Cov))
-                    } else
-                    {
-                      bias <- rnorm(n=self$n,0,sqrt(Cov))
-                    }
-                    qq <- quantile(bias,c(0.025,0.5,0.975))
-                    bias <- qq[2]
-                    lower <- qq[1]
-                    upper <- qq[3]
+                    bias <- 0
+                    lower <- -2*sqrt(thetaD)
+                    upper <- 2*sqrt(thetaD)
+                    Cov <- thetaD
                   } else
                   {
-                    bias <- mvrnorm(10000,rep(0,long),Cov)
-                    dim(bias) <- c(long,10000)
-                    qq <- apply(bias,1,quantile,c(0.025,0.5,0.975))
-                    bias <- qq[2,]
-                    lower <- qq[1,]
-                    upper <- qq[3,]
+                    X <- as.matrix(X)
+                    if (ncol(X) == 1) X <- t(X)
+                    if (self$model=="model3")
+                    {
+                      y <- self$model1.fun(theta,var,X)$y
+                    } else y <- self$model2.fun(theta,var,X)$y
+                    z   <- self$Yexp - y
+                    ## Compute the discrepancy covariance
+                    Cov <- kernel.fun(X,thetaD[1],thetaD[2],self$opt.disc$kernel.type)
+                    p <- eigen(Cov)$vectors
+                    e <- eigen(Cov)$values
+                    if (is.matrix(X) & nrow(X)==1)
+                    {} else
+                    {
+                      if (all(e>0)){} else
+                      {
+                        e[which(e<0)] <- .Machine$double.eps
+                      }
+                      d <- diag(e)
+                      if (nrow(p) == 1 & ncol(p) == 1)
+                      {
+                        Cov <- as.numeric(p)^2*d
+                      } else
+                      {
+                        Cov <- p%*%d%*%t(p)
+                      }
+                    }
+                    if (is.vector(X)){long <- length(X)}else{
+                      long <- nrow(X)}
+                    if (long==1)
+                    {
+                      if (nrow(p) == 1 & ncol(p) == 1)
+                      {
+                        bias <- rnorm(10000,0,sqrt(Cov))
+                      } else
+                      {
+                        bias <- rnorm(n=self$n,0,sqrt(Cov))
+                      }
+                      qq <- quantile(bias,c(0.025,0.5,0.975))
+                      bias <- qq[2]
+                      lower <- qq[1]
+                      upper <- qq[3]
+                    } else
+                    {
+                      bias <- mvrnorm(10000,rep(0,long),Cov)
+                      dim(bias) <- c(long,10000)
+                      qq <- apply(bias,1,quantile,c(0.025,0.5,0.975))
+                      bias <- qq[2,]
+                      lower <- qq[1,]
+                      upper <- qq[3,]
+                    }
                   }
                   return(list(bias=bias,cov=Cov,lower=lower,upper=upper))
                 })
@@ -570,12 +579,16 @@ model2.class <- R6Class(classname = "model2.class",
                           opt.gp   = NULL, ## GP options
                           opt.PCA  = NULL, ## Option for Higdon calibration
                           P        = NULL, ## Transition matrix in the PCA
+                          Pp       = NULL, ## Orthogonal transition matrix
                           case     = NULL, ## case wanted by the user (depending on options)
                           doe      = NULL, ## DOE used for the surrogate
                           z        = NULL, ## output of the code for the DOE
                           GP       = NULL, ## current Gaussian process emulated
                           p        = NULL, ## number of parameters
                           lenCode  = NULL, ## length of code output
+                          range    = NULL, ## correlation lengths estimated by km
+                          trend    = NULL, ## mean estimated by km
+                          sd2      = NULL, ## variance estimated by km
                         initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.gp=NULL,opt.emul=NULL,
                                               opt.sim=NULL,opt.PCA=NULL)
                         {
@@ -697,15 +710,23 @@ model2.class <- R6Class(classname = "model2.class",
 model2.class$set("public","PCAhigdon",
                  function()
                  {
-                   myPca <- PCA(t(self$z),graph=FALSE)
+                   myPca <- PCA(t(self$z),graph=FALSE,ncp = 300)
                    self$P <<- sqrt(myPca$var$contrib)/10 * sign(myPca$var$coord)
+                   ### P' identite - projection
+                   self$Pp <- matrix(0,nr=nrow(self$z),nc=(nrow(self$z)-5))
+                   self$Pp[,1:(ncol(self$P)-5)] <- self$P[,(5:(ncol(self$P)-1))]
+                   self$P <- self$P[,1:5]
                    resPG <- t(self$P)%*%self$z
                    funGP <- function(i)
                    {
-                     kmfit <- km(formula = ~1,design = self$doe,response = resPG[i,],covtype = "matern5_2")
+                     kmfit <- km(formula = ~1,design = self$doe,response = resPG[i,],
+                                 coef.trend = 0, covtype = "matern5_2")
                      return(kmfit)
                    }
                    kmfit <<- lapply(1:5,funGP)
+                   self$range <- mapply(function(i) coef(kmfit[[i]])$range, 1:5)
+                   self$sd2  <- mapply(function(i) coef(kmfit[[i]])$sd2, 1:5)
+                   self$trend <- mapply(function(i) coef(kmfit[[i]])$trend, 1:5)
                    codePCA <- function(theta)
                    {
                      pr <- lapply(1:5, function(i) predict(kmfit[[i]],data.frame(t(theta)),chekNames=FALSE,
@@ -858,8 +879,12 @@ model2.class$set("public","likelihood",
                    if (is.null(self$opt.PCA) == FALSE)
                    {
                      pr <- self$code(theta)
-                     n <- length(pr$cov)
-                     self$V.exp <- var*diag(n) + diag(pr$cov)
+                     n <- nrow(self$P)
+                     # return(-5/2*log(2*pi)-0.5*sum(log(var+pr$cov))-
+                     #          0.5*sum((t(self$P)%*%Yexp-pr$mean)^2/(var+pr$cov))-
+                     #          (n-5)/2 *(log(2*pi)+log(var))-1/(2*(var))*sum(crossprod(self$Pp,Yexp)^2))
+                     return(-5/2*log(2*pi)-0.5*sum(log(var+pr$cov))-
+                              0.5*sum((t(self$P)%*%Yexp-pr$mean)^2/(var+pr$cov)))
                    } else
                    {
                      D  <- cbind(self$X,matrix(rep(theta,rep(nrow(self$X),self$p)),
@@ -869,12 +894,10 @@ model2.class$set("public","likelihood",
                      Yexp <- self$Yexp
                      n <- self$n
                      self$V.exp <- var*diag(self$n) + pr$cov
+                     self$m.exp <- pr$mean
+                     return(-n/2*log(2*pi)-1/2*log(det(self$V.exp))-0.5*t(self$Yexp-self$m.exp)%*%
+                              solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                    }
-                   self$m.exp <- pr$mean
-                   # Sans calcul du déterminant qui gonfle énormément la log-likelihood
-                   # return(-0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
-                   return(-n/2*log(2*pi)-1/2*log(det(self$V.exp))-0.5*t(self$Yexp-self$m.exp)%*%
-                            solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                  })
 
 
@@ -889,25 +912,36 @@ model4.class <- R6Class(classname = "model4.class",
                           opt.disc   = NULL, ## discrepancy options
                           disc       = NULL, ## discrepancy field
                           initialize=function(code=NA, X=NA, Yexp=NA, model=NA,opt.disc=NULL,opt.gp=NULL,
-                                              opt.emul=NULL,opt.sim=NULL,...)
+                                              opt.emul=NULL,opt.sim=NULL,opt.PCA=NULL,...)
                           {
                             if (missing(opt.sim)) self$case <- 1
                             if (missing(opt.emul) & missing(opt.sim)) self$case <- 2
                             if (missing(opt.emul) & !missing(opt.sim)) self$case <- 3
+                            if (is.null(opt.PCA)==FALSE)
+                            {
+                              print("Higdon method selected")
+                              opt.disc <- 0
+                            }
+                            self$opt.PCA  <- opt.PCA
                             self$opt.gp   <- opt.gp
                             self$opt.emul <- opt.emul
                             self$opt.sim  <- opt.sim
                             self$opt.disc <- opt.disc
                             super$initialize(code, X, Yexp, model,opt.gp=self$opt.gp, opt.emul=self$opt.emul,
-                                             opt.sim=self$opt.sim)
+                                             opt.sim=self$opt.sim,opt.PCA = self$opt.PCA)
                             ## Check if the opt.emul option is filled if it is not a gaussian kernel is picked
-                            if (is.null(opt.disc$kernel.type)==TRUE)
+                            if (is.null(opt.PCA)==FALSE)
                             {
-                              warning("default value is selected. The discrepancy will have a gaussian covariance structure",call.=FALSE)
-                              self$opt.disc$kernel.type="gauss"
                             } else
                             {
-                              self$opt.disc <- opt.disc
+                              if (is.null(opt.disc$kernel.type)==TRUE)
+                              {
+                                warning("default value is selected. The discrepancy will have a gaussian covariance structure",call.=FALSE)
+                                self$opt.disc$kernel.type="gauss"
+                              } else
+                              {
+                                self$opt.disc <- opt.disc
+                              }
                             }
                             self$model2.fun <- super$model.fun
                           },
@@ -920,8 +954,8 @@ model4.class <- R6Class(classname = "model4.class",
                               df <- data.frame(y=res.model2$y,type="model output")
                             } else if (CI == "err")
                             {
-                              qq025 <- res.model2$y - 2*sqrt(self$thetaD[1] + self$var)
-                              qq975 <- res.model2$y + 2*sqrt(self$thetaD[1] + self$var)
+                              qq025 <- res.model2$y - 2*sqrt(thetaD[1] + var)
+                              qq975 <- res.model2$y + 2*sqrt(thetaD[1] + var)
                               df    <- data.frame(y=res.model2$y,type="model output",q025=qq025,q975=qq975,
                                                fill="CI 95% discrepancy + noise")
                             } else if (CI == "GP")
@@ -930,8 +964,8 @@ model4.class <- R6Class(classname = "model4.class",
                                                       q975 = res.model2$q975,fill="CI 95% GP")
                             } else if (CI == "all")
                             {
-                              qq025 <- res.model2$y - 2*sqrt(self$thetaD[1] + self$var)
-                              qq975 <- res.model2$y + 2*sqrt(self$thetaD[1] + self$var)
+                              qq025 <- res.model2$y - 2*sqrt(thetaD[1] + var)
+                              qq975 <- res.model2$y + 2*sqrt(thetaD[1] + var)
                               df    <- data.frame(y=res.model2$y,type="model ouput",q025=res.model2$q025,
                                                       q975 = res.model2$q975,fill="CI 95% GP",q025n=qq025,
                                                       q975n=qq975)
@@ -948,13 +982,25 @@ model4.class <- R6Class(classname = "model4.class",
 model4.class$set("public","likelihood",
                  function(theta,thetaD,var)
                  {
-                   D  <- cbind(self$X,matrix(rep(theta,rep(nrow(self$X),self$p)),
-                                             nr=nrow(self$X),nc=self$p))
-                   pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
-                                 cov.compute=TRUE,interval="confidence",checkNames=FALSE)
-                   dd <- self$discrepancy(theta,thetaD,var,self$X)
-                   self$m.exp <- pr$mean
-                   self$V.exp <- var*diag(self$n) + pr$cov +dd$cov
-                   return(-self$n/2*log(2*pi)-1/2*log(det(self$V.exp))
-                          -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
+                   if (is.null(self$opt.PCA) == FALSE)
+                   {
+                     pr <- self$code(theta)
+                     n <- nrow(self$P)
+                     thetaD <- as.numeric(thetaD)
+                     return(-5/2*log(2*pi)-0.5*sum(log(var+pr$cov))-
+                              0.5*sum((t(self$P)%*%Yexp-pr$mean)^2/(var+pr$cov))-
+                              (n-5)/2 *(log(2*pi)+log(thetaD))-
+                              1/(2*(thetaD))*sum(crossprod(self$Pp,Yexp)^2))
+                   } else
+                   {
+                     D  <- cbind(self$X,matrix(rep(theta,rep(nrow(self$X),self$p)),
+                                               nr=nrow(self$X),nc=self$p))
+                     pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
+                                   cov.compute=TRUE,interval="confidence",checkNames=FALSE)
+                     dd <- self$discrepancy(theta,thetaD,var,self$X)
+                     self$m.exp <- pr$mean
+                     self$V.exp <- var*diag(self$n) + pr$cov +dd$cov
+                     return(-self$n/2*log(2*pi)-1/2*log(det(self$V.exp))
+                            -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
+                   }
                  })

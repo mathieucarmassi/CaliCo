@@ -134,10 +134,17 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                self$bsup     <- private$boundaries()$bsup
                                disc          <- private$Activation(self$md$model)
                                MetropolisCpp <- private$MCMC(self$md$model)
+                               if (is.null(self$md$opt.PCA)==FALSE)
+                               {
+                                 tt <- 1
+                               } else
+                               {
+                                 tt <- 0
+                               }
                                out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
                                                            self$opt.estim$thetaInit,self$opt.estim$r,
                                                            self$opt.estim$sig,self$md$Yexp,self$binf,self$bsup,
-                                                           self$logPost,1)
+                                                           self$logPost,1,tt)
                                MAP   <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))
                              },

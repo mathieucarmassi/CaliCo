@@ -275,7 +275,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
 //' @export
 // [[Rcpp::export]]
 List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec r, arma::mat SIGMA, arma::vec Yf,
-                            arma::vec binf, arma::vec bsup, Function LogTest, int stream)
+                            arma::vec binf, arma::vec bsup, Function LogTest, int stream, int tt)
 {
   double Dim = theta_init.size();
   int D;
@@ -283,15 +283,25 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
   arma::mat PHIwg=randu<arma::mat>(Ngibbs,Dim), THETAwg=randu<arma::mat>(Ngibbs,Dim);
   if (Nmh!=0) {D=Nmh;} else {D=10;}
   arma::mat PHI= randu<arma::mat>(D,Dim), THETA=randu<arma::mat>(D,Dim);
-  THETA.row(0)=theta_init.t();
-  PHI.row(0)= log((THETA.row(0).t()-binf)/(bsup-binf)).t();
+  // Set the first row of THETA at the initial value (for the MH)
+  THETAwg.row(0)=theta_init.t();
+  // Space changing of THETA in PHI (for the MH)
+  PHIwg.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
   double AcceptationRatio=0;
   arma::vec AcceptationRatioWg=zeros(Dim,1);
   Function unscale("unscale"), rnorm("rnorm"), mvrnorm("multivariate"), runif("runif"), DefPos("DefPos");
-  THETAwg.row(0)=theta_init.t();
-  PHIwg.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
-  arma::vec theta=theta_init.rows(0,Dim-4);
-  arma::vec thetaD=theta_init.rows(Dim-3,Dim-2);
+  THETA.row(0)=theta_init.t();
+  PHI.row(0) = log((THETAwg.row(0).t()-binf)/(bsup-binf)).t();
+  arma::vec theta, thetaD;
+  if (tt == 1)
+  {
+    theta=theta_init.rows(0,Dim-3);
+    thetaD=theta_init(Dim-2);
+  } else
+  {
+    theta=theta_init.rows(0,Dim-4);
+    thetaD=theta_init.rows(Dim-3,Dim-2);
+  }
   double Verr=THETAwg(0,(Dim-1));
   double alpha = as<double>(LogTest(theta,thetaD,Verr));
   double alpha2 = alpha;
@@ -330,8 +340,15 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
       phi_star(j) = as<double>(rnorm(1,PHIwg(i,j),sqrt(k(j)*SIGMA(j,j))));
       theta_star(j) = as<double>(unscale(exp(phi_star(j)),binf(j),bsup(j)));
       Verr = theta_star((Dim-1));
-      thetaD= theta_star.rows((Dim-3),(Dim-2));
-      theta = theta_star.rows(0,Dim-4);
+      if (tt == 1)
+      {
+        thetaD= theta_star(Dim-2);
+        theta = theta_star.rows(0,Dim-3);
+      } else
+      {
+        thetaD= theta_star.rows((Dim-3),(Dim-2));
+        theta = theta_star.rows(0,Dim-4);
+      }
       double beta = as<double>(LogTest(theta,thetaD,Verr));
       double logR = beta-alpha;
       if (log(as<double>(runif(1))) < logR)
@@ -399,8 +416,15 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
       }
       vec phi_star = as<vec>(mvrnorm(1,NewPhi.t(),t*S));
       vec theta_star = as<vec>(unscale(exp(phi_star.t()),binf,bsup));
-      theta = theta_star.rows(0,Dim-4);
-      thetaD = theta_star.rows((Dim-3),(Dim-2));
+      if (tt == 1)
+      {
+        thetaD= theta_star(Dim-2);
+        theta = theta_star.rows(0,Dim-3);
+      } else
+      {
+        thetaD= theta_star.rows((Dim-3),(Dim-2));
+        theta = theta_star.rows(0,Dim-4);
+      }
       Verr = theta_star((Dim-1));
       double beta2 = as<double>(LogTest(theta,thetaD,Verr));
       double logR2 = beta2 - alpha2;
