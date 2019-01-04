@@ -38,6 +38,8 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                              n.cores    = NULL,
                              binf       = NULL,
                              bsup       = NULL,
+                             logPost1   = NULL,
+                             logPost2   = NULL,
                              initialize = function(md=NA,pr=NA,opt.estim=NA,opt.valid=NULL,onlyCV)
                              {
                                self$onlyCV <- onlyCV
@@ -141,11 +143,49 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                {
                                  tt <- 0
                                }
-                               out           <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
-                                                           self$opt.estim$thetaInit,self$opt.estim$r,
-                                                           self$opt.estim$sig,self$md$Yexp,self$binf,self$bsup,
-                                                           self$logPost,1,tt)
-                               MAP   <- private$MAPestimator(out)
+                               if (is.null(self$md$opt.PCA)==FALSE)
+                               {
+                                 if ("model3" %in% self$md$model | "model4" %in% self$md$model)
+                                 {
+                                   logPost1 <- self$logTest1D
+                                   logPost2 <- self$logTest2D
+                                 } else
+                                 {
+                                   logPost1 <- self$logTest1
+                                   logPost2 <- self$logTest2
+                                 }
+                                 # First estimation
+                                 out   <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
+                                                        self$opt.estim$thetaInit,self$opt.estim$r,
+                                                        self$opt.estim$sig,self$md$Yexp,self$binf,
+                                                        self$bsup,logPost1,1,tt)
+                                 MAP   <- private$MAPestimator(out)
+                                 # Second estimation
+                                 out2   <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
+                                                        MAP,self$opt.estim$r,
+                                                        self$opt.estim$sig,self$md$Yexp,self$binf,
+                                                        self$bsup,logPost2,1,tt)
+                                 MAP2   <- private$MAPestimator(out2)
+                                 lengthParam <- length(self$opt.estim$thetaInit)
+                                 if ("model3" %in% self$md$model | "model4" %in% self$md$model)
+                                 {
+                                   out$THETA[,c((lengthParam-1):(lengthParam))] <-
+                                     out2$THETA[,c((lengthParam-1):(lengthParam))]
+                                   MAP[c((lengthParam-1):(lengthParam))] <-
+                                     MAP2[c((lengthParam-1):(lengthParam))]
+                                 } else
+                                 {
+                                   out$THETA[,lengthParam] <- out2$THETA[,lengthParam]
+                                   MAP[lengthParam] <- MAP2[lengthParam]
+                                 }
+                               } else
+                               {
+                                 out   <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
+                                                        self$opt.estim$thetaInit,self$opt.estim$r,
+                                                        self$opt.estim$sig,self$md$Yexp,self$binf,
+                                                        self$bsup,self$logPost,1,tt)
+                                 MAP   <- private$MAPestimator(out)
+                               }
                                return(list(out=out,MAP=MAP))
                              },
                              CV = function(i=NA)
@@ -216,18 +256,25 @@ calibrate.class <- R6Class(classname = "calibrate.class",
                                binf          <- private$boundaries()$binf
                                bsup          <- private$boundaries()$bsup
                                MetropolisCpp <- private$MCMC(self$md$model)
+                               if (is.null(self$md$opt.PCA)==FALSE)
+                               {
+                                 tt <- 1
+                               } else
+                               {
+                                 tt <- 0
+                               }
                                if (is.null(self$md$PCA))
                                {
                                  out        <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
                                                              self$opt.estim$thetaInit,self$opt.estim$r,
                                                              self$opt.estim$sig,self$md$Yexp,binf,bsup,
-                                                             self$logPost,0)
+                                                             self$logPost,0,tt)
                                } else
                                {
                                  out <- MetropolisCpp(self$opt.estim$Ngibbs,self$opt.estim$Nmh,
                                                       self$opt.estim$thetaInit,self$opt.estim$r,
                                                       as.vector(self$md$Yexp%*%self$md$P) ,
-                                                      binf,bsup,self$logPost,FALSE)
+                                                      binf,bsup,self$logPost,FALSE,tt)
                                }
                                MAP   <- private$MAPestimator(out)
                                return(list(out=out,MAP=MAP))
@@ -348,6 +395,77 @@ calibrate.class$set("public","logTest",
                         s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
                         return(as.numeric(self$md$likelihood(theta,sig2) + s))
                       }
+                    })
+
+
+calibrate.class$set("public","logTest1",
+                    function(theta,sig2)
+                    {
+                      theta <- as.vector(theta)
+                      if (length(self$pr) == 1)
+                      {
+                        return(self$md$likelihood1(theta,sig2)+self$pr$prior(theta))
+                      } else
+                      {
+                        s <- 0
+                        for (i in 1:(length(theta)))
+                        {
+                          s <- s + self$pr[[i]]$prior(theta[i])
+                        }
+                        s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
+                        return(as.numeric(self$md$likelihood1(theta,sig2) + s))
+                      }
+                    })
+
+calibrate.class$set("public","logTest2",
+                    function(theta,sig2)
+                    {
+                      theta <- as.vector(theta)
+                      if (length(self$pr) == 1)
+                      {
+                        return(self$md$likelihood2(theta,sig2)+self$pr$prior(theta))
+                      } else
+                      {
+                        s <- 0
+                        for (i in 1:(length(theta)))
+                        {
+                          s <- s + self$pr[[i]]$prior(theta[i])
+                        }
+                        s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
+                        return(as.numeric(self$md$likelihood2(theta,sig2) + s))
+                      }
+                    })
+
+calibrate.class$set("public","logTest1D",
+                    function(theta,thetaD,sig2)
+                    {
+                      s <- 0
+                      for (i in 1:(length(theta)))
+                      {
+                        s <- s + self$pr[[i]]$prior(theta[i])
+                      }
+                      for (j in 1:(length(thetaD)))
+                      {
+                        s <- s + self$pr[[length(theta)+j]]$prior(thetaD[j])
+                      }
+                      s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
+                      return(as.numeric(self$md$likelihood1(theta,thetaD,sig2)) + s)
+                    })
+
+calibrate.class$set("public","logTest2D",
+                    function(theta,thetaD,sig2)
+                    {
+                      s <- 0
+                      for (i in 1:(length(theta)))
+                      {
+                        s <- s + self$pr[[i]]$prior(theta[i])
+                      }
+                      for (j in 1:(length(thetaD)))
+                      {
+                        s <- s + self$pr[[length(theta)+j]]$prior(thetaD[j])
+                      }
+                      s <- s + self$pr[[(length(theta)+1)]]$prior(sig2)
+                      return(as.numeric(self$md$likelihood2(theta,thetaD,sig2)) + s)
                     })
 
 calibrate.class$set("private","logTestD",

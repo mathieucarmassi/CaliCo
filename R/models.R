@@ -484,7 +484,7 @@ model1.class$set("public","likelihood",
                   self$m.exp <- self$code(self$X,as.vector(theta))
                   self$V.exp <- var*diag(self$n)
                   V.exp.inv  <- (1/var)*diag(self$n)
-                  return(-self$n/2*log(2*pi)+1/2*self$n*log(var)
+                  return(-self$n/2*log(2*pi)-1/2*self$n*log(var)
                          -0.5*t(self$Yexp-self$m.exp)%*%V.exp.inv%*%(self$Yexp-self$m.exp))
                 })
 
@@ -589,6 +589,9 @@ model2.class <- R6Class(classname = "model2.class",
                           range    = NULL, ## correlation lengths estimated by km
                           trend    = NULL, ## mean estimated by km
                           sd2      = NULL, ## variance estimated by km
+                          projY_d  = NULL, ## projector of Yexp on the d PCA axis
+                          projY_td = NULL, ## projector of Yexp on the T-d PCA axis
+                          Ydata    = NULL, ## real data
                         initialize = function(code=NA, X=NA, Yexp=NA, model=NA,opt.gp=NULL,opt.emul=NULL,
                                               opt.sim=NULL,opt.PCA=NULL)
                         {
@@ -710,12 +713,15 @@ model2.class <- R6Class(classname = "model2.class",
 model2.class$set("public","PCAhigdon",
                  function()
                  {
-                   myPca <- PCA(t(self$z),graph=FALSE,ncp = 300)
+                   self$Ydata <- self$Yexp
+                   myPca <- PCA(t(self$z),graph=FALSE)
                    self$P <<- sqrt(myPca$var$contrib)/10 * sign(myPca$var$coord)
                    ### P' identite - projection
-                   self$Pp <- matrix(0,nr=nrow(self$z),nc=(nrow(self$z)-5))
-                   self$Pp[,1:(ncol(self$P)-5)] <- self$P[,(5:(ncol(self$P)-1))]
-                   self$P <- self$P[,1:5]
+                   ProjPd <- tcrossprod(self$P)
+                   ProjPt_d <- diag(nrow(self$P)) - ProjPd
+                   ### Projection Y sur d premier axes
+                   self$projY_d <- ProjPd %*% self$Yexp
+                   self$projY_td <- ProjPt_d %*% self$Yexp
                    resPG <- t(self$P)%*%self$z
                    funGP <- function(i)
                    {
@@ -850,7 +856,8 @@ model2.class$set("public","surrogate",
                    ## Create the Gaussian Process corresponding
                    if (!self$f.variables == 0)
                    {
-                     GP <- km(formula =~1, design=self$doe, response = self$z,covtype = self$opt.gp$type)
+                     GP <- km(formula =~1, design=self$doe, response = self$z,
+                              covtype = self$opt.gp$type,scaling = TRUE)
                    } else if (self$lenCode > 1)
                    {
                      if(is.null(self$opt.PCA)==FALSE)
@@ -861,12 +868,13 @@ model2.class$set("public","surrogate",
                        GP <- list()
                        for (i in 1:self$lenCode){
                          GP[[i]] <- km(formula =~1, design=as.data.frame(self$doe), response = self$z[,i],
-                                       covtype = self$opt.gp$type)
+                                       covtype = self$opt.gp$type,scaling = TRUE)
                        }
                      }
                    } else
                    {
-                     GP <- km(formula =~1, design=self$doe, response = self$z,covtype = self$opt.gp$type)
+                     GP <- km(formula =~1, design=self$doe, response = self$z,
+                              covtype = self$opt.gp$type,scaling = TRUE)
                    }
                    return(GP)
                  })
@@ -881,25 +889,45 @@ model2.class$set("public","likelihood",
                      pr <- self$code(theta)
                      n <- nrow(self$P)
                      # return(-5/2*log(2*pi)-0.5*sum(log(var+pr$cov))-
-                     #          0.5*sum((t(self$P)%*%Yexp-pr$mean)^2/(var+pr$cov))-
-                     #          (n-5)/2 *(log(2*pi)+log(var))-1/(2*(var))*sum(crossprod(self$Pp,Yexp)^2))
-                     return(-5/2*log(2*pi)-0.5*sum(log(var+pr$cov))-
-                              0.5*sum((t(self$P)%*%Yexp-pr$mean)^2/(var+pr$cov)))
+                     #          0.5*sum(crossprod(t(self$projY_d-pr$mean))/(var+pr$cov))-
+                     #          (n-5)/2 *(log(2*pi)+log(var))-
+                     #          0.5*(crossprod(self$projY_td))/(var))
+                     return(-0.5*sum(log(var+pr$cov))-
+                              0.5*crossprod((t(self$P)%*%self$Ydata-pr$mean)/(var+pr$cov))-
+                              (n-5)/2 *(log(var))-
+                              0.5*(crossprod(self$Ydata)-crossprod((t(self$P)%*%self$Ydata)))/(var))
                    } else
                    {
                      D  <- cbind(self$X,matrix(rep(theta,rep(nrow(self$X),self$p)),
                                           nr=nrow(self$X),nc=self$p))
-                     pr <- predict(self$GP,newdata=as.data.frame(D),type="UK",
+                     pr <- predict(self$GP,newdata=as.data.frame(D),type="SK",
                                    cov.compute=TRUE,interval="confidence",checkNames=FALSE)
                      Yexp <- self$Yexp
                      n <- self$n
                      self$V.exp <- var*diag(self$n) + pr$cov
                      self$m.exp <- pr$mean
-                     return(-n/2*log(2*pi)-1/2*log(det(self$V.exp))-0.5*t(self$Yexp-self$m.exp)%*%
+                     return(-n/2*log(2*pi)-1/2*(n*log(var)+log(det(self$V.exp/var)))-
+                            0.5*t(self$Yexp-self$m.exp)%*%
                               solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                    }
                  })
 
+model2.class$set("public","likelihood1",
+                 function(theta,var)
+                 {
+                   pr <- self$code(theta)
+                   return(-5/2*log(2*pi)-0.5*sum(log(var+pr$cov))-
+                            0.5*crossprod((t(self$P)%*%self$Ydata-pr$mean)/(var+pr$cov)))
+                 })
+
+
+model2.class$set("public","likelihood2",
+                 function(theta,var)
+                 {
+                   n <- nrow(self$P)
+                   return(-(n-5)/2 *(log(2*pi)+log(var))-
+                            0.5*(crossprod(self$Ydata)-crossprod((t(self$P)%*%self$Ydata)))/(var))
+                 })
 
 
 ################################## Model 4 definition ####################################
@@ -919,7 +947,6 @@ model4.class <- R6Class(classname = "model4.class",
                             if (missing(opt.emul) & !missing(opt.sim)) self$case <- 3
                             if (is.null(opt.PCA)==FALSE)
                             {
-                              print("Higdon method selected")
                               opt.disc <- 0
                             }
                             self$opt.PCA  <- opt.PCA
@@ -987,10 +1014,16 @@ model4.class$set("public","likelihood",
                      pr <- self$code(theta)
                      n <- nrow(self$P)
                      thetaD <- as.numeric(thetaD)
+                     PY <- crossprod(self$P,self$P%*%self$Yexp)
+                     Y  <- self$P%*%self$Yexp
+                     # return(-5/2*log(2*pi)-0.5*sum(log(var+pr$cov))-
+                     #          0.5*sum((t(self$P)%*%Yexp-pr$mean)^2/(var+pr$cov))-
+                     #          (n-5)/2 *(log(2*pi)+log(thetaD))-
+                     #          1/(2*(thetaD))*sum(crossprod(self$Pp,Yexp)^2))
                      return(-5/2*log(2*pi)-0.5*sum(log(var+pr$cov))-
-                              0.5*sum((t(self$P)%*%Yexp-pr$mean)^2/(var+pr$cov))-
-                              (n-5)/2 *(log(2*pi)+log(thetaD))-
-                              1/(2*(thetaD))*sum(crossprod(self$Pp,Yexp)^2))
+                              0.5*sum((crossprod(self$P,Y)-pr$mean)^2/(var+pr$cov))-
+                              (n-5)/2 *(log(2*pi)+log(var + thetaD))-
+                              0.5*(crossprod(Y)^2-crossprod(PY)^2)/(var+thetaD))
                    } else
                    {
                      D  <- cbind(self$X,matrix(rep(theta,rep(nrow(self$X),self$p)),
@@ -1000,7 +1033,28 @@ model4.class$set("public","likelihood",
                      dd <- self$discrepancy(theta,thetaD,var,self$X)
                      self$m.exp <- pr$mean
                      self$V.exp <- var*diag(self$n) + pr$cov +dd$cov
-                     return(-self$n/2*log(2*pi)-1/2*log(det(self$V.exp))
+                     return(-self$n/2*log(2*pi)-1/2*(n*log(var)+log(det(self$V.exp/var)))
                             -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp))
                    }
+                 })
+
+
+
+model4.class$set("public","likelihood1",
+                 function(theta,thetaD,var)
+                 {
+                   pr <- self$code(theta)
+                   return(-5/2*log(2*pi)-0.5*sum(log(var+pr$cov))-
+                            0.5*crossprod((t(self$P)%*%self$Ydata-pr$mean)/(var+pr$cov)))
+                 })
+
+
+model4.class$set("public","likelihood2",
+                 function(theta,thetaD,var)
+                 {
+                   n <- nrow(self$P)
+                   return(-(n-5)/2 *(log(2*pi)+log(var+thetaD))-
+                            0.5*(crossprod(self$Ydata)-crossprod((t(self$P)%*%self$Ydata)))/(var+thetaD))
+                   # return(-(n-5)/2 *(log(2*pi)+log(var))-
+                   #          0.5*(crossprod(Y)^2-crossprod(PY)^2)/(var))
                  })

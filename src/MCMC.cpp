@@ -38,7 +38,7 @@ using namespace arma;
 //' @export
 // [[Rcpp::export]]
 List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec r, arma::mat SIGMA, arma::vec Yf,
-                           arma::vec binf, arma::vec bsup, Function LogTest, int stream)
+                           arma::vec binf, arma::vec bsup, Function LogTest, int stream, int tt)
 {
   // Dimention definition
   double Dim = theta_init.size();

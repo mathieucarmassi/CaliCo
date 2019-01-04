@@ -65,6 +65,8 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                                                            as.matrix(t(y.new[(self$md$d+1):(self$md$d+self$p)]))))
                            self$GP.new    <- km(formula =~1, design=self$doe.new,
                                                response = z.new,covtype = md$opt.gp$type)
+                           ## Criterion on Q2
+                           self$GP.new    <- self$critQ2(self$GP.new,z.new)
                            ## compute the sum of squares
                            self$m         <- self$SS(thetaHat)
                            ## enter the loop
@@ -81,7 +83,7 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                                n.cores <- 1
                              } else
                              {
-                               n.cores <- 2
+                               n.cores <- 6
                              }
                              EIvector  <- unlist(mclapply(c(1:(100*self$p)),EIparallel,mc.cores = n.cores))
                              if (all(EIvector == 0)) break
@@ -98,6 +100,8 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                                                                as.matrix(t(y.new[(self$md$d+1):(self$md$d+self$p)]))))
                                self$GP.new  <- km(formula =~1, design=self$doe.new,
                                                   response = z.new,covtype = md$opt.gp$type)
+                               ## Criterion on Q2
+                               self$GP.new    <- self$critQ2(self$GP.new,z.new)
                                self$m       <- c(self$m[1:k],min(c(self$m[1:k],self$SS(thetaHatNew))))
                              }
                            }
@@ -159,6 +163,38 @@ seqDesign.class <- R6Class(classname = "seqDesign.class",
                            y    <- matrix(self$md$Yexp,nrow=10000,ncol = length(self$md$Yexp),byrow = TRUE)
                            SSsim <- rowSums((y-S)^2)
                            return(mean(apply(cbind(self$m[k]-SSsim,0),1,max)))
+                         },
+                         critQ2 = function(GP,z)
+                         {
+                           temp.fun <- function(theta,var)
+                           {
+                             if (self$md$d == 1 & self$p == 1)
+                             {
+                               new.design <- cbind(self$md$X,rep(theta,length(self$md$X)))
+                             } else if (self$md$d != 1 & self$p == 1)
+                             {
+                               new.design <- cbind(self$md$X,rep(theta,nrow(self$md$X)))
+                             } else
+                             {
+                               new.design <- cbind(self$md$X,t(replicate(nrow(self$md$X),theta)))
+                             }
+                             pr           <- predict(GP, newdata=new.design,type="UK",
+                                                     checkNames=FALSE,cov.compute=TRUE)
+                             return(pr$mean)
+                           }
+                           Yp <- temp.fun(theta=c(ThetaStar[c(1,2,5)]),var = 169)
+
+                           Q2 <- 1 - sum((self$md$Yexp-Yp)^2)/sum((mean(self$md$Yexp)-self$md$Yexp)^2)
+
+                           while (Q2 <0.8)
+                           {
+                             GP <- km(formula =~1, design=self$doe.new,
+                                      response = z,covtype = self$md$opt.gp$type)
+                             Yp <- temp.fun(theta=ThetaStar[c(1,2,5)],var = 169)
+                             Q2 <- 1 - sum((self$md$Yexp-Yp)^2)/sum((mean(self$md$Yexp)-
+                                                                       self$md$Yexp)^2)
+                           }
+                           return(GP)
                          }
                        ))
 

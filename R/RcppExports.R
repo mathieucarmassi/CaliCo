@@ -28,8 +28,8 @@
 #' \item Likeli the likelihood computed at each iteration of the Metropolis Hastings algorithm
 #'  }
 #' @export
-MetropolisHastingsCpp <- function(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream) {
-    .Call('_CaliCo_MetropolisHastingsCpp', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream)
+MetropolisHastingsCpp <- function(Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream, tt) {
+    .Call('_CaliCo_MetropolisHastingsCpp', PACKAGE = 'CaliCo', Ngibbs, Nmh, theta_init, r, SIGMA, Yf, binf, bsup, LogTest, stream, tt)
 }
 
 #' C++ implementation of the algorithm for parameter calibration (with discrepancy)
