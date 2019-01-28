@@ -489,13 +489,7 @@ calibrate.class$set("private","logTestD",
 calibrate.class$set("private","MAPestimator",
                     function(out)
                     {
-                      chain <- out$THETA[-c(1:self$opt.estim$burnIn),]
-                      dens <- apply(chain,2,density)
-                      map <- function(dens)
-                      {
-                        dens$x[which(dens$y==max(dens$y))]
-                      }
-                      return(unlist(lapply(dens,map)))
+                      return(apply(out$THETA[-c(1:self$opt.estim$burnIn),],2,max))
                     })
 
 
