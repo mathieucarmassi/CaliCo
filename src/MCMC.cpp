@@ -67,7 +67,10 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   arma::vec theta=theta_init.rows(0,Dim-2);
   double Verr=THETAwg(0,Dim-1);
   // Compute the first ratio alpha
+  Rcout << theta << endl;
+  Rcout << Verr << endl;
   double alpha = as<double>(LogTest(theta,Verr));
+  Rcout << alpha << endl;
   // Loading bar (if stream==0 the bar and the prints are disabled)
   if (stream==1)
   {
@@ -279,7 +282,7 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
 {
   double Dim = theta_init.size();
   int D;
-  arma::vec k = 1e-4*ones(Dim,1);
+  arma::vec k = 1e-2*ones(Dim,1);
   arma::mat PHIwg=randu<arma::mat>(Ngibbs,Dim), THETAwg=randu<arma::mat>(Ngibbs,Dim);
   if (Nmh!=0) {D=Nmh;} else {D=10;}
   arma::mat PHI= randu<arma::mat>(D,Dim), THETA=randu<arma::mat>(D,Dim);
@@ -295,7 +298,7 @@ List MetropolisHastingsCppD(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec
   arma::vec theta, thetaD;
   if (tt == 1)
   {
-    theta=theta_init.rows(0,Dim-3);
+    theta=theta_init.rows(0,Dim-3).t();
     thetaD=theta_init(Dim-2);
   } else
   {

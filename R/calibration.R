@@ -471,6 +471,8 @@ calibrate.class$set("public","logTest2D",
 calibrate.class$set("private","logTestD",
                     function(theta,thetaD,sig2)
                     {
+                      if (is.matrix(theta)) theta <- as.vector(theta)
+                      if (is.matrix(thetaD)) thetaD <- as.vector(thetaD)
                       s <- 0
                       for (i in 1:(length(theta)))
                       {

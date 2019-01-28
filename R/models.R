@@ -375,7 +375,7 @@ model.class$set("public","discrepancy",
                   } else
                   {
                     X <- as.matrix(X)
-                    if (ncol(X) == 1) X <- t(X)
+                    # if (ncol(X) == 1) X <- t(X)
                     if (self$model=="model3")
                     {
                       y <- self$model1.fun(theta,var,X)$y
