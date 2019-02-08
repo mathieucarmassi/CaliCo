@@ -57,7 +57,7 @@ List MetropolisHastingsCpp(int Ngibbs, int Nmh, arma::vec theta_init, arma::vec 
   // Declaration of the acceptation ratios
   double AcceptationRatio=0;
   arma::vec AcceptationRatioWg=zeros(Dim,1);
-  // Functions from R
+  // Functions from R (ne pas importer de fonctions de R)
   Function unscale("unscale"), rnorm("rnorm"), runif("runif"), DefPos("DefPos"), mvrnorm("multivariate");
   // Set the first row of THETA at the initial value (for the MH)
   THETAwg.row(0)=theta_init.t();
