@@ -33,50 +33,51 @@
 #'
 #' @export
 model.class <- R6Class(classname = "model.class",
-                 public = list(
-                   code        = NULL, ## code variable
-                   X           = NULL, ## forced variables
-                   Yexp        = NULL, ## experiments
-                   n           = NULL, ## length of the experiements
-                   d           = NULL, ## number of forced variables
-                   model       = NULL, ## statistical model elected
-                   theta       = NULL, ## parameter vector
-                   var         = NULL, ## variance of the measurement error
-                   thetaD      = NULL, ## discrepancy parameter vector
-                   n.cores     = NULL, ## number of computer cores
-                   m.exp       = NULL, ## Mean for the likelihood
-                   V.exp       = NULL, ## Variance for the likelihood
-                   f.variables = NULL, ## variable indicating the presence
-                   initialize = function(code=NA,X=NA,Yexp=NA,model=NA)
-                   {
-                     self$code    <- code
-                     if (is.vector(X)) self$X <- matrix(X,ncol=1)
-                     else self$X  <- as.matrix(X)
-                     self$Yexp    <- Yexp
-                     self$n       <- length(Yexp)
-                     self$model   <- model
-                     self$n.cores <- detectCores()
-                     if (is.matrix(X)) {self$d <- ncol(X)} else{self$d <-1}
-                     private$checkModels()
-                     private$checkCode()
-                     #private$checkOptions()
-                     private$testOnForcingVar()
-                   },
-                   active = list(
-                     theta  = function(value) {return(value)},
-                     thetaD = function(value) {return(value)},
-                     var    = function(value) {return(value)}
-                   ),
-                   gglegend =function()
-                   {
-                     return(theme(legend.title = element_blank(),
-                                  legend.position = c(0.2,0.8),
-                                  legend.background = element_rect(linetype="solid", colour ="grey"),
-                                  axis.title=element_text(size=20,family = "Helvetica",face = "italic"),
-                                  axis.text = element_text(size=20),
-                                  legend.text = element_text(size=10)))
-                   }
-                 ))
+                       public = list(
+                         code        = NULL, ## code variable
+                         X           = NULL, ## forced variables
+                         n           = NULL, ## length of the experiements
+                         d           = NULL, ## number of forced variables
+                         model       = NULL, ## statistical model elected
+                         opt.gp      = NULL, ## Gaussian process options
+                         opt.emul    = NULL, ## Emulation option for the DOE
+                         opt.sim     = NULL, ## Simulation option for no numerical code
+                         f.variables = NULL, ## variable indicating the presence
+                         exp         = NULL, ## tibble with experimental data
+                         theta       = NULL, ## parameter vector
+                         var         = NULL, ## variance of the measurement error
+                         thetaD      = NULL, ## discrepancy parameter vector
+                         n.cores     = NULL, ## number of computer cores
+                         m.exp       = NULL, ## Mean for the likelihood
+                         V.exp       = NULL, ## Variance for the likelihood
+                         initialize = function(code=NA,X=NA,Yexp=NA,model=NA,opt.gp=NULL,
+                                               opt.sim=NULL,opt.emul=NULL)
+                         {
+                           # Initialization of the fields
+                           self$code     <- code
+                           self$model    <- model
+                           ## Check experimental data
+                           if (is.null(Yexp)) stop("Please give the model experimental data",.call=FALSE)
+                           self$exp      <- tibble(y = Yexp, type="exp")
+                           self$n        <- nrow(self$exp)
+                           self$X        <- private$extract_X(X)
+                           self$d        <- ncol(self$X)
+                           ##########################################################
+                           ### Problem on the parallel computation in the package ###
+                           self$n.cores  <- detectCores()
+                           ##########################################################
+                           private$checkModels()
+                           private$checkOptions()
+                           self$opt.gp   <- opt.gp
+                           self$opt.sim  <- opt.sim
+                           self$opt.emul <- opt.emul
+                         },
+                         active = list(
+                           theta  = function(value) {return(value)},
+                           thetaD = function(value) {return(value)},
+                           var    = function(value) {return(value)}
+                         )
+                       ))
 
 ## Function that check if the right label of model is given
 model.class$set("private","checkModels",
@@ -90,204 +91,243 @@ model.class$set("private","checkModels",
         })
 
 
+## Function that extract and transform to the right shape the input variables
+model.class$set("private","extract_X",
+                function(X)
+                  ### Check if the chosen model is in the possible selection
+                {
+                  if (is.vector(X)) return(as.matrix(X),ncol=1)
+                  else return(X)
+                }
+                )
+
+
+
 ## Check the content of the options
 model.class$set("private","checkOptions",
                 function()
                   ### Check if there is no missing in the options
                   {
-                  test <- function(N,options)
+                  if (self$model %in% c("model1", "model2", "model3", "model4"))
                   {
-                    N2 <- names(options)
-                    for (i in 1:length(N))
+                    ## Test on the presence of the forcing variables
+                    if (is.null(self$X))
                     {
-                      if(names(options)[i] != N[i])
-                      {
-                        stop(paste(N[i],"value is missing, please enter a correct value",sep=" "),call. = FALSE)
-                      }
+                      warning("No input variables X has been entered",.call=FALSE)
+                      self$X <- 0
+                      self$f.variables <- 0
+                    } else
+                    {
+                      self$f.variables <- 1
                     }
-                  }
-                  if (self$model %in% c("model2","model4"))
-                  {
-                    if (!is.null(self$opt.emul)) test(c("p","n.emul","binf","bsup"),self$opt.emul)
-                    test(c("type","DOE"),self$opt.gp)
-                    if (!is.null(self$opt.sim)) test(c("Ysim","DOEsim"),self$opt.sim)
-                  } else
-                  {
-                    if (self$model %in% c("model3","model4")){test(c("kernel.type"),self$opt.disc)}
-                  }
-                })
-
-## Check if the code is present for Model1 or Model3
-model.class$set("private","checkCode",
-                function()
-                  ### Check if the code is valid
-                {
-                  if (is.null(self$code) & self$model %in% c("model1","model3"))
-                  {
-                    stop("The code cannot be NULL if you chose model1 or model3",call. = FALSE)
-                  }
-                })
-
-## Test of presence of frocing variables
-model.class$set("private","testOnForcingVar",
-                function()
-                {
-                  if (ncol(self$X) == 1 & nrow(self$X) == 1)
-                  {
-                    if (self$X == 0) self$f.variables <- 0 else self$f.variables <- 1
-                  } else self$f.variables <- 1
-                })
-
-## Plot function for the models
-model.class$set("public","plot",
-                function(x,CI="all",...)
-                {
-                  if (missing(x)) stop("No x-axis selected, no graph is displayed",call. = FALSE)
-                  if (is.matrix(x)){stop("please enter a correct x to plot your model",call. = FALSE)}
-                  if (length(x)!= self$n){stop(paste("please enter a correct vector x of size",
-                                                     self$n,sep=" "),call. = FALSE)}
-                  if (is.null(self$opt.PCA)==FALSE)
-                  {
-                    df <- cbind(data.frame(y=self$P%*%self$Yexp,type="exp"),x=x)
-                  } else
-                  {
-                    df <- cbind(data.frame(y=self$Yexp,type="exp"),x=x)
-                  }
-                  if (self$model %in% c("model1","model2"))
-                  {
-                    if (!is.null(self$theta) & !is.null(self$var))
+                    if (self$model %in% c("model1","model3"))
                     {
-                      df2 <- self$model.fun(self$theta,self$var,X=self$X,CI)
-                      if(is.null(self$opt.PCA)==FALSE)
-                      {
-                        df2 <- data.frame(y=self$P%*%df2$y, type=df2$type[1], q025n=self$P%*%df2$q025n,
-                                          q975n=self$P%*%df2$q975n,q025=self$P%*%df2$q025,
-                                          q975=self$P%*%df2$q975,x=x)
-                      } else
-                      {
-                        df2 <- cbind(df2,x=x)
-                      }
+                      if (is.null(self$code)) stop("Please enter a numerical code as input in the model functon",
+                                                   .call=FALSE)
                     } else
-                      {
-                        warning("no theta and var has been given to the model, experiments only are plotted",call.= FALSE)
-                        df2 <- NULL
-                      }
-                  } else
-                  {
-                    if (!is.null(self$theta) & !is.null(self$thetaD) & !is.null(self$var))
                     {
-                      df2 <- cbind(self$model.fun(self$theta,self$thetaD,self$var,X=self$X,CI),x=x)
-                    } else
+                      ### Check opt.gp option that is in all cases
+                      if (is.null(self$opt.gp)) stop("Please enter the Gaussian process option opt.gp",.call=FALSE)
+                      if (!(names(self$opt.gp) %in% c("type","DOE"))) stop("Please check the names of the opt.gp
+                                                                           option", .call=FALSE)
+                      ### Model2 et Model4
+                      if (!is.null(self$code))
                       {
-                        warning("no theta, thetaD and var has been given to the model, experiments only are plotted",call.= FALSE)
-                        df2 <- NULL
-                      }
-                  }
-                  if (!is.null(df2))
-                  {
-                    if (is.null(CI))
-                    {
-                      df <- rbind(df,df2)
-                      p  <- ggplot(df)+geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+
-                        xlab("")+ylab("")+self$gglegend() + scale_color_manual(values=c("red", "#000000"))
-                    } else if (CI == "err")
-                    {
-                      if (self$model %in% c("model3","model4"))
-                      {
-                        df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% discrepancy + noise")
-                      } else
-                      {
-                        df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% noise")
-                      }
-                      df2 <- df2[,names(df)]
-                      df <- rbind(df,df2)
-                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
-                                                   colour="skyblue3",size=0.5)+
-                        geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
-                        scale_fill_manual(values = adjustcolor("skyblue3"))+
-                        scale_color_manual(values=c("red", "#000000"))+self$gglegend()
-                    } else if (CI == "GP")
-                    {
-                      if (self$model %in% c("model1","model3"))
-                      {
-                        stop("No Gaussian process used for the model1 and model2, no ggplot produced",call. = FALSE)
-                      }
-                      df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
-                      df <- rbind(df,df2)
-                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
-                                                   colour="grey70",size=0.5)+
-                        geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
-                        scale_fill_manual(values = adjustcolor("grey70"))+
-                        scale_color_manual(values=c("red", "#000000"))+ self$gglegend()
-                    } else if (CI == "all")
-                    {
-                      if (self$model %in% c("model1","model3"))
-                      {
-                        if (self$model == "model1"){df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% noise")}
-                        if (self$model == "model3")
+                        if (is.null(self$opt.gp$DOE))
                         {
-                          df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% discrepancy + noise")
-                        }
-                        df <- rbind(df,df2)
-                        p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
-                                                     colour="skyblue3",size=0.5)+
-                          geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
-                          scale_fill_manual(values = adjustcolor("skyblue3"))+
-                          scale_color_manual(values=c("red", "#000000"))+self$gglegend()
-                      } else
-                      {
-                        if (self$model == "model2")
-                        {
-                          df.gp  <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
-                          df.n   <- cbind(df,q025=df2$q025n,q975=df2$q975n,fill="CI 95% noise")
-                          df2.gp <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
-                          df2.n  <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025n,q975=df2$q975n,
-                                               fill="CI 95% noise")
+                          ### Cas 1 numerical code but no DOE
+                          if (is.null(self$opt.emul)) stop("Please enter the design experiement options
+                                                           in the model function",
+                                                           .call=FALSE)
+                          if (!(names(self$opt.emul) %in% c("p","n.emul","binf","bsup")))
+                            stop("Please check the names of the opt.emul option", .call=FALSE)
                         } else
                         {
-                          df.gp  <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
-                          df.n   <- cbind(df,q025=df2$q025n,q975=df2$q975n,fill="CI 95% discrepancy + noise")
-                          df2.gp <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
-                          df2.n  <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025n,q975=df2$q975n,
-                                               fill="CI 95% discrepancy + noise")
+                          ### Cas 2 numerical code with a DOE
+                          if (!is.null(self$opt.emul)) stop("Please remove the option opt.emul from the model
+                                                            function if you are using your own DOE")
+
                         }
-                        df     <- rbind(df.n,df2.n)
-                        df2    <- rbind(df.gp,df2.gp)
-                        if (self$model == "model4")
-                        {
-                          col <- c("skyblue3","grey70")
-                          Alpha <- c(0.8,0.3)
-                        }else
-                        {
-                          col <- c("grey70","skyblue3")
-                          Alpha <- c(0.3,0.8)
-                        }
-                        p <- ggplot(df)+
-                          geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
-                                      alpha=0.8,linetype="twodash",colour="#999999",size=0.7)+
-                          geom_ribbon(data=df2,mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
-                                      alpha=0.3,linetype="dotted",colour="#999999",size=0.7)+
-                          geom_line(mapping = aes(x=x,y=y, color=type))+
-                          scale_fill_manual(name = NULL,values = adjustcolor(col,alpha.f = 0.3))+
-                          guides(fill = guide_legend(override.aes = list(alpha = Alpha)),
-                                 colour= guide_legend(override.aes = list(colour = col)))+
-                          scale_color_manual(values=c("red", "#000000"))+
-                          xlab("")+ylab("")+theme_light()+self$gglegend()
+                      } else
+                      {
+                        ### Cas 3 no numerical code
+                        if (is.null(self$opt.sim)) stop("Please enter the simulation option in the model function",
+                                                        .call=FALSE)
+                        if (!(names(self$opt.sim)) %in% c("Ysim","DOEsim")) stop("Please check the names of the
+                                                                                  opt.sim option", .call=FALSE)
                       }
-                    } else
-                    {
-                      p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                        xlab("")+ylab("")+theme_light()+self$gglegend()+
-                        scale_color_manual(values=c("red"))
                     }
                   } else
                   {
-                    p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
-                      xlab("")+ylab("")+theme_light()+self$gglegend()+
-                      scale_color_manual(values=c("red"))
+                    stop("please choose a correct model in the model variable")
                   }
-                  return(p)
                 })
+
+### Interactive display for model output
+
+model.class$set("public","plot",
+                function(x,...)
+                {
+                  if (missing(x)) x=rep(1:self$n,2)
+                  if (is.matrix(x) && ncol(x)>1) stop("please enter a correct x to plot your model",call. = FALSE)
+                  out <- self$model.fun(self$theta,self$var)
+                  p <- ggplot(out,aes(y=y,x=x,color=type,ymin=q025,ymax=q975,fill=fill)) + geom_line() +
+                    geom_ribbon(alpha=0.2, colour=NA) + theme_classic() +
+                    scale_fill_manual(values=c("grey12"))
+                  return(ggplotly(p))
+                })
+
+
+# ## Plot function for the models
+# model.class$set("public","plot",
+#                 function(x,CI="all",...)
+#                 {
+#                   if (missing(x)) stop("No x-axis selected, no graph is displayed",call. = FALSE)
+#                   if (is.matrix(x)){stop("please enter a correct x to plot your model",call. = FALSE)}
+#                   if (length(x)!= self$n){stop(paste("please enter a correct vector x of size",
+#                                                      self$n,sep=" "),call. = FALSE)}
+#                   if (is.null(self$opt.PCA)==FALSE)
+#                   {
+#                     df <- cbind(data.frame(y=self$P%*%self$Yexp,type="exp"),x=x)
+#                   } else
+#                   {
+#                     df <- cbind(data.frame(y=self$Yexp,type="exp"),x=x)
+#                   }
+#                   if (self$model %in% c("model1","model2"))
+#                   {
+#                     if (!is.null(self$theta) & !is.null(self$var))
+#                     {
+#                       df2 <- self$model.fun(self$theta,self$var,X=self$X,CI)
+#                       if(is.null(self$opt.PCA)==FALSE)
+#                       {
+#                         df2 <- data.frame(y=self$P%*%df2$y, type=df2$type[1], q025n=self$P%*%df2$q025n,
+#                                           q975n=self$P%*%df2$q975n,q025=self$P%*%df2$q025,
+#                                           q975=self$P%*%df2$q975,x=x)
+#                       } else
+#                       {
+#                         df2 <- cbind(df2,x=x)
+#                       }
+#                     } else
+#                       {
+#                         warning("no theta and var has been given to the model, experiments only are plotted",call.= FALSE)
+#                         df2 <- NULL
+#                       }
+#                   } else
+#                   {
+#                     if (!is.null(self$theta) & !is.null(self$thetaD) & !is.null(self$var))
+#                     {
+#                       df2 <- cbind(self$model.fun(self$theta,self$thetaD,self$var,X=self$X,CI),x=x)
+#                     } else
+#                       {
+#                         warning("no theta, thetaD and var has been given to the model, experiments only are plotted",call.= FALSE)
+#                         df2 <- NULL
+#                       }
+#                   }
+#                   if (!is.null(df2))
+#                   {
+#                     if (is.null(CI))
+#                     {
+#                       df <- rbind(df,df2)
+#                       p  <- ggplot(df)+geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+
+#                         xlab("")+ylab("")+self$gglegend() + scale_color_manual(values=c("red", "#000000"))
+#                     } else if (CI == "err")
+#                     {
+#                       if (self$model %in% c("model3","model4"))
+#                       {
+#                         df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% discrepancy + noise")
+#                       } else
+#                       {
+#                         df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% noise")
+#                       }
+#                       df2 <- df2[,names(df)]
+#                       df <- rbind(df,df2)
+#                       p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
+#                                                    colour="skyblue3",size=0.5)+
+#                         geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
+#                         scale_fill_manual(values = adjustcolor("skyblue3"))+
+#                         scale_color_manual(values=c("red", "#000000"))+self$gglegend()
+#                     } else if (CI == "GP")
+#                     {
+#                       if (self$model %in% c("model1","model3"))
+#                       {
+#                         stop("No Gaussian process used for the model1 and model2, no ggplot produced",call. = FALSE)
+#                       }
+#                       df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
+#                       df <- rbind(df,df2)
+#                       p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
+#                                                    colour="grey70",size=0.5)+
+#                         geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
+#                         scale_fill_manual(values = adjustcolor("grey70"))+
+#                         scale_color_manual(values=c("red", "#000000"))+ self$gglegend()
+#                     } else if (CI == "all")
+#                     {
+#                       if (self$model %in% c("model1","model3"))
+#                       {
+#                         if (self$model == "model1"){df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% noise")}
+#                         if (self$model == "model3")
+#                         {
+#                           df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% discrepancy + noise")
+#                         }
+#                         df <- rbind(df,df2)
+#                         p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
+#                                                      colour="skyblue3",size=0.5)+
+#                           geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
+#                           scale_fill_manual(values = adjustcolor("skyblue3"))+
+#                           scale_color_manual(values=c("red", "#000000"))+self$gglegend()
+#                       } else
+#                       {
+#                         if (self$model == "model2")
+#                         {
+#                           df.gp  <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
+#                           df.n   <- cbind(df,q025=df2$q025n,q975=df2$q975n,fill="CI 95% noise")
+#                           df2.gp <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
+#                           df2.n  <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025n,q975=df2$q975n,
+#                                                fill="CI 95% noise")
+#                         } else
+#                         {
+#                           df.gp  <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
+#                           df.n   <- cbind(df,q025=df2$q025n,q975=df2$q975n,fill="CI 95% discrepancy + noise")
+#                           df2.gp <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
+#                           df2.n  <- data.frame(y=df2$y,type=df2$type,x=x,q025=df2$q025n,q975=df2$q975n,
+#                                                fill="CI 95% discrepancy + noise")
+#                         }
+#                         df     <- rbind(df.n,df2.n)
+#                         df2    <- rbind(df.gp,df2.gp)
+#                         if (self$model == "model4")
+#                         {
+#                           col <- c("skyblue3","grey70")
+#                           Alpha <- c(0.8,0.3)
+#                         }else
+#                         {
+#                           col <- c("grey70","skyblue3")
+#                           Alpha <- c(0.3,0.8)
+#                         }
+#                         p <- ggplot(df)+
+#                           geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
+#                                       alpha=0.8,linetype="twodash",colour="#999999",size=0.7)+
+#                           geom_ribbon(data=df2,mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
+#                                       alpha=0.3,linetype="dotted",colour="#999999",size=0.7)+
+#                           geom_line(mapping = aes(x=x,y=y, color=type))+
+#                           scale_fill_manual(name = NULL,values = adjustcolor(col,alpha.f = 0.3))+
+#                           guides(fill = guide_legend(override.aes = list(alpha = Alpha)),
+#                                  colour= guide_legend(override.aes = list(colour = col)))+
+#                           scale_color_manual(values=c("red", "#000000"))+
+#                           xlab("")+ylab("")+theme_light()+self$gglegend()
+#                       }
+#                     } else
+#                     {
+#                       p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
+#                         xlab("")+ylab("")+theme_light()+self$gglegend()+
+#                         scale_color_manual(values=c("red"))
+#                     }
+#                   } else
+#                   {
+#                     p <- ggplot(df) + geom_line(mapping = aes(x=x,y=y,color=type))+
+#                       xlab("")+ylab("")+theme_light()+self$gglegend()+
+#                       scale_color_manual(values=c("red"))
+#                   }
+#                   return(p)
+#                 })
 
 
 ## Print function
@@ -439,55 +479,34 @@ model1.class <- R6Class(classname = "model1.class",
                           ### Initialize from model.class
                           super$initialize(code, X, Yexp, model)
                         },
-                        model.fun = function(theta,var,X=self$X,CI="err")
+                        model.fun = function(theta,var,X=self$X)
                         {
-                          ### Function that generates the output of the model. If CI=TRUE, it computes the credibility
-                          ### intervals of the white Gaussian noise
-                          #y <- matrix(nr=100,nc=self$n)
-                          # for(i in 1:100){y[i,] <- self$code(X,theta)+rnorm(self$n,0,sqrt(var))}
-                          # qq <- apply(y,2,quantile,c(0.05,0.5,0.95))
-                          y <- self$code(X,theta)
-                          qq025 <- y - 2*sqrt(var)
-                          qq975 <- y + 2*sqrt(var)
-                          if (is.null(CI))
-                          {
-                            # df <- data.frame(y=qq[2,],type="model output")
-                            df <- data.frame(y=y,type="model output")
-                          } else if (CI=="err" | CI == "all")
-                          {
-                            # df <- data.frame(y=qq[2,],type="model output",q025=qq[1,],q975=qq[3,],fill="CI 95% noise")
-                            df <- data.frame(y=y,type="model output",q025=qq025,q975=qq975,fill="CI 95% noise")
-                          } else
-                          {
-                            warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
-                            # df <- data.frame(y=qq[2,],type="model output")
-                            df <- data.frame(y=y,type="model output")
-                          }
-                          return(df)
-                        }
-                        # prediction.fun = function(theta,var,x.new)
-                        # {
-                        #   ### Prediction function is the function to use when applying on a new data set
-                        #   if (is.matrix(x.new)){l <- nrow(x.new)} else{l <- length(x.new)}
-                        #   y  <- self$code(x.new,theta)+rnorm(l,0,sqrt(var))
-                        #   df <- data.frame(pr=y,type="predicted")
-                        #   return(df)
-                        #}
-                        )
+                          ## Function that generates the noise output of the numerical code
+                          out <- tibble(y = self$code(X,theta))%>%
+                            mutate(type = "Code output") %>%
+                            mutate(q025 = y - 2*sqrt(var),
+                                   q975 = y + 2*sqrt(var),
+                                   fill = "CI 95% noise")
+                          exp <- self$exp %>%
+                            mutate(q025 = out$q025,
+                                   q975 = out$q975,
+                                   fill = "CI 95% noise")
+                          out <- out %>% bind_rows(exp)
+                          return(out)
+                        },
+                        LogLikelihood = function(theta, var)
+                        {
+                          ### Log-Likelihood of the model
+                          ### To be implemented in C++
+                            self$m.exp <- self$code(self$X,theta)
+                            self$V.exp <- var*diag(self$n)
+                            V.exp.inv  <- (1/var)*diag(self$n)
+                            res <- -self$n/2*log(2*pi)-1/2*self$n*log(var) -
+                              0.5*t(self$exp$y-self$m.exp)%*%V.exp.inv%*%(self$exp$y-self$m.exp)
+                            return(as.numeric(res))
+                        })
 )
-
-## likelihood function
-model1.class$set("public","likelihood",
-                function(theta,var)
-                {
-                  ### Log-Likelihood
-                  self$m.exp <- self$code(self$X,as.vector(theta))
-                  self$V.exp <- var*diag(self$n)
-                  V.exp.inv  <- (1/var)*diag(self$n)
-                  return(-self$n/2*log(2*pi)-1/2*self$n*log(var)
-                         -0.5*t(self$Yexp-self$m.exp)%*%V.exp.inv%*%(self$Yexp-self$m.exp))
-                })
-
+#############################################################################################
 
 
 ##################################### Model 3 definition ##################################
