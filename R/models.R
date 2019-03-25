@@ -169,7 +169,8 @@ model.class$set("public","plot",
                       }
                     } else
                       {
-                        warning("no theta and var has been given to the model, experiments only are plotted",call.= FALSE)
+                        warning("no theta and var has been given to the model,
+                                experiments only are plotted",call.= FALSE)
                         df2 <- NULL
                       }
                   } else
@@ -179,7 +180,8 @@ model.class$set("public","plot",
                       df2 <- cbind(self$model.fun(self$theta,self$thetaD,self$var,X=self$X,CI),x=x)
                     } else
                       {
-                        warning("no theta, thetaD and var has been given to the model, experiments only are plotted",call.= FALSE)
+                        warning("no theta, thetaD and var has been given to the model,
+                                experiments only are plotted",call.= FALSE)
                         df2 <- NULL
                       }
                   }
@@ -201,8 +203,8 @@ model.class$set("public","plot",
                       }
                       df2 <- df2[,names(df)]
                       df <- rbind(df,df2)
-                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
-                                                   colour="skyblue3",size=0.5)+
+                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
+                                                   alpha=0.4,linetype=1,colour="skyblue3",size=0.5)+
                         geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
                         scale_fill_manual(values = adjustcolor("skyblue3"))+
                         scale_color_manual(values=c("red", "#000000"))+self$gglegend()
@@ -214,8 +216,8 @@ model.class$set("public","plot",
                       }
                       df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% GP")
                       df <- rbind(df,df2)
-                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
-                                                   colour="grey70",size=0.5)+
+                      p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
+                                                   alpha=0.4,linetype=1,colour="grey70",size=0.5)+
                         geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
                         scale_fill_manual(values = adjustcolor("grey70"))+
                         scale_color_manual(values=c("red", "#000000"))+ self$gglegend()
@@ -229,8 +231,8 @@ model.class$set("public","plot",
                           df <- cbind(df,q025=df2$q025,q975=df2$q975,fill="CI 95% discrepancy + noise")
                         }
                         df <- rbind(df,df2)
-                        p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),alpha=0.4,linetype=1,
-                                                     colour="skyblue3",size=0.5)+
+                        p  <- ggplot(df)+geom_ribbon(mapping = aes(x=x,ymin=q025,ymax=q975,fill=fill),
+                                                     alpha=0.4,linetype=1,colour="skyblue3",size=0.5)+
                           geom_line(mapping = aes(x=x,y=y,color=type))+theme_light()+xlab("")+ylab("")+
                           scale_fill_manual(values = adjustcolor("skyblue3"))+
                           scale_color_manual(values=c("red", "#000000"))+self$gglegend()
@@ -332,7 +334,8 @@ model.class$set("public","print",
                     {
                       if (self$lenCode > 1)
                       {
-                        print("In time series modeling, a Gaussian process is available for each time step. You can access each one of them by yourmodel$GP")
+                        print("In time series modeling, a Gaussian process is available for each time step.
+                              You can access each one of them by yourmodel$GP")
                       } else
                       {
                         print(self$GP)
@@ -441,38 +444,25 @@ model1.class <- R6Class(classname = "model1.class",
                         },
                         model.fun = function(theta,var,X=self$X,CI="err")
                         {
-                          ### Function that generates the output of the model. If CI=TRUE, it computes the credibility
-                          ### intervals of the white Gaussian noise
-                          #y <- matrix(nr=100,nc=self$n)
-                          # for(i in 1:100){y[i,] <- self$code(X,theta)+rnorm(self$n,0,sqrt(var))}
-                          # qq <- apply(y,2,quantile,c(0.05,0.5,0.95))
+                          ### Function that generates the output of the model. If CI=TRUE,
+                          ### it computes the credibility intervals of the white Gaussian noise
                           y <- self$code(X,theta)
                           qq025 <- y - 2*sqrt(var)
                           qq975 <- y + 2*sqrt(var)
                           if (is.null(CI))
                           {
-                            # df <- data.frame(y=qq[2,],type="model output")
                             df <- data.frame(y=y,type="model output")
                           } else if (CI=="err" | CI == "all")
                           {
-                            # df <- data.frame(y=qq[2,],type="model output",q025=qq[1,],q975=qq[3,],fill="CI 95% noise")
                             df <- data.frame(y=y,type="model output",q025=qq025,q975=qq975,fill="CI 95% noise")
                           } else
                           {
-                            warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
-                            # df <- data.frame(y=qq[2,],type="model output")
+                            warning("The argument for the credibility interval is not valid and no
+                                    credibility interval will be displayed",call. = FALSE)
                             df <- data.frame(y=y,type="model output")
                           }
                           return(df)
                         }
-                        # prediction.fun = function(theta,var,x.new)
-                        # {
-                        #   ### Prediction function is the function to use when applying on a new data set
-                        #   if (is.matrix(x.new)){l <- nrow(x.new)} else{l <- length(x.new)}
-                        #   y  <- self$code(x.new,theta)+rnorm(l,0,sqrt(var))
-                        #   df <- data.frame(pr=y,type="predicted")
-                        #   return(df)
-                        #}
                         )
 )
 
@@ -505,7 +495,8 @@ model3.class <- R6Class(classname = "model3.class",
                             ## Check if the opt.emul option is filled if it is not a gaussian kernel is picked
                             if (is.null(opt.disc$kernel.type))
                             {
-                              warning("default value is selected. The discrepancy will have a gauss covariance structure",call. = FALSE)
+                              warning("default value is selected. The discrepancy will have a gauss
+                                      covariance structure",call. = FALSE)
                               self$opt.disc$kernel.type="gauss"
                             } else
                             {
@@ -702,7 +693,8 @@ model2.class <- R6Class(classname = "model2.class",
                                                 q975=pr$upper95, fill="CI 95% GP")
                             } else
                             {
-                              warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
+                              warning("The argument for the credibility interval is not valid and no credibility
+                                      interval will be displayed",call. = FALSE)
                               df <- 0
                             }
                             return(df)
@@ -963,7 +955,8 @@ model4.class <- R6Class(classname = "model4.class",
                             {
                               if (is.null(opt.disc$kernel.type)==TRUE)
                               {
-                                warning("default value is selected. The discrepancy will have a gaussian covariance structure",call.=FALSE)
+                                warning("default value is selected. The discrepancy will have a gaussian
+                                        covariance structure",call.=FALSE)
                                 self$opt.disc$kernel.type="gauss"
                               } else
                               {
@@ -998,7 +991,8 @@ model4.class <- R6Class(classname = "model4.class",
                                                       q975n=qq975)
                             } else
                             {
-                              warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
+                              warning("The argument for the credibility interval is not valid and no credibility
+                                      interval will be displayed",call. = FALSE)
                               df <- 0
                             }
                             return(df)
