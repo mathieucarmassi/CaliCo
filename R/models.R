@@ -372,7 +372,8 @@ model.class$set("public","print",
                     {
                       if (self$lenCode > 1)
                       {
-                        print("In time series modeling, a Gaussian process is available for each time step. You can access each one of them by yourmodel$GP")
+                        print("In time series modeling, a Gaussian process is available for each time step.
+                              You can access each one of them by yourmodel$GP")
                       } else
                       {
                         print(self$GP)
@@ -524,7 +525,8 @@ model3.class <- R6Class(classname = "model3.class",
                             ## Check if the opt.emul option is filled if it is not a gaussian kernel is picked
                             if (is.null(opt.disc$kernel.type))
                             {
-                              warning("default value is selected. The discrepancy will have a gauss covariance structure",call. = FALSE)
+                              warning("default value is selected. The discrepancy will have a gauss
+                                      covariance structure",call. = FALSE)
                               self$opt.disc$kernel.type="gauss"
                             } else
                             {
@@ -721,7 +723,8 @@ model2.class <- R6Class(classname = "model2.class",
                                                 q975=pr$upper95, fill="CI 95% GP")
                             } else
                             {
-                              warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
+                              warning("The argument for the credibility interval is not valid and no credibility
+                                      interval will be displayed",call. = FALSE)
                               df <- 0
                             }
                             return(df)
@@ -982,7 +985,8 @@ model4.class <- R6Class(classname = "model4.class",
                             {
                               if (is.null(opt.disc$kernel.type)==TRUE)
                               {
-                                warning("default value is selected. The discrepancy will have a gaussian covariance structure",call.=FALSE)
+                                warning("default value is selected. The discrepancy will have a gaussian
+                                        covariance structure",call.=FALSE)
                                 self$opt.disc$kernel.type="gauss"
                               } else
                               {
@@ -1017,7 +1021,8 @@ model4.class <- R6Class(classname = "model4.class",
                                                       q975n=qq975)
                             } else
                             {
-                              warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
+                              warning("The argument for the credibility interval is not valid and no credibility
+                                      interval will be displayed",call. = FALSE)
                               df <- 0
                             }
                             return(df)
