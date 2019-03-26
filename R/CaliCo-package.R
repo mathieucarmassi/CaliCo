@@ -7,7 +7,7 @@
 #' @useDynLib CaliCo
 #' @importFrom R6 R6Class
 #' @importFrom stats rnorm
-#' @import dplyr tidyr DiceKriging DiceDesign coda parallel MASS gridExtra gtools plotly
+#' @import dplyr tidyr ggplot2 DiceKriging DiceDesign coda parallel MASS gtools plotly
 #'
 #' @details
 #' Package: CaliCo

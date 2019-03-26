@@ -33,53 +33,44 @@
 #'
 #' @export
 model.class <- R6Class(classname = "model.class",
-                       public = list(
-                         code        = NULL, ## code variable
-                         X           = NULL, ## forced variables
-                         n           = NULL, ## length of the experiements
-                         d           = NULL, ## number of forced variables
-                         model       = NULL, ## statistical model elected
-                         opt.gp      = NULL, ## Gaussian process options
-                         opt.emul    = NULL, ## Emulation option for the DOE
-                         opt.sim     = NULL, ## Simulation option for no numerical code
-                         f.variables = NULL, ## variable indicating the presence
-                         exp         = NULL, ## tibble with experimental data
-                         theta       = NULL, ## parameter vector
-                         var         = NULL, ## variance of the measurement error
-                         thetaD      = NULL, ## discrepancy parameter vector
-                         n.cores     = NULL, ## number of computer cores
-                         m.exp       = NULL, ## Mean for the likelihood
-                         V.exp       = NULL, ## Variance for the likelihood
-                         initialize = function(code=NA,X=NA,Yexp=NA,model=NA,opt.gp=NULL,
-                                               opt.sim=NULL,opt.emul=NULL)
-                         {
-                           # Initialization of the fields
-                           self$code     <- code
-                           self$model    <- model
-                           ## Check experimental data
-                           if (is.null(Yexp)) stop("Please give the model experimental data",.call=FALSE)
-                           self$exp      <- tibble(y = Yexp, type="exp")
-                           self$n        <- nrow(self$exp)
-                           self$X        <- private$extract_X(X)
-                           self$d        <- ncol(self$X)
-                           ##########################################################
-                           ### Problem on the parallel computation in the package ###
-                           self$n.cores  <- detectCores()
-                           ##########################################################
-                           private$checkModels()
-                           private$checkOptions()
-                           self$opt.gp   <- opt.gp
-                           self$opt.sim  <- opt.sim
-                           self$opt.emul <- opt.emul
-                         },
-                         active = list(
-                           theta  = function(value) {return(value)},
-                           thetaD = function(value) {return(value)},
-                           var    = function(value) {return(value)}
-                         )
-                       ))
+                 public = list(
+                   code        = NULL, ## code variable
+                   X           = NULL, ## forced variables
+                   Yexp        = NULL, ## experiments
+                   n           = NULL, ## length of the experiements
+                   d           = NULL, ## number of forced variables
+                   model       = NULL, ## statistical model elected
+                   theta       = NULL, ## parameter vector
+                   var         = NULL, ## variance of the measurement error
+                   thetaD      = NULL, ## discrepancy parameter vector
+                   n.cores     = NULL, ## number of computer cores
+                   m.exp       = NULL, ## Mean for the likelihood
+                   V.exp       = NULL, ## Variance for the likelihood
+                   f.variables = NULL, ## variable indicating the presence
+                   initialize = function(code=NA,X=NA,Yexp=NA,model=NA)
+                   {
+                     self$code    <- code
+                     if (is.vector(X)) self$X <- matrix(X,ncol=1)
+                     else self$X  <- as.matrix(X)
+                     self$Yexp    <- Yexp
+                     self$n       <- length(Yexp)
+                     self$model   <- model
+                     self$n.cores <- detectCores()
+                     if (is.matrix(X)) {self$d <- ncol(X)} else{self$d <-1}
+                     private$checkModels()
+                     private$checkCode()
+                     #private$checkOptions()
+                     private$testOnForcingVar()
+                     private$checkSize()
+                   },
+                   active = list(
+                     theta  = function(value) {return(value)},
+                     thetaD = function(value) {return(value)},
+                     var    = function(value) {return(value)}
+                   )
+                 ))
 
-## Function that check if the right label of model is given
+## Function that checks if the right label of model is given
 model.class$set("private","checkModels",
         function()
           ### Check if the chosen model is in the possible selection
@@ -90,93 +81,101 @@ model.class$set("private","checkModels",
           }
         })
 
+## Private function that defines the color
+model.class$set("private","colors",
+                function()
+                {
+                  return(list(bleu="#2760ac",orange="#df4718",vert="#2d7117"))
+                })
 
-## Function that extract and transform to the right shape the input variables
-model.class$set("private","extract_X",
-                function(X)
+## Private function that defines graphics parameters
+model.class$set("private","paramGraph",
+                function()
+                  {
+                  colors <- private$colors()
+                  param_graph <- theme_classic()+ theme(
+                    plot.title = element_text(color=colors$orange, size=18, face="bold", hjust=0.5),
+                    axis.title.x = element_text(color=colors$orange, size=14, face = "italic"),
+                    axis.title.y = element_text(color=colors$orange, size=14, face = "italic"),
+                    axis.text.x = element_text(size=10),
+                    axis.text.y = element_text(size=10)
+                  )
+                  return(param_graph)
+                })
+
+## Function that checks the size of Yexp and X are adequate
+model.class$set("private","checkSize",
+                function()
                   ### Check if the chosen model is in the possible selection
                 {
-                  if (is.vector(X)) return(as.matrix(X),ncol=1)
-                  else return(X)
-                }
-                )
+                  if (is.matrix(self$X)) {l <- nrow(self$X)} else{l <- length(self$X)}
+                  if(self$n!= l) stop("Inadequate size of X or Yexp", .call=FALSE)
+                })
 
 
-
-## Check the content of the options
+## Check the content of the options (waiting for other models to be cleared)
 model.class$set("private","checkOptions",
                 function()
                   ### Check if there is no missing in the options
                   {
-                  if (self$model %in% c("model1", "model2", "model3", "model4"))
+                  test <- function(N,options)
                   {
-                    ## Test on the presence of the forcing variables
-                    if (is.null(self$X))
+                    N2 <- names(options)
+                    for (i in 1:length(N))
                     {
-                      warning("No input variables X has been entered",.call=FALSE)
-                      self$X <- 0
-                      self$f.variables <- 0
-                    } else
-                    {
-                      self$f.variables <- 1
-                    }
-                    if (self$model %in% c("model1","model3"))
-                    {
-                      if (is.null(self$code)) stop("Please enter a numerical code as input in the model functon",
-                                                   .call=FALSE)
-                    } else
-                    {
-                      ### Check opt.gp option that is in all cases
-                      if (is.null(self$opt.gp)) stop("Please enter the Gaussian process option opt.gp",.call=FALSE)
-                      if (!(names(self$opt.gp) %in% c("type","DOE"))) stop("Please check the names of the opt.gp
-                                                                           option", .call=FALSE)
-                      ### Model2 et Model4
-                      if (!is.null(self$code))
+                      if(names(options)[i] != N[i])
                       {
-                        if (is.null(self$opt.gp$DOE))
-                        {
-                          ### Cas 1 numerical code but no DOE
-                          if (is.null(self$opt.emul)) stop("Please enter the design experiement options
-                                                           in the model function",
-                                                           .call=FALSE)
-                          if (!(names(self$opt.emul) %in% c("p","n.emul","binf","bsup")))
-                            stop("Please check the names of the opt.emul option", .call=FALSE)
-                        } else
-                        {
-                          ### Cas 2 numerical code with a DOE
-                          if (!is.null(self$opt.emul)) stop("Please remove the option opt.emul from the model
-                                                            function if you are using your own DOE")
-
-                        }
-                      } else
-                      {
-                        ### Cas 3 no numerical code
-                        if (is.null(self$opt.sim)) stop("Please enter the simulation option in the model function",
-                                                        .call=FALSE)
-                        if (!(names(self$opt.sim)) %in% c("Ysim","DOEsim")) stop("Please check the names of the
-                                                                                  opt.sim option", .call=FALSE)
+                        stop(paste(N[i],"value is missing, please enter a correct value",sep=" "),call. = FALSE)
                       }
                     }
+                  }
+                  if (self$model %in% c("model2","model4"))
+                  {
+                    if (!is.null(self$opt.emul)) test(c("p","n.emul","binf","bsup"),self$opt.emul)
+                    test(c("type","DOE"),self$opt.gp)
+                    if (!is.null(self$opt.sim)) test(c("Ysim","DOEsim"),self$opt.sim)
                   } else
                   {
-                    stop("please choose a correct model in the model variable")
+                    if (self$model %in% c("model3","model4")){test(c("kernel.type"),self$opt.disc)}
                   }
                 })
 
-### Interactive display for model output
-
-model.class$set("public","plot",
-                function(x,...)
+## Check if the code is present for Model1 or Model3
+model.class$set("private","checkCode",
+                function()
+                  ### Check if the code is valid
                 {
-                  if (missing(x)) x=rep(1:self$n,2)
-                  if (is.matrix(x) && ncol(x)>1) stop("please enter a correct x to plot your model",call. = FALSE)
-                  out <- self$model.fun(self$theta,self$var)
-                  p <- ggplot(out,aes(y=y,x=x,color=type,ymin=q025,ymax=q975,fill=fill)) + geom_line() +
-                    geom_ribbon(alpha=0.2, colour=NA) + theme_classic() +
-                    scale_fill_manual(values=c("grey12"))
-                  return(ggplotly(p))
+                  if (is.null(self$code) & self$model %in% c("model1","model3"))
+                  {
+                    stop("The code cannot be NULL if you chose model1 or model3",call. = FALSE)
+                  }
                 })
 
+## Test of presence of frocing variables
+model.class$set("private","testOnForcingVar",
+                function()
+                {
+                  if (ncol(self$X) == 1 & nrow(self$X) == 1)
+                  {
+                    if (self$X == 0) self$f.variables <- 0 else self$f.variables <- 1
+                  } else self$f.variables <- 1
+                })
+
+## Plot function for the model
+model.class$set("public","plot",
+                function(x,CI="all",...)
+                {
+                  browser()
+                  if (missing(x)) stop("No x-axis selected, no graph is displayed",call. = FALSE)
+                  if (is.matrix(x)){stop("x is a matrix, please select a vector",call. = FALSE)}
+                  ggplotly(bind_cols(self$model.fun(self$theta,self$var,X=self$X,CI=CI),data.frame(x=x)) %>%
+                    as_tibble() %>%
+                    ggplot(aes(x=x,y=y,ymin=q025,ymax=q975,fill=fill)) + geom_ribbon(alpha=0.4)+
+                    geom_line()+ private$paramGraph() + theme(legend.title=element_blank())+
+                    xlab("Input variable selected") +ylab("Code output")+
+                    scale_fill_manual(values=c("grey12"), name="fill"))
+                }
+)
 
 # ## Plot function for the models
 # model.class$set("public","plot",
@@ -372,8 +371,7 @@ model.class$set("public","print",
                     {
                       if (self$lenCode > 1)
                       {
-                        print("In time series modeling, a Gaussian process is available for each time step.
-                              You can access each one of them by yourmodel$GP")
+                        print("In time series modeling, a Gaussian process is available for each time step. You can access each one of them by yourmodel$GP")
                       } else
                       {
                         print(self$GP)
@@ -480,34 +478,42 @@ model1.class <- R6Class(classname = "model1.class",
                           ### Initialize from model.class
                           super$initialize(code, X, Yexp, model)
                         },
-                        model.fun = function(theta,var,X=self$X)
+                        model.fun = function(theta,var,X=self$X,CI="err")
                         {
-                          ## Function that generates the noise output of the numerical code
-                          out <- tibble(y = self$code(X,theta))%>%
-                            mutate(type = "Code output") %>%
-                            mutate(q025 = y - 2*sqrt(var),
-                                   q975 = y + 2*sqrt(var),
-                                   fill = "CI 95% noise")
-                          exp <- self$exp %>%
-                            mutate(q025 = out$q025,
-                                   q975 = out$q975,
-                                   fill = "CI 95% noise")
-                          out <- out %>% bind_rows(exp)
-                          return(out)
-                        },
-                        LogLikelihood = function(theta, var)
-                        {
-                          ### Log-Likelihood of the model
-                          ### To be implemented in C++
-                            self$m.exp <- self$code(self$X,theta)
-                            self$V.exp <- var*diag(self$n)
-                            V.exp.inv  <- (1/var)*diag(self$n)
-                            res <- -self$n/2*log(2*pi)-1/2*self$n*log(var) -
-                              0.5*t(self$exp$y-self$m.exp)%*%V.exp.inv%*%(self$exp$y-self$m.exp)
-                            return(as.numeric(res))
-                        })
+                          ### Function that generates the output of the model. If CI=TRUE, it computes
+                          ### the credibility intervals of the white Gaussian noise
+                          y <- self$code(X,theta)
+                          qq025 <- y - 2*sqrt(var)
+                          qq975 <- y + 2*sqrt(var)
+                          if (is.null(CI))
+                          {
+                            df <- data.frame(y=y,type="model output")
+                          } else if (CI=="err" | CI == "all")
+                          {
+                            df <- data.frame(y=y,type="model output",q025=qq025,q975=qq975,fill="CI 95% noise")
+                          } else
+                          {
+                            warning("The argument for the credibility interval is not
+                                    valid and no credibility interval will be displayed",call. = FALSE)
+                            df <- data.frame(y=y,type="model output")
+                          }
+                          return(df)
+                        }
+                        )
 )
-#############################################################################################
+
+## likelihood function
+model1.class$set("public","likelihood",
+                function(theta,var)
+                {
+                  ### Log-Likelihood
+                  self$m.exp <- self$code(self$X,as.vector(theta))
+                  self$V.exp <- var*diag(self$n)
+                  V.exp.inv  <- (1/var)*diag(self$n)
+                  return(-self$n/2*log(2*pi)-1/2*self$n*log(var)
+                         -0.5*t(self$Yexp-self$m.exp)%*%V.exp.inv%*%(self$Yexp-self$m.exp))
+                })
+
 
 
 ##################################### Model 3 definition ##################################
@@ -525,8 +531,7 @@ model3.class <- R6Class(classname = "model3.class",
                             ## Check if the opt.emul option is filled if it is not a gaussian kernel is picked
                             if (is.null(opt.disc$kernel.type))
                             {
-                              warning("default value is selected. The discrepancy will have a gauss
-                                      covariance structure",call. = FALSE)
+                              warning("default value is selected. The discrepancy will have a gauss covariance structure",call. = FALSE)
                               self$opt.disc$kernel.type="gauss"
                             } else
                             {
@@ -723,8 +728,7 @@ model2.class <- R6Class(classname = "model2.class",
                                                 q975=pr$upper95, fill="CI 95% GP")
                             } else
                             {
-                              warning("The argument for the credibility interval is not valid and no credibility
-                                      interval will be displayed",call. = FALSE)
+                              warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
                               df <- 0
                             }
                             return(df)
@@ -985,8 +989,7 @@ model4.class <- R6Class(classname = "model4.class",
                             {
                               if (is.null(opt.disc$kernel.type)==TRUE)
                               {
-                                warning("default value is selected. The discrepancy will have a gaussian
-                                        covariance structure",call.=FALSE)
+                                warning("default value is selected. The discrepancy will have a gaussian covariance structure",call.=FALSE)
                                 self$opt.disc$kernel.type="gauss"
                               } else
                               {
@@ -1021,8 +1024,7 @@ model4.class <- R6Class(classname = "model4.class",
                                                       q975n=qq975)
                             } else
                             {
-                              warning("The argument for the credibility interval is not valid and no credibility
-                                      interval will be displayed",call. = FALSE)
+                              warning("The argument for the credibility interval is not valid and no credibility interval will be displayed",call. = FALSE)
                               df <- 0
                             }
                             return(df)
