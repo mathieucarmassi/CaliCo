@@ -109,7 +109,7 @@ model.class$set("private","checkSize",
                   ### Check if the chosen model is in the possible selection
                 {
                   if (is.matrix(self$X)) {l <- nrow(self$X)} else{l <- length(self$X)}
-                  if(self$n!= l) stop("Inadequate size of X or Yexp", .call=FALSE)
+                  if(self$n!= l & self$X!=0) stop("Inadequate size of X or Yexp", .call=FALSE)
                 })
 
 
@@ -511,7 +511,7 @@ model1.class$set("public","likelihood",
                   self$V.exp <- var*diag(self$n)
                   V.exp.inv  <- (1/var)*diag(self$n)
                   return(-self$n/2*log(2*pi)-1/2*self$n*log(var)
-                         -0.5*t(self$Yexp-self$m.exp)%*%V.exp.inv%*%(self$Yexp-self$m.exp))
+                         -0.5*t(self$Yexp-self$m.exp)%*%V.exp.inv%*%as.matrix((self$Yexp-self$m.exp),nrow=self$n))
                 })
 
 
@@ -587,9 +587,11 @@ model3.class$set("public","likelihood",
                    # Log-Likelihood
                    self$disc  <- self$discrepancy(theta,thetaD,var,X=self$X)
                    self$m.exp <- self$code(self$X,as.vector(theta))
+                   if (nrow(self$disc$cov)==1) self$disc$cov <- as.numeric(self$disc$cov)*diag(self$n)
                    self$V.exp <- var*diag(self$n) + self$disc$cov
                    return(as.numeric(-self$n/2*log(2*pi)-1/2*log(det(self$V.exp))
-                          -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%(self$Yexp-self$m.exp)))
+                          -0.5*t(self$Yexp-self$m.exp)%*%solve(self$V.exp)%*%
+                            as.matrix((self$Yexp-self$m.exp)),nrow=self$n))
                  })
 
 
